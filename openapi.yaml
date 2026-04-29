@@ -40,6 +40,36 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '502': { $ref: '#/components/responses/BadGateway' }
+  /agentic-search:
+    post:
+      tags: [search]
+      summary: 自然语言语义检索（RAG 用）
+      operationId: semantic_search
+      description: |
+        自然语言语义检索，返回相关文献片段（chunk）用于 RAG 回答。
+        适用：「Transformer 注意力机制如何工作？」「最新的蛋白质折叠预测方法有哪些？」
+        不适用：精确字段过滤 → search_papers；取完整原文 → read_content。
+        返回：相关 chunk 列表，每条含 chunk_id/doc_id/abstract/chunk/score/title/offset。
+        典型链路：semantic_search → 选取 chunk → read_content(doc_id, offset)。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SemanticSearchRequest' }
+      responses:
+        '200':
+          description: 检索结果
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SemanticSearchResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503':
+          description: 嵌入或检索后端暂不可用
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
 
 components:
   securitySchemes:
@@ -130,6 +160,55 @@ components:
         subjects:
           type: array
           items: { type: string }
+
+    SemanticSearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: 自然语言查询，1-200 字最佳。
+        top_k:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 30
+        source_types:
+          type: array
+          items: { type: string, enum: [web, pdf] }
+        mode:
+          type: string
+          enum: [fast, balanced, quality]
+          default: balanced
+          description: |
+            fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。
+
+    SemanticSearchResponse:
+      type: object
+      required: [hits]
+      properties:
+        hits:
+          type: array
+          items: { $ref: '#/components/schemas/SearchChunk' }
+
+    SearchChunk:
+      type: object
+      required: [chunk_id, doc_id, score, title, offset]
+      properties:
+        chunk_id: { type: string }
+        doc_id: { type: string }
+        title: { type: string }
+        abstract: { type: string }
+        chunk: { type: string }
+        score: { type: number, format: float }
+        offset:
+          type: integer
+          format: int64
+          description: chunk 在原文中的字节偏移，可直接传给 read_content。
+        page_no: { type: integer }
+        source_type: { type: string }
 
     ApiError:
       type: object
