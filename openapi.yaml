@@ -70,6 +70,38 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /content:
+    get:
+      tags: [content]
+      summary: 按字节区间读取文献原文片段
+      operationId: read_content
+      description: |
+        按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，
+        用于扩展上下文（往前/往后读更多字节）。
+        返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。
+      parameters:
+        - name: doc_id
+          in: query
+          required: true
+          schema: { type: string }
+          description: 文献 ID（来自 search_papers / semantic_search）。
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, format: int64, default: 0 }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, format: int64, default: 4096, maximum: 16384 }
+      responses:
+        '200':
+          description: 内容片段
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReadContentResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '502': { $ref: '#/components/responses/BadGateway' }
 
 components:
   securitySchemes:
@@ -209,6 +241,17 @@ components:
           description: chunk 在原文中的字节偏移，可直接传给 read_content。
         page_no: { type: integer }
         source_type: { type: string }
+
+    ReadContentResponse:
+      type: object
+      required: [text, bytes_returned, next_offset, more]
+      properties:
+        text: { type: string }
+        bytes_returned: { type: integer }
+        next_offset: { type: integer, format: int64 }
+        more:
+          type: boolean
+          description: 为 true 表示可能还有后续字节，可用 next_offset 继续请求。
 
     ApiError:
       type: object
