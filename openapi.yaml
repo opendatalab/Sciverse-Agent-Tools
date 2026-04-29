@@ -13,13 +13,148 @@ servers:
   - url: https://sciverse-dev.opendatalab.org.cn/api
     description: 开发环境
 
+paths:
+  /meta-search:
+    post:
+      tags: [search]
+      summary: 按结构化条件检索学术文献元数据
+      operationId: search_papers
+      description: |
+        按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。
+        适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。
+        不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。
+        返回：论文元数据列表，每条含 doc_id、title、authors、abstract、journal、year 等。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchPapersRequest'
+      responses:
+        '200':
+          description: 检索结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchPapersResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
 
+  schemas:
+    SearchPapersRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: BM25 关键词，匹配标题/摘要/作者。留空则纯靠 filters 过滤。
+        title_contains:
+          type: string
+          description: 标题中必须包含的词（仅匹配 title 字段）。
+        abstract_contains:
+          type: string
+          description: 摘要中必须包含的词（仅匹配 abstract 字段）。
+        authors:
+          type: array
+          items: { type: string }
+          description: 作者名匹配（任一命中）。
+        year_from:
+          type: integer
+          description: 起始发表年（含）。
+        year_to:
+          type: integer
+          description: 结束发表年（含）。
+        journals:
+          type: array
+          items: { type: string }
+        subjects:
+          type: array
+          items: { type: string }
+          description: 学科分类，如 "computer science"、"biology"。
+        filters_advanced:
+          type: array
+          description: 高级过滤逃生舱（仅当上述字段不够用时使用）。
+          items:
+            type: object
+            required: [field, value]
+            properties:
+              field: { type: string }
+              operator:
+                type: string
+                enum: [FILTER_OP_EQ, FILTER_OP_NE, FILTER_OP_GT, FILTER_OP_GTE, FILTER_OP_LT, FILTER_OP_LTE, FILTER_OP_IN, FILTER_OP_NIN, FILTER_OP_CONTAINS]
+                default: FILTER_OP_EQ
+              value: {}
+        sort_by_year:
+          type: string
+          enum: [desc, asc, none]
+          default: desc
+        page:
+          type: integer
+          default: 1
+          minimum: 1
+        page_size:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 50
+
+    SearchPapersResponse:
+      type: object
+      required: [hits, total, page, page_size]
+      properties:
+        hits:
+          type: array
+          items: { $ref: '#/components/schemas/PaperMetadata' }
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+
+    PaperMetadata:
+      type: object
+      required: [doc_id, title]
+      properties:
+        doc_id: { type: string }
+        title: { type: string }
+        authors:
+          type: array
+          items: { type: string }
+        abstract: { type: string }
+        journal: { type: string }
+        publication_published_year: { type: integer }
+        subjects:
+          type: array
+          items: { type: string }
+
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string }
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Unauthorized:
+      description: Bearer Token 缺失或无效
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    BadGateway:
+      description: 上游服务不可用
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+
 security:
   - bearerAuth: []
-
-paths: {}
