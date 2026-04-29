@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+node_modules/
+packages/python/dist/
+packages/python/build/
+packages/typescript/dist/
+packages/typescript/node_modules/

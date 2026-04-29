@@ -1,0 +1,23 @@
+[project]
+name = "sciverse-agent-tools-build"
+version = "0.0.0"
+description = "Internal build tooling for sciverse-agent-tools (not published)"
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0",
+    "jsonschema>=4.21",
+    "datamodel-code-generator>=0.25",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
