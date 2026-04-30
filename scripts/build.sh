@@ -24,7 +24,8 @@ uv run datamodel-codegen \
     --target-python-version 3.10 \
     --use-schema-description \
     --field-constraints \
-    --use-double-quotes
+    --use-double-quotes \
+    --disable-timestamp
 echo "wrote packages/python/src/sciverse_agent_tools/types.py"
 
 # 4. 把 dist/ 下的 tool JSON 嵌入 Python SDK
