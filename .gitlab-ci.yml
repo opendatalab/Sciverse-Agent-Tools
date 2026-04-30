@@ -1,0 +1,106 @@
+.agent-tools-changes: &agent-tools-changes
+  changes:
+    - agent-tools/**/*
+
+agent-tools:lint-openapi:
+  stage: test
+  image: docker.shlab.tech/public/node:20.15.0-buster
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      <<: *agent-tools-changes
+    - if: $CI_COMMIT_BRANCH
+      <<: *agent-tools-changes
+  script:
+    - cd agent-tools
+    - npx --yes @stoplight/spectral-cli@6 lint openapi.yaml
+
+agent-tools:test-python:
+  stage: test
+  image: docker.shlab.tech/public/python:3.12-bookworm
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      <<: *agent-tools-changes
+    - if: $CI_COMMIT_BRANCH
+      <<: *agent-tools-changes
+  script:
+    - pip install --quiet uv
+    - cd agent-tools
+    - uv sync
+    - uv run pytest tests/ -v
+    - cd packages/python
+    - uv venv --python 3.12
+    - uv sync
+    - uv run pytest tests/ -v --ignore tests/test_contract.py
+
+agent-tools:test-typescript:
+  stage: test
+  image: docker.shlab.tech/public/node:20.15.0-buster
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      <<: *agent-tools-changes
+    - if: $CI_COMMIT_BRANCH
+      <<: *agent-tools-changes
+  script:
+    - cd agent-tools/packages/typescript
+    - npm ci
+    - npm run typecheck
+    - npx vitest run --exclude 'tests/contract.test.ts'
+
+agent-tools:drift-check:
+  stage: test
+  image: docker.shlab.tech/public/python:3.12-bookworm
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      <<: *agent-tools-changes
+  script:
+    - apt-get update && apt-get install -y --no-install-recommends nodejs npm
+    - pip install --quiet uv
+    - cd agent-tools
+    - uv sync
+    - cd packages/typescript && npm ci && cd ../..
+    - bash scripts/build.sh
+    - cd ..
+    - |
+      if ! git diff --exit-code agent-tools/dist agent-tools/packages/python/src/sciverse_agent_tools/types.py agent-tools/packages/python/src/sciverse_agent_tools/tools.py agent-tools/packages/typescript/src/types.ts agent-tools/packages/typescript/src/tools.ts agent-tools/packages/typescript/package.json agent-tools/packages/python/pyproject.toml; then
+          echo ""
+          echo "派生产物未同步，请本地运行 bash agent-tools/scripts/build.sh 后提交"
+          exit 1
+      fi
+
+agent-tools:version-check:
+  stage: test
+  image: docker.shlab.tech/public/python:3.12-bookworm
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      <<: *agent-tools-changes
+  script:
+    - pip install --quiet pyyaml
+    - |
+      python <<'PY'
+      import json, yaml
+      from pathlib import Path
+      root = Path("agent-tools")
+      v_yaml = yaml.safe_load((root / "openapi.yaml").read_text())["info"]["version"]
+      v_py = next(line.split('"')[1] for line in (root / "packages/python/pyproject.toml").read_text().splitlines() if line.startswith("version"))
+      v_ts = json.loads((root / "packages/typescript/package.json").read_text())["version"]
+      assert v_yaml == v_py == v_ts, f"version mismatch: openapi={v_yaml}, py={v_py}, ts={v_ts}"
+      print(f"version OK: {v_yaml}")
+      PY
+
+agent-tools:contract:
+  stage: test
+  image: docker.shlab.tech/public/python:3.12-bookworm
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      <<: *agent-tools-changes
+    - if: $CI_COMMIT_BRANCH == "dev"
+      <<: *agent-tools-changes
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  variables:
+    SCIVERSE_TEST_BASE_URL: "https://sciverse-dev.opendatalab.org.cn/api"
+  script:
+    - pip install --quiet uv
+    - cd agent-tools/packages/python
+    - uv venv --python 3.12
+    - uv sync
+    - uv run pytest tests/test_contract.py -v
