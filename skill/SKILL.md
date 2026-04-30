@@ -14,6 +14,7 @@ SciVerse academic paper retrieval: structured metadata search, semantic chunk re
 
 Trigger this skill when the user's request involves any of:
 
+
 - Locating academic papers by structured criteria (authors, year, journal, subjects)
 - Grounding answers in paper excerpts (RAG / citations)
 - Expanding the original text around a known doc_id (more bytes before/after a chunk)
