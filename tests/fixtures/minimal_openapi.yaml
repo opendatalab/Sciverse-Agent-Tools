@@ -1,0 +1,21 @@
+openapi: 3.0.3
+info:
+  title: Test
+  version: 1.0.0
+  x-sciverse-tools-version: 1.0.0
+paths:
+  /foo:
+    post:
+      operationId: do_foo
+      description: 测试 tool。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, description: 名字 }
+                age: { type: integer }
+components: {}
