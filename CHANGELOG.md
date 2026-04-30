@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- ClawHub `SKILL.md` 与 `manifest.json` 改为英文输出（与 ClawHub 社区惯例对齐，提升国际可发现性 + semantic search 召回率）。OpenAPI 中文 description 保留不变（继续供 OpenAI/Anthropic tool 派生器使用，对齐中文 agent 调用语境）。
+- `to_clawhub_skill.py` 派生器优先读取 OpenAPI 扩展字段 `x-en-summary` / `x-en-description`，fallback 到 `summary` / `description`。
+- `skill/README.md` 改为英文为主 + 中文备选段。
+- GitLab CI 新增 `agent-tools:publish-skill` job：main 分支 + skill 改动时自动 `npx clawhub package publish` 到 ClawHub。`CLAWHUB_TOKEN` 未配置时 warn + skip。
+
+### Added
+- OpenAPI `info` 与三个 operation 新增 `x-en-summary` / `x-en-description` 扩展字段，承载英文文案。
+
 ## [0.1.0] - 2026-04-30
 
 ### Added

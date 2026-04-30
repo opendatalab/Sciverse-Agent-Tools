@@ -1,21 +1,68 @@
 # sciverse-agent-tools — ClawHub skill bundle
 
-OpenClaw 用户专用：通过 ClawHub 一键给 agent 加上 SciVerse 学术文献检索能力。
+ClawHub skill that gives any OpenClaw agent SciVerse academic-paper retrieval
+capabilities (English | [中文](#中文说明)).
 
-## 安装
+## Install
 
 ```bash
 clawhub install sciverse-agent-tools
 ```
 
-## 配置
+## Configure
+
+```bash
+export SCIVERSE_API_TOKEN=sv-xxx       # obtain from https://sciverse.space
+# optional: export SCIVERSE_BASE_URL=https://sciverse-dev.opendatalab.org.cn/api
+```
+
+## Tools at a glance
+
+| Tool | Purpose |
+|---|---|
+| `search_papers` | Structured metadata search (authors/year/journal/subjects) |
+| `semantic_search` | Natural-language semantic chunk retrieval (for RAG) |
+| `read_content` | Byte-range read of a paper's original text |
+
+See `SKILL.md` for full agent-facing documentation.
+
+## Direct invocation (bypass OpenClaw)
+
+```bash
+node scripts/semantic_search.mjs '{"query":"Transformer attention mechanism","top_k":3}'
+```
+
+## Relationship to the SDK
+
+This skill is **complementary** to the `sciverse-agent-tools` packages on PyPI / npm:
+
+- **This skill** — OpenClaw users only. Zero external deps (Node 18+ native fetch).
+- **PyPI / npm SDK** — Any LLM agent framework (OpenAI, Anthropic, LangChain, LlamaIndex…).
+
+## License
+
+Apache-2.0
+
+---
+
+## 中文说明
+
+OpenClaw 用户专用：通过 ClawHub 一键给 agent 加上 SciVerse 学术文献检索能力。
+
+### 安装
+
+```bash
+clawhub install sciverse-agent-tools
+```
+
+### 配置
 
 ```bash
 export SCIVERSE_API_TOKEN=sv-xxx   # 从 https://sciverse.space 控制台申请
 # 可选：export SCIVERSE_BASE_URL=https://sciverse-dev.opendatalab.org.cn/api
 ```
 
-## 工具速览
+### 工具速览
 
 | Tool | 用途 |
 |---|---|
@@ -23,20 +70,17 @@ export SCIVERSE_API_TOKEN=sv-xxx   # 从 https://sciverse.space 控制台申请
 | `semantic_search` | 自然语言语义检索文献片段（RAG 用） |
 | `read_content` | 按字节区间读取文献原文片段 |
 
-详见 `SKILL.md`。
+agent 视角的完整文档见 `SKILL.md`（英文）。
 
-## 直接调用（不通过 OpenClaw）
+### 直接调用（不通过 OpenClaw）
 
 ```bash
 node scripts/semantic_search.mjs '{"query":"Transformer 注意力机制","top_k":3}'
 ```
 
-## 与 SDK 的关系
+### 与 SDK 的关系
 
 本 skill 与 PyPI/npm 上的 `sciverse-agent-tools` 包是**互补**的：
+
 - **本 skill**：OpenClaw 用户专用，零外部依赖（仅 Node 18+ native fetch）
 - **PyPI/npm SDK**：任意 LLM Agent 框架（OpenAI / Anthropic / LangChain / LlamaIndex...）
-
-## License
-
-Apache-2.0

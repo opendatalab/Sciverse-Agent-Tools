@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info:
+  title: TestEn
+  version: 1.0.0
+  x-sciverse-tools-version: 1.0.0
+paths:
+  /foo:
+    post:
+      operationId: do_foo
+      summary: 中文 summary
+      description: 测试 tool。
+      x-en-summary: Run a foo
+      x-en-description: |
+        Run a foo. Use when user asks for foos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, description: 名字 }
+                age: { type: integer }
+components: {}

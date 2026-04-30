@@ -4,6 +4,11 @@ info:
   description: |
     SciVerse 开放平台面向 AI Agent 的检索能力 API。
     所有接口均需 Bearer Token 鉴权（来自 platform-console 控制台）。
+  x-en-description: |
+    SciVerse open platform retrieval API for AI agents.
+    All endpoints require Bearer Token authentication (obtain one from
+    https://sciverse.space). The platform indexes academic papers (titles,
+    authors, abstracts, full-text chunks) for citation-grade RAG.
   version: 0.1.0
   x-sciverse-tools-version: 0.1.0
 
@@ -30,6 +35,16 @@ paths:
         适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。
         不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。
         返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。
+      x-en-summary: Search academic papers by structured filters
+      x-en-description: |
+        Search academic papers by structured filters (title, authors, journal,
+        year, subjects, etc.).
+        Use when: "find Hinton's papers from 2020-2023", "Nature papers on
+        CRISPR".
+        Not for: natural-language Q&A retrieval (use semantic_search) or
+        full-text snippets (use read_content).
+        Returns: list of papers; each entry has doc_id, title, author, abstract,
+        publication_venue_name, publication_published_year.
       requestBody:
         required: true
         content:
@@ -57,6 +72,18 @@ paths:
         不适用：精确字段过滤 → search_papers；取完整原文 → read_content。
         返回：相关 chunk 列表，每条含 chunk_id/doc_id/abstract/chunk/score/title/offset。
         典型链路：semantic_search → 选取 chunk → read_content(doc_id, offset)。
+      x-en-summary: Semantic search over academic papers (for RAG)
+      x-en-description: |
+        Natural-language semantic search returning relevant paper chunks for
+        RAG-style answering.
+        Use when: "How does Transformer attention work?", "What are recent
+        methods for protein structure prediction?".
+        Not for: precise field filtering (use search_papers) or fetching full
+        original text (use read_content).
+        Returns: list of chunks; each entry has chunk_id, doc_id, abstract,
+        chunk, score, title, offset.
+        Typical chain: semantic_search → pick chunk → read_content(doc_id,
+        offset).
       requestBody:
         required: true
         content:
@@ -85,6 +112,12 @@ paths:
         按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，
         用于扩展上下文（往前/往后读更多字节）。
         返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。
+      x-en-summary: Read paper content by byte range
+      x-en-description: |
+        Read a UTF-8 byte range of a paper's original text. Typically used with
+        a doc_id/offset returned by semantic_search to expand context (read
+        more bytes before or after a chunk).
+        Returns: text fragment, bytes_returned, next_offset, more (boolean).
       parameters:
         - name: doc_id
           in: query

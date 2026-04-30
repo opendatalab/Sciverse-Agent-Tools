@@ -1,7 +1,7 @@
 {
   "name": "sciverse-agent-tools",
   "version": "0.1.0",
-  "description": "SciVerse 学术文献检索：按结构化条件查元数据、自然语言语义检索片段、按字节读取原文。适合需要权威学术文献支撑的 RAG 与 agent 工作流。",
+  "description": "SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.",
   "runtime": "node>=18",
   "license": "Apache-2.0",
   "homepage": "https://sciverse.space",
@@ -9,19 +9,19 @@
     {
       "name": "SCIVERSE_API_TOKEN",
       "required": true,
-      "description": "SciVerse API Token（从 https://sciverse.space 控制台申请）"
+      "description": "SciVerse API Token (obtain from https://sciverse.space)."
     },
     {
       "name": "SCIVERSE_BASE_URL",
       "required": false,
       "default": "https://sciverse.space/api",
-      "description": "覆盖默认 API base URL（用于 dev / 自建网关）"
+      "description": "Override the default API base URL (for dev / self-hosted gateways)."
     }
   ],
   "tools": [
     {
       "name": "search_papers",
-      "description": "按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。\n适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。\n不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。\n返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。",
+      "description": "Search academic papers by structured filters (title, authors, journal,\nyear, subjects, etc.).\nUse when: \"find Hinton's papers from 2020-2023\", \"Nature papers on\nCRISPR\".\nNot for: natural-language Q&A retrieval (use semantic_search) or\nfull-text snippets (use read_content).\nReturns: list of papers; each entry has doc_id, title, author, abstract,\npublication_venue_name, publication_published_year.",
       "script": "scripts/search_papers.mjs",
       "input_schema": {
         "type": "object",
@@ -124,7 +124,7 @@
     },
     {
       "name": "semantic_search",
-      "description": "自然语言语义检索，返回相关文献片段（chunk）用于 RAG 回答。\n适用：「Transformer 注意力机制如何工作？」「最新的蛋白质折叠预测方法有哪些？」\n不适用：精确字段过滤 → search_papers；取完整原文 → read_content。\n返回：相关 chunk 列表，每条含 chunk_id/doc_id/abstract/chunk/score/title/offset。\n典型链路：semantic_search → 选取 chunk → read_content(doc_id, offset)。",
+      "description": "Natural-language semantic search returning relevant paper chunks for\nRAG-style answering.\nUse when: \"How does Transformer attention work?\", \"What are recent\nmethods for protein structure prediction?\".\nNot for: precise field filtering (use search_papers) or fetching full\noriginal text (use read_content).\nReturns: list of chunks; each entry has chunk_id, doc_id, abstract,\nchunk, score, title, offset.\nTypical chain: semantic_search → pick chunk → read_content(doc_id,\noffset).",
       "script": "scripts/semantic_search.mjs",
       "input_schema": {
         "type": "object",
@@ -169,7 +169,7 @@
     },
     {
       "name": "read_content",
-      "description": "按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，\n用于扩展上下文（往前/往后读更多字节）。\n返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。",
+      "description": "Read a UTF-8 byte range of a paper's original text. Typically used with\na doc_id/offset returned by semantic_search to expand context (read\nmore bytes before or after a chunk).\nReturns: text fragment, bytes_returned, next_offset, more (boolean).",
       "script": "scripts/read_content.mjs",
       "input_schema": {
         "type": "object",
