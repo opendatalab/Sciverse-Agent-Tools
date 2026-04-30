@@ -131,7 +131,7 @@ agent-tools:contract:
     - uv run pytest tests/test_contract.py -v
 
 agent-tools:release:
-  stage: release
+  stage: publish
   image: docker.shlab.tech/public/python:3.13-slim
   # 不引用 mirror-vars：npm publish 必须发到 npmjs.org（默认 registry）。
   # 装包用 mirror，发布走默认。
@@ -179,7 +179,7 @@ agent-tools:release:
     - git push origin "agent-tools-v${VERSION}"
 
 agent-tools:publish-skill:
-  stage: release
+  stage: publish
   image: docker.shlab.tech/public/node:20.15.0-buster
   variables:
     <<: *agent-tools-mirror-vars
