@@ -1,6 +1,6 @@
 {
   "name": "sciverse-agent-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SciVerse Agent Tools — OpenAI/Anthropic/LangChain compatible tool schema and async client for SciVerse retrieval APIs",
   "license": "Apache-2.0",
   "type": "module",
