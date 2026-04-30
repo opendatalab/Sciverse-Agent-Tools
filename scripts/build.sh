@@ -10,12 +10,24 @@ cd "$ROOT"
 VERSION=$(uv run python -c "import yaml; print(yaml.safe_load(open('openapi.yaml'))['info']['version'])")
 echo "Building agent-tools v${VERSION}"
 
-# 2. 跑三个派生器
+# 2. 跑三个派生器（OpenAPI → tool format JSON）
 uv run python -m generators.to_openai
 uv run python -m generators.to_anthropic
 uv run python -m generators.to_langchain
 
-# 3. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
+# 3. 派生 Python pydantic 模型
+uv run datamodel-codegen \
+    --input openapi.yaml \
+    --input-file-type openapi \
+    --output packages/python/src/sciverse_agent_tools/types.py \
+    --output-model-type pydantic_v2.BaseModel \
+    --target-python-version 3.10 \
+    --use-schema-description \
+    --field-constraints \
+    --use-double-quotes
+echo "wrote packages/python/src/sciverse_agent_tools/types.py"
+
+# 4. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
 if [ -f "packages/python/pyproject.toml" ]; then
     sed -i.bak -E "s/^version *= *\".*\"/version = \"${VERSION}\"/" packages/python/pyproject.toml && rm packages/python/pyproject.toml.bak
 fi
