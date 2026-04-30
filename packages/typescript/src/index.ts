@@ -1,1 +1,2 @@
-export const __placeholder = true;
+export { AgentToolsClient } from "./client";
+export type { AgentToolsClientOptions } from "./client";
