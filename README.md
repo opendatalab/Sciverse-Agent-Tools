@@ -190,6 +190,16 @@ bash scripts/build.sh   # 重新派生 dist/ 与 packages/*/src/{tools,types}.{p
 uv run pytest tests/    # 派生器单测
 ```
 
+## OpenClaw 用户
+
+通过 [ClawHub](https://clawhub.ai) 一键安装：
+
+```bash
+clawhub install sciverse-agent-tools
+```
+
+详见 [`skill/README.md`](./skill/README.md)。
+
 ## License
 
 Apache-2.0
