@@ -200,4 +200,5 @@ agent-tools:publish-skill:
       fi
     # ClawHub CLI 默认读取 CLAWHUB_TOKEN env var；若 CLI 升级要求 --token flag，
     # 请改成 `npx clawhub@latest package publish . --token "${CLAWHUB_TOKEN}" ...`
-    - npx --yes clawhub@latest package publish . --version "${VERSION}" --tags latest
+    # --family skill 显式声明包类型（CLI 无法从 manifest 自动检测时必填）
+    - npx --yes clawhub@latest package publish . --family skill --version "${VERSION}" --tags latest
