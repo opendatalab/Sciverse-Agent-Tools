@@ -142,7 +142,7 @@ agent-tools:release:
     - if: $CI_COMMIT_BRANCH == "main"
       <<: *agent-tools-changes
   before_script:
-    - pip install --quiet uv twine
+    - pip install --quiet uv twine pyyaml
     # CI 不通 deb.debian.org，把 apt sources 切到阿里云镜像
     - sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
     - apt-get update && apt-get install -y --no-install-recommends nodejs npm git
