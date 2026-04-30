@@ -7,6 +7,12 @@ info:
   version: 0.1.0
   x-sciverse-tools-version: 0.1.0
 
+tags:
+  - name: search
+    description: 检索类操作（结构化元数据 + 语义检索）
+  - name: content
+    description: 原文读取类操作
+
 servers:
   - url: https://sciverse.space/api
     description: 生产环境
