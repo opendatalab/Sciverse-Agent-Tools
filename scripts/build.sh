@@ -27,7 +27,25 @@ uv run datamodel-codegen \
     --use-double-quotes
 echo "wrote packages/python/src/sciverse_agent_tools/types.py"
 
-# 4. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
+# 4. 把 dist/ 下的 tool JSON 嵌入 Python SDK
+uv run python - <<'PY'
+import json
+from pathlib import Path
+
+openai = json.loads(Path("dist/openai-tools.json").read_text())
+anthropic = json.loads(Path("dist/anthropic-tools.json").read_text())
+target = Path("packages/python/src/sciverse_agent_tools/tools.py")
+target.write_text(
+    f'"""Auto-generated. Do not edit. Run scripts/build.sh."""\n'
+    f'TOOLS_VERSION = {json.dumps(openai["version"])}\n'
+    f'OPENAI_TOOLS = {json.dumps(openai["tools"], ensure_ascii=False, indent=2)}\n'
+    f'ANTHROPIC_TOOLS = {json.dumps(anthropic["tools"], ensure_ascii=False, indent=2)}\n',
+    encoding="utf-8"
+)
+print(f"wrote {target}")
+PY
+
+# 5. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
 if [ -f "packages/python/pyproject.toml" ]; then
     sed -i.bak -E "s/^version *= *\".*\"/version = \"${VERSION}\"/" packages/python/pyproject.toml && rm packages/python/pyproject.toml.bak
 fi
