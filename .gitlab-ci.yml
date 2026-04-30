@@ -104,3 +104,43 @@ agent-tools:contract:
     - uv venv --python 3.12
     - uv sync
     - uv run pytest tests/test_contract.py -v
+
+agent-tools:release:
+  stage: release
+  image: docker.shlab.tech/public/python:3.12-bookworm
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      <<: *agent-tools-changes
+  before_script:
+    - pip install --quiet uv twine
+    - apt-get update && apt-get install -y --no-install-recommends nodejs npm git
+  script:
+    - cd agent-tools
+    - VERSION=$(python -c "import yaml; print(yaml.safe_load(open('openapi.yaml'))['info']['version'])")
+    - echo "Releasing sciverse-agent-tools v${VERSION}"
+    # 检查 git tag 是否已存在，存在则跳过（幂等）
+    - |
+      if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+          echo "tag v${VERSION} already exists, skipping release"
+          exit 0
+      fi
+    # PyPI
+    - cd packages/python
+    - uv venv --python 3.12
+    - uv sync
+    - uv build
+    - twine upload --non-interactive --username __token__ --password "${PYPI_API_TOKEN}" dist/*
+    - cd ../..
+    # npm
+    - cd packages/typescript
+    - npm ci
+    - npm run build
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+    - npm publish --access public
+    - cd ../..
+    # tag
+    - git config user.email "ci@gitlab.shlab.tech"
+    - git config user.name "GitLab CI"
+    - git remote set-url origin "https://oauth2:${GL_TOKEN}@gitlab.shlab.tech/${CI_PROJECT_PATH}.git"
+    - git tag -a "v${VERSION}" -m "agent-tools v${VERSION}"
+    - git push origin "v${VERSION}"
