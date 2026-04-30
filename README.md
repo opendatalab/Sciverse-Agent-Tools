@@ -125,7 +125,7 @@ await c.readContent({ doc_id, offset, limit });
 返回值类型为 `unknown`，需用户自行 cast：
 
 ```ts
-import type { components } from "sciverse-agent-tools/dist/types";
+import type { components } from "sciverse-agent-tools";
 type SemanticSearchResp = components["schemas"]["SemanticSearchResponse"];
 const r = await c.semanticSearch({ query: "x" }) as SemanticSearchResp;
 ```
