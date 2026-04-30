@@ -42,18 +42,19 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     SearchPapersRequest: {
-      /** @description BM25 关键词，匹配标题/摘要/作者。留空则纯靠 filters 过滤。 */
+      /** @description BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。 */
       query?: string;
       /** @description 标题中必须包含的词（仅匹配 title 字段）。 */
       title_contains?: string;
       /** @description 摘要中必须包含的词（仅匹配 abstract 字段）。 */
       abstract_contains?: string;
-      /** @description 作者名匹配（任一命中）。 */
+      /** @description 作者名（任一命中即可）。SDK 内部映射到后端 `author` 字段（FILTER_OP_IN）。 */
       authors?: string[];
       /** @description 起始发表年（含）。 */
       year_from?: number;
       /** @description 结束发表年（含）。 */
       year_to?: number;
+      /** @description 期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。 */
       journals?: string[];
       /** @description 学科分类，如 "computer science"、"biology"。 */
       subjects?: string[];
@@ -83,14 +84,23 @@ export interface components {
       page: number;
       page_size: number;
     };
+    /**
+     * @description 文献元数据。字段名与 metadata-service 后端 `fields.py` 的真实字段一致，
+     * SDK 不做响应转换。`doc_id` 由 metadata-service 注入（OpenSearch `_id`）。
+     */
     PaperMetadata: {
+      /** @description 文献唯一 ID（OpenSearch _id，通常为内容 sha256）。 */
       doc_id: string;
       title: string;
-      authors?: string[];
+      /** @description 作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。 */
+      author?: string[];
       abstract?: string;
-      journal?: string;
+      /** @description 期刊/会议名（fields.py 中是 String 类型）。 */
+      publication_venue_name?: string;
       publication_published_year?: number;
       subjects?: string[];
+      keywords?: string[];
+      doi?: string;
     };
     SemanticSearchRequest: {
       /** @description 自然语言查询，1-200 字最佳。 */

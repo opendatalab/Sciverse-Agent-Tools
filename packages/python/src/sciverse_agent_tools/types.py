@@ -35,7 +35,8 @@ class SortByYear(Enum):
 
 class SearchPapersRequest(BaseModel):
     query: str | None = Field(
-        None, description="BM25 关键词，匹配标题/摘要/作者。留空则纯靠 filters 过滤。"
+        None,
+        description="BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。",
     )
     title_contains: str | None = Field(
         None, description="标题中必须包含的词（仅匹配 title 字段）。"
@@ -43,10 +44,16 @@ class SearchPapersRequest(BaseModel):
     abstract_contains: str | None = Field(
         None, description="摘要中必须包含的词（仅匹配 abstract 字段）。"
     )
-    authors: list[str] | None = Field(None, description="作者名匹配（任一命中）。")
+    authors: list[str] | None = Field(
+        None,
+        description="作者名（任一命中即可）。SDK 内部映射到后端 `author` 字段（FILTER_OP_IN）。",
+    )
     year_from: int | None = Field(None, description="起始发表年（含）。")
     year_to: int | None = Field(None, description="结束发表年（含）。")
-    journals: list[str] | None = None
+    journals: list[str] | None = Field(
+        None,
+        description="期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。",
+    )
     subjects: list[str] | None = Field(
         None, description='学科分类，如 "computer science"、"biology"。'
     )
@@ -59,13 +66,28 @@ class SearchPapersRequest(BaseModel):
 
 
 class PaperMetadata(BaseModel):
-    doc_id: str
+    """
+    文献元数据。字段名与 metadata-service 后端 `fields.py` 的真实字段一致，
+    SDK 不做响应转换。`doc_id` 由 metadata-service 注入（OpenSearch `_id`）。
+
+    """
+
+    doc_id: str = Field(
+        ..., description="文献唯一 ID（OpenSearch _id，通常为内容 sha256）。"
+    )
     title: str
-    authors: list[str] | None = None
+    author: list[str] | None = Field(
+        None,
+        description="作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。",
+    )
     abstract: str | None = None
-    journal: str | None = None
+    publication_venue_name: str | None = Field(
+        None, description="期刊/会议名（fields.py 中是 String 类型）。"
+    )
     publication_published_year: int | None = None
     subjects: list[str] | None = None
+    keywords: list[str] | None = None
+    doi: str | None = None
 
 
 class SourceType(Enum):

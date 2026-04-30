@@ -11,13 +11,13 @@ TOOLS_VERSION = "0.1.0"
 
 class SearchPapersArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    query: str | None = Field(None, description='BM25 关键词，匹配标题/摘要/作者。留空则纯靠 filters 过滤。')
+    query: str | None = Field(None, description='BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。')
     title_contains: str | None = Field(None, description='标题中必须包含的词（仅匹配 title 字段）。')
     abstract_contains: str | None = Field(None, description='摘要中必须包含的词（仅匹配 abstract 字段）。')
-    authors: list[str] | None = Field(None, description='作者名匹配（任一命中）。')
+    authors: list[str] | None = Field(None, description='作者名（任一命中即可）。SDK 内部映射到后端 `author` 字段（FILTER_OP_IN）。')
     year_from: int | None = Field(None, description='起始发表年（含）。')
     year_to: int | None = Field(None, description='结束发表年（含）。')
-    journals: list[str] | None = Field(None, description='')
+    journals: list[str] | None = Field(None, description='期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。')
     subjects: list[str] | None = Field(None, description='学科分类，如 "computer science"、"biology"。')
     filters_advanced: list[dict[str, Any]] | None = Field(None, description='高级过滤逃生舱（仅当上述字段不够用时使用）。')
     sort_by_year: str = Field('desc', description='')

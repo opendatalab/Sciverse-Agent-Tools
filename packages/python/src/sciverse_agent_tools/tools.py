@@ -11,7 +11,7 @@ OPENAI_TOOLS = [
         "properties": {
           "query": {
             "type": "string",
-            "description": "BM25 关键词，匹配标题/摘要/作者。留空则纯靠 filters 过滤。"
+            "description": "BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。"
           },
           "title_contains": {
             "type": "string",
@@ -26,7 +26,7 @@ OPENAI_TOOLS = [
             "items": {
               "type": "string"
             },
-            "description": "作者名匹配（任一命中）。"
+            "description": "作者名（任一命中即可）。SDK 内部映射到后端 `author` 字段（FILTER_OP_IN）。"
           },
           "year_from": {
             "type": "integer",
@@ -40,7 +40,8 @@ OPENAI_TOOLS = [
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。"
           },
           "subjects": {
             "type": "array",
@@ -192,7 +193,7 @@ ANTHROPIC_TOOLS = [
       "properties": {
         "query": {
           "type": "string",
-          "description": "BM25 关键词，匹配标题/摘要/作者。留空则纯靠 filters 过滤。"
+          "description": "BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。"
         },
         "title_contains": {
           "type": "string",
@@ -207,7 +208,7 @@ ANTHROPIC_TOOLS = [
           "items": {
             "type": "string"
           },
-          "description": "作者名匹配（任一命中）。"
+          "description": "作者名（任一命中即可）。SDK 内部映射到后端 `author` 字段（FILTER_OP_IN）。"
         },
         "year_from": {
           "type": "integer",
@@ -221,7 +222,8 @@ ANTHROPIC_TOOLS = [
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。"
         },
         "subjects": {
           "type": "array",
