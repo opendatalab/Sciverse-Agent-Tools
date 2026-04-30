@@ -189,7 +189,13 @@ agent-tools:publish-skill:
         - agent-tools/skill/**/*
         - agent-tools/openapi.yaml
   script:
-    - cd agent-tools/skill
+    # 把 skill bundle 复制到非 git 目录后再 publish。
+    # 否则 ClawHub CLI 会从 .git 检测到 GitLab remote（非 GitHub 格式），
+    # 触发 "--source-repo and --source-commit must be set together" 错误。
+    # 复制后 CLI 找不到 .git context，干净跳过 source 元数据。
+    # v0.2 迁到 GitHub mirror 后改回从仓库目录直发并加 --source-repo flag。
+    - cp -r agent-tools/skill /tmp/sciverse-agent-tools-skill
+    - cd /tmp/sciverse-agent-tools-skill
     - VERSION=$(node -e "console.log(require('./manifest.json').version)")
     - echo "Publishing sciverse-agent-tools skill v${VERSION} to ClawHub"
     - |
