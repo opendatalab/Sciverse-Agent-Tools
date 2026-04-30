@@ -2,9 +2,18 @@
   changes:
     - agent-tools/**/*
 
+# CI 环境无法直连公网 PyPI / npm，统一走阿里云 / npmmirror。
+# release job 单独处理 npm publish（必须发布到 npmjs.org）。
+.agent-tools-mirror-vars: &agent-tools-mirror-vars
+  PIP_INDEX_URL: "https://mirrors.aliyun.com/pypi/simple/"
+  UV_INDEX_URL: "https://mirrors.aliyun.com/pypi/simple/"
+  NPM_CONFIG_REGISTRY: "https://registry.npmmirror.com"
+
 agent-tools:lint-openapi:
   stage: test
   image: docker.shlab.tech/public/node:20.15.0-buster
+  variables:
+    <<: *agent-tools-mirror-vars
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
@@ -17,6 +26,8 @@ agent-tools:lint-openapi:
 agent-tools:test-python:
   stage: test
   image: docker.shlab.tech/public/python:3.13-slim
+  variables:
+    <<: *agent-tools-mirror-vars
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
@@ -35,6 +46,8 @@ agent-tools:test-python:
 agent-tools:test-typescript:
   stage: test
   image: docker.shlab.tech/public/node:20.15.0-buster
+  variables:
+    <<: *agent-tools-mirror-vars
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
@@ -49,6 +62,8 @@ agent-tools:test-typescript:
 agent-tools:drift-check:
   stage: test
   image: docker.shlab.tech/public/python:3.13-slim
+  variables:
+    <<: *agent-tools-mirror-vars
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
@@ -70,6 +85,8 @@ agent-tools:drift-check:
 agent-tools:version-check:
   stage: test
   image: docker.shlab.tech/public/python:3.13-slim
+  variables:
+    <<: *agent-tools-mirror-vars
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
@@ -97,6 +114,7 @@ agent-tools:contract:
       <<: *agent-tools-changes
     - if: $CI_PIPELINE_SOURCE == "schedule"
   variables:
+    <<: *agent-tools-mirror-vars
     SCIVERSE_TEST_BASE_URL: "https://sciverse-dev.opendatalab.org.cn/api"
   script:
     - |
@@ -113,6 +131,11 @@ agent-tools:contract:
 agent-tools:release:
   stage: release
   image: docker.shlab.tech/public/python:3.13-slim
+  # 不引用 mirror-vars：npm publish 必须发到 npmjs.org（默认 registry）。
+  # 装包用 mirror，发布走默认。
+  variables:
+    PIP_INDEX_URL: "https://mirrors.aliyun.com/pypi/simple/"
+    UV_INDEX_URL: "https://mirrors.aliyun.com/pypi/simple/"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       <<: *agent-tools-changes
@@ -136,12 +159,12 @@ agent-tools:release:
     - uv build
     - twine upload --skip-existing --non-interactive --username __token__ --password "${PYPI_API_TOKEN}" dist/*
     - cd ../..
-    # npm
+    # npm（装 deps 走 mirror，publish 走 npmjs.org）
     - cd packages/typescript
-    - npm ci
+    - npm ci --registry=https://registry.npmmirror.com
     - npm run build
     - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-    - npm publish --access public
+    - npm publish --access public --registry=https://registry.npmjs.org
     - cd ../..
     # tag
     - git config user.email "ci@gitlab.shlab.tech"
