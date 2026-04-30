@@ -5,7 +5,7 @@ OPENAI_TOOLS = [
     "type": "function",
     "function": {
       "name": "search_papers",
-      "description": "按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。\n适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。\n不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。\n返回：论文元数据列表，每条含 doc_id、title、authors、abstract、journal、year 等。",
+      "description": "按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。\n适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。\n不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。\n返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。",
       "parameters": {
         "type": "object",
         "properties": {
@@ -187,7 +187,7 @@ OPENAI_TOOLS = [
 ANTHROPIC_TOOLS = [
   {
     "name": "search_papers",
-    "description": "按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。\n适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。\n不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。\n返回：论文元数据列表，每条含 doc_id、title、authors、abstract、journal、year 等。",
+    "description": "按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。\n适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。\n不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。\n返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。",
     "input_schema": {
       "type": "object",
       "properties": {

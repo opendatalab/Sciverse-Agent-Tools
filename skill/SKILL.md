@@ -30,7 +30,7 @@ SciVerse 学术文献检索：按结构化条件查元数据、自然语言语�
 按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。
 适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。
 不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。
-返回：论文元数据列表，每条含 doc_id、title、authors、abstract、journal、year 等。
+返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。
 
 **调用**：`node scripts/search_papers.mjs '<JSON 入参>'`
 
