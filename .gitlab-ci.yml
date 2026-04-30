@@ -204,7 +204,8 @@ agent-tools:publish-skill:
           echo "请在 GitLab Project Settings → CI/CD → Variables 配置 CLAWHUB_TOKEN（masked + protected）。"
           exit 0
       fi
-    # ClawHub CLI 默认读取 CLAWHUB_TOKEN env var；若 CLI 升级要求 --token flag，
-    # 请改成 `npx clawhub@latest package publish . --token "${CLAWHUB_TOKEN}" ...`
+    # ClawHub CLI 不读 env var，必须先 `clawhub login --token` 写入本地 config，
+    # 之后 publish 才能识别身份。
+    - npx --yes clawhub@latest login --token "${CLAWHUB_TOKEN}"
     # --family skill 显式声明包类型（CLI 无法从 manifest 自动检测时必填）
     - npx --yes clawhub@latest package publish . --family skill --version "${VERSION}" --tags latest
