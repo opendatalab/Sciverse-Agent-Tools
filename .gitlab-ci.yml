@@ -16,7 +16,7 @@ agent-tools:lint-openapi:
 
 agent-tools:test-python:
   stage: test
-  image: docker.shlab.tech/public/python:3.12-bookworm
+  image: docker.shlab.tech/public/python:3.13-slim
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
@@ -28,7 +28,7 @@ agent-tools:test-python:
     - uv sync
     - uv run pytest tests/ -v
     - cd packages/python
-    - uv venv --python 3.12
+    - uv venv --python 3.13
     - uv sync
     - uv run pytest tests/ -v --ignore tests/test_contract.py
 
@@ -48,12 +48,12 @@ agent-tools:test-typescript:
 
 agent-tools:drift-check:
   stage: test
-  image: docker.shlab.tech/public/python:3.12-bookworm
+  image: docker.shlab.tech/public/python:3.13-slim
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
   script:
-    - apt-get update && apt-get install -y --no-install-recommends nodejs npm
+    - apt-get update && apt-get install -y --no-install-recommends git nodejs npm
     - pip install --quiet uv
     - cd agent-tools
     - uv sync
@@ -69,7 +69,7 @@ agent-tools:drift-check:
 
 agent-tools:version-check:
   stage: test
-  image: docker.shlab.tech/public/python:3.12-bookworm
+  image: docker.shlab.tech/public/python:3.13-slim
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
@@ -89,7 +89,7 @@ agent-tools:version-check:
 
 agent-tools:contract:
   stage: test
-  image: docker.shlab.tech/public/python:3.12-bookworm
+  image: docker.shlab.tech/public/python:3.13-slim
   rules:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
@@ -106,13 +106,13 @@ agent-tools:contract:
       fi
     - pip install --quiet uv
     - cd agent-tools/packages/python
-    - uv venv --python 3.12
+    - uv venv --python 3.13
     - uv sync
     - uv run pytest tests/test_contract.py -v
 
 agent-tools:release:
   stage: release
-  image: docker.shlab.tech/public/python:3.12-bookworm
+  image: docker.shlab.tech/public/python:3.13-slim
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       <<: *agent-tools-changes
@@ -131,7 +131,7 @@ agent-tools:release:
       fi
     # PyPI
     - cd packages/python
-    - uv venv --python 3.12
+    - uv venv --python 3.13
     - uv sync
     - uv build
     - twine upload --skip-existing --non-interactive --username __token__ --password "${PYPI_API_TOKEN}" dist/*
