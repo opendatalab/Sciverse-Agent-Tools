@@ -54,7 +54,21 @@ else
     echo "skipping TS types (run 'npm install' in packages/typescript first)"
 fi
 
-# 6. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
+# 6. 嵌入 tool 常量到 TypeScript SDK
+node -e "
+const fs = require('fs');
+const openai = JSON.parse(fs.readFileSync('dist/openai-tools.json', 'utf8'));
+const anthropic = JSON.parse(fs.readFileSync('dist/anthropic-tools.json', 'utf8'));
+const out = \`/** Auto-generated. Do not edit. Run scripts/build.sh. */
+export const TOOLS_VERSION = '\${openai.version}';
+export const OPENAI_TOOLS = \${JSON.stringify(openai.tools, null, 2)} as const;
+export const ANTHROPIC_TOOLS = \${JSON.stringify(anthropic.tools, null, 2)} as const;
+\`;
+fs.writeFileSync('packages/typescript/src/tools.ts', out);
+console.log('wrote packages/typescript/src/tools.ts');
+"
+
+# 7. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
 if [ -f "packages/python/pyproject.toml" ]; then
     sed -i.bak -E "s/^version *= *\".*\"/version = \"${VERSION}\"/" packages/python/pyproject.toml && rm packages/python/pyproject.toml.bak
 fi
