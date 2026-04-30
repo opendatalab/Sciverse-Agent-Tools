@@ -55,4 +55,73 @@ describe("AgentToolsClient", () => {
     const c = new AgentToolsClient({ baseUrl: "https://api.example", token: "bad" });
     await expect(c.searchPapers({ query: "x" })).rejects.toThrow(/401/);
   });
+
+  it("search_papers maps authors to backend filter", async () => {
+    let captured: any;
+    server.use(
+      http.post("https://api.example/meta-search", async ({ request }) => {
+        captured = await request.json();
+        return HttpResponse.json({ hits: [], total: 0, page: 1, page_size: 10 });
+      })
+    );
+    await new AgentToolsClient({ baseUrl: "https://api.example", token: "t" })
+      .searchPapers({ authors: ["Hinton", "LeCun"] });
+    expect(captured.authors).toBeUndefined();
+    expect(captured.filters).toEqual([{
+      field: "author",
+      operator: "FILTER_OP_IN",
+      value: ["Hinton", "LeCun"],
+    }]);
+  });
+
+  it("search_papers maps year range", async () => {
+    let captured: any;
+    server.use(
+      http.post("https://api.example/meta-search", async ({ request }) => {
+        captured = await request.json();
+        return HttpResponse.json({ hits: [], total: 0, page: 1, page_size: 10 });
+      })
+    );
+    await new AgentToolsClient({ baseUrl: "https://api.example", token: "t" })
+      .searchPapers({ year_from: 2020, year_to: 2023 });
+    const fields = captured.filters.map((f: any) => f.field);
+    const ops = captured.filters.map((f: any) => f.operator);
+    expect(fields.every((f: string) => f === "publication_published_year")).toBe(true);
+    expect(ops).toContain("FILTER_OP_GTE");
+    expect(ops).toContain("FILTER_OP_LTE");
+  });
+
+  it("search_papers maps sort_by_year and journals", async () => {
+    let captured: any;
+    server.use(
+      http.post("https://api.example/meta-search", async ({ request }) => {
+        captured = await request.json();
+        return HttpResponse.json({ hits: [], total: 0, page: 1, page_size: 10 });
+      })
+    );
+    await new AgentToolsClient({ baseUrl: "https://api.example", token: "t" })
+      .searchPapers({ sort_by_year: "desc", journals: ["Nature"] });
+    expect(captured.sort).toEqual([{
+      field: "publication_published_year",
+      order: "SORT_ORDER_DESC",
+    }]);
+    expect(captured.filters[0]).toEqual({
+      field: "publication_venue_name",
+      operator: "FILTER_OP_IN",
+      value: ["Nature"],
+    });
+  });
+
+  it("search_papers passthrough keeps only canonical fields", async () => {
+    let captured: any;
+    server.use(
+      http.post("https://api.example/meta-search", async ({ request }) => {
+        captured = await request.json();
+        return HttpResponse.json({ hits: [], total: 0, page: 1, page_size: 10 });
+      })
+    );
+    await new AgentToolsClient({ baseUrl: "https://api.example", token: "t" })
+      .searchPapers({ query: "x", page: 2, page_size: 20, fields: ["title"] });
+    expect(Object.keys(captured).sort()).toEqual(["fields", "page", "page_size", "query"]);
+  });
 });
