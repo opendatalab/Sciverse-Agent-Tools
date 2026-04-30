@@ -176,3 +176,27 @@ agent-tools:release:
     - git remote set-url origin "https://oauth2:${GL_TOKEN}@gitlab.shlab.tech/${CI_PROJECT_PATH}.git"
     - git tag -a "v${VERSION}" -m "agent-tools v${VERSION}"
     - git push origin "v${VERSION}"
+
+agent-tools:publish-skill:
+  stage: release
+  image: docker.shlab.tech/public/node:20.15.0-buster
+  variables:
+    <<: *agent-tools-mirror-vars
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - agent-tools/skill/**/*
+        - agent-tools/openapi.yaml
+  script:
+    - cd agent-tools/skill
+    - VERSION=$(node -e "console.log(require('./manifest.json').version)")
+    - echo "Publishing sciverse-agent-tools skill v${VERSION} to ClawHub"
+    - |
+      if [ -z "${CLAWHUB_TOKEN:-}" ]; then
+          echo "::warning:: CLAWHUB_TOKEN 未配置，skill 发布跳过。"
+          echo "请在 GitLab Project Settings → CI/CD → Variables 配置 CLAWHUB_TOKEN（masked + protected）。"
+          exit 0
+      fi
+    # ClawHub CLI 默认读取 CLAWHUB_TOKEN env var；若 CLI 升级要求 --token flag，
+    # 请改成 `npx clawhub@latest package publish . --token "${CLAWHUB_TOKEN}" ...`
+    - npx --yes clawhub@latest package publish . --version "${VERSION}" --tags latest
