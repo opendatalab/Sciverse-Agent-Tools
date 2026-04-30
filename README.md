@@ -200,6 +200,17 @@ clawhub install sciverse-agent-tools
 
 详见 [`skill/README.md`](./skill/README.md)。
 
+## v0.2 路线图
+
+- [ ] **ClawHub skill 迁移到 GitHub 公开 mirror**
+  - 当前：v0.1.x 通过内部 GitLab CI 自动发布到 ClawHub（`agent-tools:publish-skill` job），但详情页 source 链接为空，社区无法审计 skill 代码
+  - 目标：建 `github.com/sciverse/agent-tools-skill` 公开 mirror（仅 `skill/` 子目录），通过 GitHub Actions 自动发布。提供可审计 source、提升 ClawHub trust score、支持团队成员通过 GitHub PR 协作
+  - 迁移步骤：(1) 创建 GitHub org/repo；(2) 加 GitLab CI sync job 把 `skill/` 同步到 GitHub；(3) 在 GitHub repo 加 `.github/workflows/publish.yml` 用 `clawhub package publish . --source-repo sciverse/agent-tools-skill`；(4) 移除 GitLab 的 `agent-tools:publish-skill` job
+- [ ] **完善 PyPI / npm 包 metadata**：repository / homepage / documentation / changelog / bugs URLs
+- [ ] **添加根级 LICENSE 文件**（Apache-2.0）
+- [ ] **examples 中 Anthropic model id 用 alias**（替换 `claude-opus-4-7` 或注明可替换）
+- [ ] **README 加 `await c.aclose()` 长生命周期 client 示例**
+
 ## License
 
 Apache-2.0
