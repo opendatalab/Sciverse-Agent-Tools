@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info:
+  title: WithDefaults
+  version: 1.0.0
+  x-sciverse-tools-version: 1.0.0
+paths:
+  /bar:
+    post:
+      operationId: do_bar
+      description: 测试 default 与多行 description 的派生。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  description: |
+                    line1
+                    line2
+                top_k:
+                  type: integer
+                  default: 10
+                mode:
+                  type: string
+                  default: balanced
+                  enum: [fast, balanced]
+components: {}

@@ -11,18 +11,18 @@ TOOLS_VERSION = "0.1.0"
 
 class SearchPapersArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    query: str | None = Field(None, description="BM25 关键词，匹配标题/摘要/作者。留空则纯靠 filters 过滤。")
-    title_contains: str | None = Field(None, description="标题中必须包含的词（仅匹配 title 字段）。")
-    abstract_contains: str | None = Field(None, description="摘要中必须包含的词（仅匹配 abstract 字段）。")
-    authors: list[str] | None = Field(None, description="作者名匹配（任一命中）。")
-    year_from: int | None = Field(None, description="起始发表年（含）。")
-    year_to: int | None = Field(None, description="结束发表年（含）。")
-    journals: list[str] | None = Field(None, description="")
-    subjects: list[str] | None = Field(None, description="学科分类，如 \"computer science\"、\"biology\"。")
-    filters_advanced: list[dict[str, Any]] | None = Field(None, description="高级过滤逃生舱（仅当上述字段不够用时使用）。")
-    sort_by_year: str | None = Field(None, description="")
-    page: int | None = Field(None, description="")
-    page_size: int | None = Field(None, description="")
+    query: str | None = Field(None, description='BM25 关键词，匹配标题/摘要/作者。留空则纯靠 filters 过滤。')
+    title_contains: str | None = Field(None, description='标题中必须包含的词（仅匹配 title 字段）。')
+    abstract_contains: str | None = Field(None, description='摘要中必须包含的词（仅匹配 abstract 字段）。')
+    authors: list[str] | None = Field(None, description='作者名匹配（任一命中）。')
+    year_from: int | None = Field(None, description='起始发表年（含）。')
+    year_to: int | None = Field(None, description='结束发表年（含）。')
+    journals: list[str] | None = Field(None, description='')
+    subjects: list[str] | None = Field(None, description='学科分类，如 "computer science"、"biology"。')
+    filters_advanced: list[dict[str, Any]] | None = Field(None, description='高级过滤逃生舱（仅当上述字段不够用时使用）。')
+    sort_by_year: str = Field('desc', description='')
+    page: int = Field(1, description='')
+    page_size: int = Field(10, description='')
 
 
 class SearchPapersTool(BaseTool):
@@ -43,10 +43,10 @@ class SearchPapersTool(BaseTool):
 
 class SemanticSearchArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    query: str = Field(..., description="自然语言查询，1-200 字最佳。")
-    top_k: int | None = Field(None, description="")
-    source_types: list[str] | None = Field(None, description="")
-    mode: str | None = Field(None, description="fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。 ")
+    query: str = Field(..., description='自然语言查询，1-200 字最佳。')
+    top_k: int = Field(10, description='')
+    source_types: list[str] | None = Field(None, description='')
+    mode: str = Field('balanced', description='fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。\n')
 
 
 class SemanticSearchTool(BaseTool):
@@ -68,9 +68,9 @@ class SemanticSearchTool(BaseTool):
 
 class ReadContentArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    doc_id: str = Field(..., description="文献 ID（来自 search_papers / semantic_search）。")
-    offset: int | None = Field(None, description="")
-    limit: int | None = Field(None, description="")
+    doc_id: str = Field(..., description='文献 ID（来自 search_papers / semantic_search）。')
+    offset: int = Field(0, description='')
+    limit: int = Field(4096, description='')
 
 
 class ReadContentTool(BaseTool):

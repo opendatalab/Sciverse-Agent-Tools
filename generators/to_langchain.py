@@ -28,11 +28,16 @@ def _emit_args_model(class_name: str, schema: dict) -> str:
     required = set(schema.get("required", []))
     for prop_name, prop in properties.items():
         py_type = _json_type_to_python(prop)
-        default = "..." if prop_name in required else "None"
-        if default == "None" and not py_type.endswith(" | None"):
+        if prop_name in required:
+            default_expr = "..."
+        elif "default" in prop:
+            default_expr = repr(prop["default"])
+        else:
+            default_expr = "None"
+        if default_expr == "None" and not py_type.endswith(" | None"):
             py_type = f"{py_type} | None"
-        desc = prop.get("description", "").replace('"', '\\"').replace("\n", " ")
-        lines.append(f'    {prop_name}: {py_type} = Field({default}, description="{desc}")')
+        desc = prop.get("description", "")
+        lines.append(f'    {prop_name}: {py_type} = Field({default_expr}, description={repr(desc)})')
     if not properties:
         lines.append("    pass")
     return "\n".join(lines)
