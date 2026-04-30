@@ -21,12 +21,10 @@ class AgentToolsClient:
         base_url: str,
         token: str,
         timeout: float = 30.0,
-        client: httpx.AsyncClient | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._token = token
-        self._owns_client = client is None
-        self._client = client or httpx.AsyncClient(
+        self._client = httpx.AsyncClient(
             base_url=self._base_url,
             timeout=timeout,
             headers={"Authorization": f"Bearer {token}"},
@@ -39,8 +37,7 @@ class AgentToolsClient:
         await self.aclose()
 
     async def aclose(self) -> None:
-        if self._owns_client:
-            await self._client.aclose()
+        await self._client.aclose()
 
     async def search_papers(self, **kwargs: Any) -> dict[str, Any]:
         """对应 POST /meta-search。参数见 SearchPapersRequest。"""
