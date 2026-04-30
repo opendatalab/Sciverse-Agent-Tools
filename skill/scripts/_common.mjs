@@ -1,0 +1,51 @@
+// Standalone fetch wrapper for ClawHub skill scripts. Zero external dependencies.
+// 通过 ClawHub skill scripts 调用 SciVerse API 的共享工具。
+
+const TOKEN = process.env.SCIVERSE_API_TOKEN;
+const BASE_URL = (process.env.SCIVERSE_BASE_URL ?? "https://sciverse.space/api").replace(/\/$/, "");
+
+if (!TOKEN) {
+  console.error("[sciverse-agent-tools] 错误：环境变量 SCIVERSE_API_TOKEN 未设置。");
+  console.error("请前往 https://sciverse.space 申请 API Token 后导出到环境变量。");
+  process.exit(2);
+}
+
+export async function callSciVerse(method, path, options = {}) {
+  const headers = {
+    authorization: `Bearer ${TOKEN}`,
+    "content-type": "application/json",
+  };
+  const init = { method, headers };
+  let url = `${BASE_URL}${path}`;
+  if (options.query) {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(options.query)) {
+      if (v !== undefined && v !== null) qs.set(k, String(v));
+    }
+    url += `?${qs.toString()}`;
+  }
+  if (options.body !== undefined) {
+    const cleaned = Object.fromEntries(
+      Object.entries(options.body).filter(([, v]) => v !== undefined),
+    );
+    init.body = JSON.stringify(cleaned);
+  }
+  const res = await fetch(url, init);
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[sciverse-agent-tools] SciVerse API ${res.status}: ${body}`);
+    process.exit(1);
+  }
+  return await res.json();
+}
+
+export function readJsonArg() {
+  // 第 3 个 argv（node, script, payload-json）。若缺则回退空对象。
+  const raw = process.argv[2] ?? "{}";
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error(`[sciverse-agent-tools] 入参不是合法 JSON: ${raw}`);
+    process.exit(2);
+  }
+}
