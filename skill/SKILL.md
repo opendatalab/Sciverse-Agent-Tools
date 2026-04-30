@@ -20,6 +20,7 @@ Trigger this skill when the user's request involves any of:
 
 ## Authentication
 
+
 This skill requires the `SCIVERSE_API_TOKEN` environment variable
 (obtain from https://sciverse.space). Optionally set `SCIVERSE_BASE_URL`
 to override the default API base URL.
