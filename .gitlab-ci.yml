@@ -68,6 +68,8 @@ agent-tools:drift-check:
     - if: $CI_MERGE_REQUEST_IID
       <<: *agent-tools-changes
   script:
+    # CI 不通 deb.debian.org，把 apt sources 切到阿里云镜像
+    - sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
     - apt-get update && apt-get install -y --no-install-recommends git nodejs npm
     - pip install --quiet uv
     - cd agent-tools
@@ -141,6 +143,8 @@ agent-tools:release:
       <<: *agent-tools-changes
   before_script:
     - pip install --quiet uv twine
+    # CI 不通 deb.debian.org，把 apt sources 切到阿里云镜像
+    - sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
     - apt-get update && apt-get install -y --no-install-recommends nodejs npm git
   script:
     - cd agent-tools
