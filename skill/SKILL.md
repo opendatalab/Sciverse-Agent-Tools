@@ -1,6 +1,6 @@
 ---
 name: sciverse-agent-tools
-version: 0.1.1
+version: 0.1.2
 description: SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.
 license: Apache-2.0
 homepage: https://sciverse.space

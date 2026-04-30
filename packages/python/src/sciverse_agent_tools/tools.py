@@ -1,5 +1,5 @@
 """Auto-generated. Do not edit. Run scripts/build.sh."""
-TOOLS_VERSION = "0.1.1"
+TOOLS_VERSION = "0.1.2"
 OPENAI_TOOLS = [
   {
     "type": "function",

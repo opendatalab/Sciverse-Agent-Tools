@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-04-30
+
+### Fixed
+- ClawHub publish 流程修复：`--family skill` 必填 flag、跑 `clawhub login --token` 写入本地 config 后再 publish、复制 skill 到非 git 目录避免 source 检测半失败。
+- CI stage 重排：`agent-tools:release` / `agent-tools:publish-skill` 移到独立 `publish` stage，在 monorepo 整体 `release-to-gitlab` 之前，避免发布失败时 monorepo tag 已先打出去的副作用。
+- `.releaserc.yaml` 的 `releaseRules` 加 `scope: agent-tools, release: false`，让 agent-tools 子项目 commits 不参与 monorepo 整体 semantic-release（之前会误触发 monorepo patch bump）。
+- `agent-tools:release` job 打的 git tag 加 `agent-tools-v` 前缀（如 `agent-tools-v0.1.2`），避免与 monorepo 整体 tag (`v1.x.y`) 命名空间冲突。
+
 ## [0.1.1] - 2026-04-30
 
 ### Changed
