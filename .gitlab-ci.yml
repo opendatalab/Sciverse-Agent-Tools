@@ -129,7 +129,7 @@ agent-tools:release:
     - uv venv --python 3.12
     - uv sync
     - uv build
-    - twine upload --non-interactive --username __token__ --password "${PYPI_API_TOKEN}" dist/*
+    - twine upload --skip-existing --non-interactive --username __token__ --password "${PYPI_API_TOKEN}" dist/*
     - cd ../..
     # npm
     - cd packages/typescript
