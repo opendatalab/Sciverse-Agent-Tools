@@ -151,9 +151,10 @@ agent-tools:release:
     - VERSION=$(python -c "import yaml; print(yaml.safe_load(open('openapi.yaml'))['info']['version'])")
     - echo "Releasing sciverse-agent-tools v${VERSION}"
     # 检查 git tag 是否已存在，存在则跳过（幂等）
+    # tag 用 `agent-tools-v` 前缀避免与 monorepo 整体 tag (`v1.x.y`) 命名空间冲突
     - |
-      if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
-          echo "tag v${VERSION} already exists, skipping release"
+      if git rev-parse "agent-tools-v${VERSION}" >/dev/null 2>&1; then
+          echo "tag agent-tools-v${VERSION} already exists, skipping release"
           exit 0
       fi
     # PyPI
@@ -174,8 +175,8 @@ agent-tools:release:
     - git config user.email "ci@gitlab.shlab.tech"
     - git config user.name "GitLab CI"
     - git remote set-url origin "https://oauth2:${GL_TOKEN}@gitlab.shlab.tech/${CI_PROJECT_PATH}.git"
-    - git tag -a "v${VERSION}" -m "agent-tools v${VERSION}"
-    - git push origin "v${VERSION}"
+    - git tag -a "agent-tools-v${VERSION}" -m "agent-tools v${VERSION}"
+    - git push origin "agent-tools-v${VERSION}"
 
 agent-tools:publish-skill:
   stage: release
