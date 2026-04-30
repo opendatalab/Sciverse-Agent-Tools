@@ -33,8 +33,8 @@ uv run python - <<'PY'
 import json
 from pathlib import Path
 
-openai = json.loads(Path("dist/openai-tools.json").read_text())
-anthropic = json.loads(Path("dist/anthropic-tools.json").read_text())
+openai = json.loads(Path("dist/openai-tools.json").read_text(encoding="utf-8"))
+anthropic = json.loads(Path("dist/anthropic-tools.json").read_text(encoding="utf-8"))
 target = Path("packages/python/src/sciverse_agent_tools/tools.py")
 target.write_text(
     f'"""Auto-generated. Do not edit. Run scripts/build.sh."""\n'
