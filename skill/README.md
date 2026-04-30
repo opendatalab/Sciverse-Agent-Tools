@@ -1,5 +1,7 @@
 # sciverse-agent-tools — ClawHub skill bundle
 
+[![ClawHub](https://img.shields.io/badge/ClawHub-sciverse--agent--tools-brightgreen)](https://clawhub.ai/skills/sciverse-agent-tools)
+
 ClawHub skill that gives any OpenClaw agent SciVerse academic-paper retrieval
 capabilities (English | [中文](#中文说明)).
 
