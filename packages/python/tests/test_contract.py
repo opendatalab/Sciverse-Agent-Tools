@@ -1,5 +1,8 @@
 import os
+
+import httpx
 import pytest
+
 from sciverse_agent_tools import AgentToolsClient
 
 pytestmark = pytest.mark.skipif(
@@ -63,3 +66,25 @@ async def test_read_content_after_semantic_search():
         assert field in r
     assert isinstance(r["text"], str)
     assert isinstance(r["more"], bool)
+
+
+@pytest.mark.asyncio
+async def test_invalid_token_returns_401():
+    async with AgentToolsClient(
+        base_url=os.environ["SCIVERSE_TEST_BASE_URL"],
+        token="invalid-token-deadbeef",
+    ) as c:
+        with pytest.raises(httpx.HTTPStatusError) as exc_info:
+            await c.search_papers(query="x")
+    assert exc_info.value.response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_read_content_missing_doc_returns_4xx():
+    async with AgentToolsClient(
+        base_url=os.environ["SCIVERSE_TEST_BASE_URL"],
+        token=os.environ["SCIVERSE_TEST_TOKEN"],
+    ) as c:
+        with pytest.raises(httpx.HTTPStatusError) as exc_info:
+            await c.read_content(doc_id="p_does_not_exist_xxxxxxxxxxxxxxxx")
+    assert 400 <= exc_info.value.response.status_code < 600
