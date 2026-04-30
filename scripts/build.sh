@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# 全量构建 agent-tools 派生产物：dist/ + packages/*/src/generated/。
+# 单一真相源：agent-tools/openapi.yaml 中 info.version。
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+# 1. 抽取版本号
+VERSION=$(uv run python -c "import yaml; print(yaml.safe_load(open('openapi.yaml'))['info']['version'])")
+echo "Building agent-tools v${VERSION}"
+
+# 2. 跑三个派生器
+uv run python -m generators.to_openai
+uv run python -m generators.to_anthropic
+uv run python -m generators.to_langchain
+
+# 3. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
+if [ -f "packages/python/pyproject.toml" ]; then
+    sed -i.bak -E "s/^version *= *\".*\"/version = \"${VERSION}\"/" packages/python/pyproject.toml && rm packages/python/pyproject.toml.bak
+fi
+if [ -f "packages/typescript/package.json" ]; then
+    node -e "const fs=require('fs'),p='packages/typescript/package.json';const j=JSON.parse(fs.readFileSync(p));j.version='${VERSION}';fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n')"
+fi
+
+echo "Build complete."
