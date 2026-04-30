@@ -76,4 +76,16 @@ if [ -f "packages/typescript/package.json" ]; then
     node -e "const fs=require('fs'),p='packages/typescript/package.json';const j=JSON.parse(fs.readFileSync(p));j.version='${VERSION}';fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n')"
 fi
 
+# 8. 自检：派生产物 schema 应能被基础校验通过
+uv run python <<'PY'
+import json
+from pathlib import Path
+
+for p in ["dist/openai-tools.json", "dist/anthropic-tools.json"]:
+    data = json.loads(Path(p).read_text(encoding="utf-8"))
+    assert "version" in data, f"{p} missing version"
+    assert isinstance(data.get("tools"), list) and len(data["tools"]) >= 1, f"{p} tools empty"
+print("self-check OK")
+PY
+
 echo "Build complete."
