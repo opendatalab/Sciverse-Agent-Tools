@@ -61,7 +61,7 @@ agent-tools:drift-check:
     - bash scripts/build.sh
     - cd ..
     - |
-      if ! git diff --exit-code agent-tools/dist agent-tools/packages/python/src/sciverse_agent_tools/types.py agent-tools/packages/python/src/sciverse_agent_tools/tools.py agent-tools/packages/typescript/src/types.ts agent-tools/packages/typescript/src/tools.ts agent-tools/packages/typescript/package.json agent-tools/packages/python/pyproject.toml; then
+      if ! git diff --exit-code agent-tools/dist agent-tools/packages/python/src/sciverse_agent_tools/types.py agent-tools/packages/python/src/sciverse_agent_tools/tools.py agent-tools/packages/typescript/src/types.ts agent-tools/packages/typescript/src/tools.ts agent-tools/packages/typescript/package.json agent-tools/packages/python/pyproject.toml agent-tools/skill/SKILL.md agent-tools/skill/manifest.json; then
           echo ""
           echo "派生产物未同步，请本地运行 bash agent-tools/scripts/build.sh 后提交"
           exit 1
