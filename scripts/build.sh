@@ -76,7 +76,10 @@ if [ -f "packages/typescript/package.json" ]; then
     node -e "const fs=require('fs'),p='packages/typescript/package.json';const j=JSON.parse(fs.readFileSync(p));j.version='${VERSION}';fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n')"
 fi
 
-# 8. 自检：派生产物 schema 应能被基础校验通过
+# 8. 派生 ClawHub skill bundle (SKILL.md + manifest.json)
+uv run python -m generators.to_clawhub_skill
+
+# 9. 自检：派生产物 schema 应能被基础校验通过
 uv run python <<'PY'
 import json
 from pathlib import Path
