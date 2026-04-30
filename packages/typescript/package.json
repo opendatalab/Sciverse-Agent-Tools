@@ -1,0 +1,29 @@
+{
+  "name": "sciverse-agent-tools",
+  "version": "0.1.0",
+  "description": "SciVerse Agent Tools — OpenAI/Anthropic/LangChain compatible tool schema and async client for SciVerse retrieval APIs",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": { "node": ">=18" },
+  "devDependencies": {
+    "typescript": "^5.4",
+    "vitest": "^1.4",
+    "openapi-typescript": "^6.7",
+    "msw": "^2.0",
+    "@types/node": "^20"
+  }
+}
