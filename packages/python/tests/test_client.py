@@ -47,3 +47,18 @@ async def test_sends_bearer_token():
     async with AgentToolsClient(base_url="https://api.example", token="abc") as c:
         await c.search_papers()
     assert route.calls.last.request.headers["authorization"] == "Bearer abc"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_raises_on_4xx_with_httpx_error():
+    """非 2xx 响应应抛 httpx.HTTPStatusError（用户应捕获该类型）。"""
+    import httpx
+
+    respx.post("https://api.example/meta-search").mock(
+        return_value=Response(401, json={"code": "TOKEN_INVALID", "message": "无效 token"})
+    )
+    async with AgentToolsClient(base_url="https://api.example", token="bad") as c:
+        with pytest.raises(httpx.HTTPStatusError) as exc_info:
+            await c.search_papers(query="x")
+    assert exc_info.value.response.status_code == 401
