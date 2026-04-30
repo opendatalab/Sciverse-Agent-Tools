@@ -99,6 +99,11 @@ agent-tools:contract:
   variables:
     SCIVERSE_TEST_BASE_URL: "https://sciverse-dev.opendatalab.org.cn/api"
   script:
+    - |
+      if [ -z "${SCIVERSE_TEST_TOKEN:-}" ]; then
+          echo "::warning:: SCIVERSE_TEST_TOKEN 未配置，契约测试将全部 skip。"
+          echo "请在 GitLab Project Settings → CI/CD → Variables 配置 (masked + protected)。"
+      fi
     - pip install --quiet uv
     - cd agent-tools/packages/python
     - uv venv --python 3.12
