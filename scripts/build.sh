@@ -46,7 +46,15 @@ target.write_text(
 print(f"wrote {target}")
 PY
 
-# 5. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
+# 5. 派生 TypeScript types
+if [ -d "packages/typescript/node_modules" ]; then
+    npx --prefix packages/typescript openapi-typescript openapi.yaml -o packages/typescript/src/types.ts
+    echo "wrote packages/typescript/src/types.ts"
+else
+    echo "skipping TS types (run 'npm install' in packages/typescript first)"
+fi
+
+# 6. 同步包版本号（packages/* 在后续 phase 创建后这两行才会真正命中）
 if [ -f "packages/python/pyproject.toml" ]; then
     sed -i.bak -E "s/^version *= *\".*\"/version = \"${VERSION}\"/" packages/python/pyproject.toml && rm packages/python/pyproject.toml.bak
 fi
