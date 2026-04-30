@@ -206,6 +206,32 @@ agent-tools:publish-skill:
       fi
     # ClawHub CLI 不读 env var，必须先 `clawhub login --token` 写入本地 config，
     # 之后 publish 才能识别身份。
-    - npx --yes clawhub@latest login --token "${CLAWHUB_TOKEN}"
+    # CI runner 出口到 clawhub.ai 偶发不稳，login token 验证 15s 超时，加 3 次重试。
+    - |
+      for i in 1 2 3; do
+        if npx --yes clawhub@latest login --token "${CLAWHUB_TOKEN}"; then
+          echo "ClawHub login succeeded on attempt $i"
+          break
+        fi
+        if [ "$i" = "3" ]; then
+          echo "ClawHub login failed after 3 attempts"
+          exit 1
+        fi
+        echo "Login attempt $i failed, retrying in 10s..."
+        sleep 10
+      done
     # --family skill 显式声明包类型（CLI 无法从 manifest 自动检测时必填）
-    - npx --yes clawhub@latest package publish . --family skill --version "${VERSION}" --tags latest
+    # publish 也加重试（同样的网络抖动可能影响）
+    - |
+      for i in 1 2 3; do
+        if npx --yes clawhub@latest package publish . --family skill --version "${VERSION}" --tags latest; then
+          echo "ClawHub publish succeeded on attempt $i"
+          break
+        fi
+        if [ "$i" = "3" ]; then
+          echo "ClawHub publish failed after 3 attempts"
+          exit 1
+        fi
+        echo "Publish attempt $i failed, retrying in 10s..."
+        sleep 10
+      done
