@@ -5,6 +5,10 @@
   "runtime": "node>=18",
   "license": "Apache-2.0",
   "homepage": "https://sciverse.space",
+  "credentials": {
+    "required": true,
+    "description": "Requires SCIVERSE_API_TOKEN (Bearer token) to authenticate with the SciVerse API at api.sciverse.space."
+  },
   "env": [
     {
       "name": "SCIVERSE_API_TOKEN",
@@ -14,8 +18,8 @@
     {
       "name": "SCIVERSE_BASE_URL",
       "required": false,
-      "default": "https://sciverse.space/api",
-      "description": "Override the default API base URL (for dev / self-hosted gateways)."
+      "default": "https://api.sciverse.space",
+      "description": "Override the default API base URL. Only *.sciverse.space domains are allowed."
     }
   ],
   "tools": [

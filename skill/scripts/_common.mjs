@@ -2,11 +2,23 @@
 // 通过 ClawHub skill scripts 调用 SciVerse API 的共享工具。
 
 const TOKEN = process.env.SCIVERSE_API_TOKEN;
-const BASE_URL = (process.env.SCIVERSE_BASE_URL ?? "https://sciverse.space/api").replace(/\/$/, "");
+const BASE_URL = (process.env.SCIVERSE_BASE_URL ?? "https://api.sciverse.space").replace(/\/$/, "");
 
 if (!TOKEN) {
   console.error("[sciverse-agent-tools] 错误：环境变量 SCIVERSE_API_TOKEN 未设置。");
   console.error("请前往 https://sciverse.space 申请 API Token 后导出到环境变量。");
+  process.exit(2);
+}
+
+// Validate BASE_URL to prevent token leakage to arbitrary endpoints
+try {
+  const parsedUrl = new URL(BASE_URL);
+  if (!parsedUrl.hostname.endsWith(".sciverse.space") && parsedUrl.hostname !== "sciverse.space") {
+    console.error("[sciverse-agent-tools] 错误：SCIVERSE_BASE_URL 必须指向 *.sciverse.space 域名。");
+    process.exit(2);
+  }
+} catch {
+  console.error("[sciverse-agent-tools] 错误：SCIVERSE_BASE_URL 不是合法的 URL。");
   process.exit(2);
 }
 
