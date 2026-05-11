@@ -135,6 +135,7 @@ agent-tools:release:
   image: docker.shlab.tech/public/python:3.13-slim
   # 不引用 mirror-vars：npm publish 必须发到 npmjs.org（默认 registry）。
   # 装包用 mirror，发布走默认。
+  allow_failure: true  # 发布失败不阻塞后续 release/deploy stage
   variables:
     PIP_INDEX_URL: "https://mirrors.aliyun.com/pypi/simple/"
     UV_INDEX_URL: "https://mirrors.aliyun.com/pypi/simple/"
@@ -181,6 +182,7 @@ agent-tools:release:
 agent-tools:publish-skill:
   stage: publish
   image: docker.shlab.tech/public/node:20.15.0-buster
+  allow_failure: true  # ClawHub 发布失败不阻塞后续 release/deploy stage
   variables:
     <<: *agent-tools-mirror-vars
   rules:
