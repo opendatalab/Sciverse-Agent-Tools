@@ -19,10 +19,8 @@ tags:
     description: 原文读取类操作
 
 servers:
-  - url: https://sciverse.space/api
+  - url: https://api.sciverse.space
     description: 生产环境
-  - url: https://sciverse-dev.opendatalab.org.cn/api
-    description: 开发环境
 
 paths:
   /meta-search:

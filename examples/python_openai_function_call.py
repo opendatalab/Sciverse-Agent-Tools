@@ -13,7 +13,7 @@ import os
 from openai import OpenAI
 from sciverse_agent_tools import OPENAI_TOOLS, AgentToolsClient
 
-BASE_URL = os.environ.get("SCIVERSE_BASE_URL", "https://sciverse.space/api")
+BASE_URL = os.environ.get("SCIVERSE_BASE_URL", "https://api.sciverse.space")
 TOKEN = os.environ["SCIVERSE_API_TOKEN"]
 
 

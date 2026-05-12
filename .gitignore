@@ -7,3 +7,5 @@ packages/python/dist/
 packages/python/build/
 packages/typescript/dist/
 packages/typescript/node_modules/
+packages/mcp/dist/
+packages/mcp/src/generated/

@@ -1,12 +1,13 @@
 ---
-name: sciverse-agent-tools
-version: 0.1.2
+name: sciverse-academic-retrieval
+slug: academic-retrieval
+version: 0.1.5
 description: SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.
 license: Apache-2.0
 homepage: https://sciverse.space
 ---
 
-# sciverse-agent-tools
+# academic-retrieval
 
 SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.
 
@@ -14,19 +15,15 @@ SciVerse academic paper retrieval: structured metadata search, semantic chunk re
 
 Trigger this skill when the user's request involves any of:
 
-
 - Locating academic papers by structured criteria (authors, year, journal, subjects)
 - Grounding answers in paper excerpts (RAG / citations)
 - Expanding the original text around a known doc_id (more bytes before/after a chunk)
 
 ## Authentication
 
-This skill requires credentials. Set the `SCIVERSE_API_TOKEN` environment
-variable (obtain from https://sciverse.space). The token is sent as a
-Bearer header exclusively to `api.sciverse.space`.
-
-Optionally set `SCIVERSE_BASE_URL` to override the default API endpoint.
-Only `*.sciverse.space` domains are permitted to prevent token leakage.
+This skill requires the `SCIVERSE_API_TOKEN` environment variable
+(obtain from https://sciverse.space). Optionally set `SCIVERSE_BASE_URL`
+to override the default API base URL.
 
 ## Tools
 

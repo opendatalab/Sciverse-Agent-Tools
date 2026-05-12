@@ -1,14 +1,16 @@
-# sciverse-agent-tools — ClawHub skill bundle
+# academic-retrieval — ClawHub skill bundle
 
-[![ClawHub](https://img.shields.io/badge/clawhub-sciverse--agent--tools-brightgreen)](https://clawhub.ai/sciverse-agent-tools)
+[![ClawHub](https://img.shields.io/badge/clawhub-academic--retrieval-brightgreen)](https://clawhub.ai/academic-retrieval)
 
 ClawHub skill that gives any OpenClaw agent SciVerse academic-paper retrieval
 capabilities (English | [中文](#中文说明)).
 
+Published by **@sciverse** (slug `academic-retrieval`).
+
 ## Install
 
 ```bash
-clawhub install sciverse-agent-tools
+openclaw skills install academic-retrieval
 ```
 
 ## Configure
@@ -51,10 +53,12 @@ Apache-2.0
 
 OpenClaw 用户专用：通过 ClawHub 一键给 agent 加上 SciVerse 学术文献检索能力。
 
+发布者 **@sciverse**，slug `academic-retrieval`。
+
 ### 安装
 
 ```bash
-clawhub install sciverse-agent-tools
+openclaw skills install academic-retrieval
 ```
 
 ### 配置

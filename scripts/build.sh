@@ -79,7 +79,10 @@ fi
 # 8. 派生 ClawHub skill bundle (SKILL.md + manifest.json)
 uv run python -m generators.to_clawhub_skill
 
-# 9. 自检：派生产物 schema 应能被基础校验通过
+# 9. 派生 Claude Code 官方 Agent Skill 形态 + Plugin Marketplace 入口
+uv run python -m generators.to_claude_skill
+
+# 10. 自检：派生产物 schema 应能被基础校验通过
 uv run python <<'PY'
 import json
 from pathlib import Path

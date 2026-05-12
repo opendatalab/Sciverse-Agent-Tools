@@ -1,0 +1,157 @@
+// HTTP 调用层 + agent-友好参数到后端 canonical payload 的转换。
+//
+// `toBackendPayload` 是从 packages/typescript/src/client.ts 的 `toBackendPayload`
+// 复制过来的（约 50 行）。MCP 包刻意不依赖 TS SDK，避免 monorepo 内部环依赖。
+// 后续如有第 4 处复制，再用 codegen 收敛。
+
+import type { Config } from "./config.js";
+import { ENDPOINTS } from "./generated/tools.js";
+
+export interface ToolResult {
+  isError: boolean;
+  content: { type: "text"; text: string }[];
+}
+
+interface FilterEntry {
+  field: string;
+  operator?: string;
+  value: unknown;
+}
+
+const PASSTHROUGH = ["query", "page", "page_size", "fields"] as const;
+
+function toBackendPayload(args: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const filters: FilterEntry[] = [];
+  const sort: { field: string; order: string }[] = [];
+
+  for (const k of PASSTHROUGH) {
+    if (args[k] !== undefined && args[k] !== null) out[k] = args[k];
+  }
+
+  const addFilter = (field: string, operator: string, value: unknown) => {
+    filters.push({ field, operator, value });
+  };
+
+  if (args.title_contains != null) addFilter("title", "FILTER_OP_CONTAINS", args.title_contains);
+  if (args.abstract_contains != null) addFilter("abstract", "FILTER_OP_CONTAINS", args.abstract_contains);
+  if (Array.isArray(args.authors) && args.authors.length > 0) {
+    addFilter("author", "FILTER_OP_IN", args.authors);
+  }
+  if (args.year_from != null) addFilter("publication_published_year", "FILTER_OP_GTE", args.year_from);
+  if (args.year_to != null) addFilter("publication_published_year", "FILTER_OP_LTE", args.year_to);
+  if (Array.isArray(args.journals) && args.journals.length > 0) {
+    addFilter("publication_venue_name", "FILTER_OP_IN", args.journals);
+  }
+  if (Array.isArray(args.subjects) && args.subjects.length > 0) {
+    addFilter("subjects", "FILTER_OP_IN", args.subjects);
+  }
+  if (Array.isArray(args.filters_advanced)) {
+    for (const item of args.filters_advanced as FilterEntry[]) {
+      filters.push({ operator: "FILTER_OP_EQ", ...item });
+    }
+  }
+
+  const sortByYear = args.sort_by_year as string | undefined;
+  if (sortByYear && sortByYear !== "none") {
+    sort.push({
+      field: "publication_published_year",
+      order: sortByYear === "desc" ? "SORT_ORDER_DESC" : "SORT_ORDER_ASC",
+    });
+  }
+
+  if (filters.length > 0) out.filters = filters;
+  if (sort.length > 0) out.sort = sort;
+  return out;
+}
+
+async function call(
+  config: Config,
+  method: "GET" | "POST",
+  path: string,
+  options: { body?: Record<string, unknown>; query?: Record<string, unknown> } = {},
+): Promise<ToolResult> {
+  const url = new URL(`${config.baseUrl}${path}`);
+  if (options.query) {
+    for (const [k, v] of Object.entries(options.query)) {
+      if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+    }
+  }
+  const init: RequestInit = {
+    method,
+    headers: {
+      authorization: `Bearer ${config.token}`,
+      "content-type": "application/json",
+    },
+  };
+  if (options.body !== undefined) {
+    init.body = JSON.stringify(
+      Object.fromEntries(Object.entries(options.body).filter(([, v]) => v !== undefined)),
+    );
+  }
+  const res = await fetch(url, init);
+  const text = await res.text();
+  if (!res.ok) {
+    return {
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ status: res.status, body: safeParse(text) }, null, 2),
+        },
+      ],
+    };
+  }
+  return {
+    isError: false,
+    content: [{ type: "text", text }],
+  };
+}
+
+function safeParse(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+export async function executeTool(
+  config: Config,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<ToolResult> {
+  const endpoint = ENDPOINTS[name];
+  if (!endpoint) {
+    return {
+      isError: true,
+      content: [{ type: "text", text: JSON.stringify({ error: `unknown tool: ${name}` }) }],
+    };
+  }
+
+  switch (name) {
+    case "search_papers":
+      return call(config, "POST", endpoint.path, { body: toBackendPayload(args) });
+    case "semantic_search":
+      return call(config, "POST", endpoint.path, { body: args });
+    case "read_content": {
+      const { doc_id, offset, limit } = args as {
+        doc_id?: string;
+        offset?: number;
+        limit?: number;
+      };
+      if (!doc_id) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: JSON.stringify({ error: "doc_id is required" }) }],
+        };
+      }
+      return call(config, "GET", endpoint.path, { query: { doc_id, offset, limit } });
+    }
+    default:
+      return {
+        isError: true,
+        content: [{ type: "text", text: JSON.stringify({ error: `unhandled tool: ${name}` }) }],
+      };
+  }
+}

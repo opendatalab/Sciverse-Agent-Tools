@@ -34,7 +34,7 @@ from sciverse_agent_tools import AgentToolsClient
 
 async def main():
     async with AgentToolsClient(
-        base_url="https://sciverse.space/api",
+        base_url="https://api.sciverse.space",
         token="<TOKEN>",
     ) as c:
         r = await c.semantic_search(query="Transformer 注意力机制")
@@ -50,7 +50,7 @@ asyncio.run(main())
 import { AgentToolsClient } from "sciverse-agent-tools";
 
 const c = new AgentToolsClient({
-  baseUrl: "https://sciverse.space/api",
+  baseUrl: "https://api.sciverse.space",
   token: process.env.SCIVERSE_API_TOKEN!,
 });
 
@@ -200,16 +200,99 @@ clawhub install sciverse-agent-tools
 
 详见 [`skill/README.md`](./skill/README.md)。
 
-## v0.2 路线图
+## Claude Code 用户
 
-- [ ] **ClawHub skill 迁移到 GitHub 公开 mirror**
-  - 当前：v0.1.x 通过内部 GitLab CI 自动发布到 ClawHub（`agent-tools:publish-skill` job），但详情页 source 链接为空，社区无法审计 skill 代码
-  - 目标：建 `github.com/sciverse/agent-tools-skill` 公开 mirror（仅 `skill/` 子目录），通过 GitHub Actions 自动发布。提供可审计 source、提升 ClawHub trust score、支持团队成员通过 GitHub PR 协作
-  - 迁移步骤：(1) 创建 GitHub org/repo；(2) 加 GitLab CI sync job 把 `skill/` 同步到 GitHub；(3) 在 GitHub repo 加 `.github/workflows/publish.yml` 用 `clawhub package publish . --source-repo sciverse/agent-tools-skill`；(4) 移除 GitLab 的 `agent-tools:publish-skill` job
-- [ ] **完善 PyPI / npm 包 metadata**：repository / homepage / documentation / changelog / bugs URLs
-- [ ] **添加根级 LICENSE 文件**（Apache-2.0）
+SciVerse 提供 Claude Code 官方 Agent Skill 形态（与 OpenClaw 平行的另一种 skill）。
+
+**方式 1：通过 Plugin Marketplace（推荐）**
+
+```bash
+claude /plugin marketplace add https://gitlab.shlab.tech/sciverse/sciverse
+claude /plugin install sciverse
+```
+
+**方式 2：手动安装**
+
+把 `skill-claude-code/` 整目录复制到 Claude Code skill 加载路径之一：
+
+```bash
+# 用户级
+cp -r agent-tools/skill-claude-code ~/.claude/skills/sciverse
+
+# 或项目级
+cp -r agent-tools/skill-claude-code .claude/skills/sciverse
+```
+
+**配合 MCP server**
+
+Claude Code skill 形态依赖 `@sciverse/mcp-server`（由另一个并行 agent 维护），先安装：
+
+```bash
+npm install -g @sciverse/mcp-server
+export SCIVERSE_API_TOKEN=sv-...
+```
+
+或在项目 `.mcp.json` 里声明（详见 `skill-claude-code/SKILL.md`）。
+
+## 其他 coding agent
+
+通过 MCP server [`@sciverse/mcp-server`](./packages/mcp/) 接入主流 coding agent：
+
+| Agent | 接入指南 |
+|---|---|
+| Claude Code | [docs/integrations/claude-code.md](./docs/integrations/claude-code.md) |
+| Cursor | [docs/integrations/cursor.md](./docs/integrations/cursor.md) |
+| Codex CLI | [docs/integrations/codex-cli.md](./docs/integrations/codex-cli.md) |
+| Windsurf | [docs/integrations/windsurf.md](./docs/integrations/windsurf.md) |
+
+## TODO / 路线图
+
+### 立即可做（P1 剩余）
+
+- [ ] **Claude Agent SDK / OpenAI Agents SDK 示例** — `examples/` 当前是 `messages.create` 风格的 tool-calling 回环；补 `claude-agent-sdk` / `@openai/agents` 的 `mcpServers` 注入示例（coding-agent 风格应用主流走 Agent SDK）
+- [ ] **Token 体验：`sciverse auth login` device-code flow** — 写 `~/.sciverse/credentials.json`，MCP server / SDK 自动 fallback 读取；省掉用户每次手动复制 token 进 env
+
+### P2（可缓但有价值）
+
+- [ ] **MCP `progress` 通知** — `semantic_search` quality 模式 2-4s，借 MCP progress notifications 输出"正在 LLM 改写 query / 召回 X 篇"，避免 agent UI 静默等待
+- [ ] **eval baseline** — `evals/`：一批 query → 期望 tool 调用 → recall@k，CI 跑；当前 description 调优靠"真实 Agent 反馈"但没基线
+- [ ] **MCP server 接 SLS `app_logs`** — 当前出错只写 stderr，没结构化日志
+- [ ] **更多框架适配** — Vercel AI SDK（TS 圈最热）、LlamaIndex（README 提了但 examples 没有）、Dify / Coze（国内工具市场上架）
+- [ ] **Offline mock** — SDK 加 `MOCK=1` 模式返回 fixture，方便 agent 开发者无 token 本地调试
+- [ ] **`read_full_content` 高阶 wrapper** — `read_content` 上限 16KB，agent 经常循环 offset 浪费 turn，封装一次拿完
+
+### 今天落地后的 follow-up
+
+- [ ] **npm 发布前置** — `@sciverse/mcp-server` 需要在 npmjs.org 注册 `@sciverse` org；或改无 scope 名 `sciverse-mcp-server`。决定后在 GitLab CI 加 `npm publish` job（参考 `agent-tools:release` PyPI 那个 job）
+- [ ] **Plugin Marketplace `<repo-url>` 占位符** — `README.md` "Claude Code 用户"段 + `docs/integrations/claude-code.md` 里都写了 `claude /plugin marketplace add <repo-url>`，需要换成真实 GitLab/GitHub URL
+- [ ] **派生漂移 CI 验证** — 这次顺手把 ClawHub `skill/*` 重生成后的版本也提交了，需要跑一次 CI 确认"派生产物漂移检测"job 还能正常报警
+- [ ] **CHANGELOG 版本号** — `[Unreleased]` 累积了 3 条 Added（MCP / Claude skill / 接入文档），下次发布前 bump 到 `0.2.0` 并定型 `[Unreleased]`
+- [ ] **完善 PyPI / npm 包 metadata**：repository / homepage / documentation / changelog / bugs URLs（含新 `@sciverse/mcp-server`）
+- [ ] **根级 LICENSE 文件**（Apache-2.0）
 - [ ] **examples 中 Anthropic model id 用 alias**（替换 `claude-opus-4-7` 或注明可替换）
 - [ ] **README 加 `await c.aclose()` 长生命周期 client 示例**
+
+### ClawHub skill：迁移到组织账号 + GitHub 公开 mirror
+
+当前 ClawHub 上 `sciverse-agent-tools` skill 由个人账号 publish。需要迁到 SciVerse 组织账号 + GitHub 公开 mirror，以提升 trust score、可审计 source、支持团队协作。
+
+**Phase 1 — ClawHub 组织账号**
+
+1. 在 https://clawhub.ai 创建/使用组织 `sciverse`（如组织功能需要申请，联系 ClawHub admin）
+2. 在 ClawHub web console 把现有 skill `sciverse-agent-tools` 的 ownership transfer 到 `sciverse` 组织（具体路径以 ClawHub 文档为准；如不支持原地迁移，新组织下重新发布并把旧 skill `deprecate` 到新地址）
+3. 在 ClawHub 组织设置里生成**组织级 publish token**，替换 GitLab CI 中的 `CLAWHUB_TOKEN`（原个人 token 作废）
+4. 如需在 skill name 加 namespace 前缀（`sciverse/sciverse-agent-tools`），更新 `generators/to_clawhub_skill.py` 中 `SKILL_NAME`，并跑 `bash scripts/build.sh` 同步产物
+5. 验证：https://clawhub.ai/sciverse 出现组织页 + skill 列表，`clawhub install sciverse-agent-tools`（或新 namespace 名）仍可装
+
+**Phase 2 — GitHub 公开 mirror**
+
+1. 创建 `github.com/sciverse/agent-tools-skill`（仅 `skill/` 子目录的镜像）
+2. 加 GitLab CI sync job：每次 `skill/` 改动 push 到 GitHub mirror（用 deploy key 或 PAT）
+3. 在 GitHub repo 加 `.github/workflows/publish.yml`：`clawhub package publish . --source-repo sciverse/agent-tools-skill --family skill`
+4. 移除 GitLab 的 `agent-tools:publish-skill` job（publish 路径切到 GitHub Actions）
+5. ClawHub 详情页 source 链接指向 GitHub repo，社区可审计
+
+**回滚预案**：保留旧个人账号 + 旧 GitLab publish job 至少一个 release cycle 作为热备，确认新链路无问题后再下线。
 
 ## License
 

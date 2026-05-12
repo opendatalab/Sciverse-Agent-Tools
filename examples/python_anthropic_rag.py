@@ -13,7 +13,7 @@ import os
 from anthropic import Anthropic
 from sciverse_agent_tools import ANTHROPIC_TOOLS, AgentToolsClient
 
-BASE_URL = os.environ.get("SCIVERSE_BASE_URL", "https://sciverse.space/api")
+BASE_URL = os.environ.get("SCIVERSE_BASE_URL", "https://api.sciverse.space")
 TOKEN = os.environ["SCIVERSE_API_TOKEN"]
 
 

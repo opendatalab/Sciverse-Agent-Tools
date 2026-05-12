@@ -13,7 +13,7 @@ import { z } from "zod";
 import { AgentToolsClient } from "sciverse-agent-tools";
 
 const sv = new AgentToolsClient({
-  baseUrl: process.env.SCIVERSE_BASE_URL ?? "https://sciverse.space/api",
+  baseUrl: process.env.SCIVERSE_BASE_URL ?? "https://api.sciverse.space",
   token: process.env.SCIVERSE_API_TOKEN!,
 });
 

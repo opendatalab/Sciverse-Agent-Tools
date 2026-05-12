@@ -61,7 +61,7 @@ def generate_manifest(openapi_path: Path) -> dict:
             {
                 "name": "SCIVERSE_BASE_URL",
                 "required": False,
-                "default": "https://sciverse.space/api",
+                "default": "https://api.sciverse.space",
                 "description": "Override the default API base URL (for dev / self-hosted gateways).",
             },
         ],

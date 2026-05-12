@@ -1,14 +1,11 @@
 {
-  "name": "sciverse-agent-tools",
-  "version": "0.1.2",
+  "name": "sciverse-academic-retrieval",
+  "version": "0.1.5",
+  "slug": "academic-retrieval",
   "description": "SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.",
   "runtime": "node>=18",
   "license": "Apache-2.0",
   "homepage": "https://sciverse.space",
-  "credentials": {
-    "required": true,
-    "description": "Requires SCIVERSE_API_TOKEN (Bearer token) to authenticate with the SciVerse API at api.sciverse.space."
-  },
   "env": [
     {
       "name": "SCIVERSE_API_TOKEN",
@@ -19,7 +16,7 @@
       "name": "SCIVERSE_BASE_URL",
       "required": false,
       "default": "https://api.sciverse.space",
-      "description": "Override the default API base URL. Only *.sciverse.space domains are allowed."
+      "description": "Override the default API base URL (for dev / self-hosted gateways)."
     }
   ],
   "tools": [
@@ -76,10 +73,7 @@
             "description": "高级过滤逃生舱（仅当上述字段不够用时使用）。",
             "items": {
               "type": "object",
-              "required": [
-                "field",
-                "value"
-              ],
+              "required": ["field", "value"],
               "properties": {
                 "field": {
                   "type": "string"
@@ -105,11 +99,7 @@
           },
           "sort_by_year": {
             "type": "string",
-            "enum": [
-              "desc",
-              "asc",
-              "none"
-            ],
+            "enum": ["desc", "asc", "none"],
             "default": "desc"
           },
           "page": {
@@ -132,9 +122,7 @@
       "script": "scripts/semantic_search.mjs",
       "input_schema": {
         "type": "object",
-        "required": [
-          "query"
-        ],
+        "required": ["query"],
         "properties": {
           "query": {
             "type": "string",
@@ -152,19 +140,12 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": [
-                "web",
-                "pdf"
-              ]
+              "enum": ["web", "pdf"]
             }
           },
           "mode": {
             "type": "string",
-            "enum": [
-              "fast",
-              "balanced",
-              "quality"
-            ],
+            "enum": ["fast", "balanced", "quality"],
             "default": "balanced",
             "description": "fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。\n"
           }
@@ -194,9 +175,7 @@
             "maximum": 16384
           }
         },
-        "required": [
-          "doc_id"
-        ]
+        "required": ["doc_id"]
       }
     }
   ]
