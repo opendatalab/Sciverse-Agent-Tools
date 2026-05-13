@@ -284,7 +284,7 @@ export SCIVERSE_API_TOKEN=sv-...
 - [x] 在 ClawHub web 上把 skill 迁到 `@sciverse` 组织，发布为 `sciverse-academic-retrieval`（slug `academic-retrieval`）
 - [x] 派生器 `generators/to_clawhub_skill.py` 同步：`SKILL_NAME = "sciverse-academic-retrieval"` + `SKILL_SLUG = "academic-retrieval"`，manifest 加 `slug` 字段，SKILL.md frontmatter 加 `slug` 字段，标题用 slug。
 - [x] 版本号独立 bump：派生器读 `skill/manifest.json` 已有 `version`，不再被 openapi.yaml 拽回（manifest 现 `0.1.5`，openapi `0.1.2`，二者解耦）
-- [ ] CI variable `CLAWHUB_TOKEN` 替换为组织级 token（当前仍为个人 token；owner 切组织前需做）
+- [x] CI variable `CLAWHUB_TOKEN`：保留 owner 个人 token（ClawHub 无组织级 token 概念，由 owner 个人身份代表组织 publish，与 GitHub PAT 模式一致）。owner 变更时需同步替换。
 - [ ] 用户安装命令更新：`openclaw skills install academic-retrieval`（README 已改，待发布说明同步）
 
 **Phase 2 — GitHub 公开 mirror**（基础设施已就位）
