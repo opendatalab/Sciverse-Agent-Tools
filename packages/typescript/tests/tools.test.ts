@@ -3,7 +3,9 @@ import { TOOLS_VERSION, OPENAI_TOOLS, ANTHROPIC_TOOLS } from "../src/tools";
 
 describe("tools constants", () => {
   it("exposes three tools", () => {
-    expect(TOOLS_VERSION).toBe("0.1.2");
+    // version 是 semver 字符串即可，不硬编码（避免每次 bump 都要改测试）
+    expect(typeof TOOLS_VERSION).toBe("string");
+    expect(TOOLS_VERSION).toMatch(/^\d+\.\d+\.\d+/);
     const names = OPENAI_TOOLS.map((t: any) => t.function.name).sort();
     expect(names).toEqual(["read_content", "search_papers", "semantic_search"]);
     expect(ANTHROPIC_TOOLS.map((t: any) => t.name).sort()).toEqual(names);
