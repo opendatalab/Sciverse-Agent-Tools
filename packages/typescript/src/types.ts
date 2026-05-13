@@ -163,8 +163,6 @@ export interface components {
       default_fields: string[];
       /** @description 支持的 FilterOperator 名（不带 FILTER_OP_ 前缀，如 "EQ" / "IN" / "CONTAINS"）。 */
       filter_operators: string[];
-      /** @description 后端 OpenSearch 索引名（诊断 / 排错用）。 */
-      index_name: string;
     };
     FieldCatalogEntry: {
       /** @description 字段名（与 search_papers 的 filters[].field 一致）。 */

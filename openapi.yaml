@@ -351,7 +351,7 @@ components:
 
     CatalogResponse:
       type: object
-      required: [fields, default_fields, filter_operators, index_name]
+      required: [fields, default_fields, filter_operators]
       properties:
         fields:
           type: array
@@ -364,9 +364,6 @@ components:
           type: array
           items: { type: string }
           description: 支持的 FilterOperator 名（不带 FILTER_OP_ 前缀，如 "EQ" / "IN" / "CONTAINS"）。
-        index_name:
-          type: string
-          description: 后端 OpenSearch 索引名（诊断 / 排错用）。
 
     FieldCatalogEntry:
       type: object

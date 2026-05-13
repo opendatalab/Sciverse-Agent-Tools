@@ -189,6 +189,3 @@ class CatalogResponse(BaseModel):
         ...,
         description='支持的 FilterOperator 名（不带 FILTER_OP_ 前缀，如 "EQ" / "IN" / "CONTAINS"）。',
     )
-    index_name: str = Field(
-        ..., description="后端 OpenSearch 索引名（诊断 / 排错用）。"
-    )
