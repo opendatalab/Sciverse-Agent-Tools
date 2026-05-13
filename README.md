@@ -267,13 +267,13 @@ export SCIVERSE_API_TOKEN=sv-...
 
 ## TODO / 路线图
 
-### 立即可做（P1 剩余）
+> v0.2.0（2026-05-13）已落地：MCP server 包、Claude Code Skill 派生、4 篇接入指南、GitHub 公开 mirror（含 author 脱敏 sync）、ClawHub 组织迁移（`@sciverse/academic-retrieval`）、Agent SDK 示例、LICENSE、包 metadata。明细见 [CHANGELOG.md](./CHANGELOG.md)。
+>
+> 下面是**剩余未完成项**，已完成项不再列出。
 
-- [x] ~~**Claude Agent SDK / OpenAI Agents SDK 示例**~~ — `examples/python_claude_agent_sdk.py` 和 `examples/ts_openai_agents.ts` 演示 `mcpServers` 直接挂 `sciverse-mcp-server`，agent loop 由 SDK 处理
-- [ ] **Token 体验：`sciverse auth login` device-code flow** — 写 `~/.sciverse/credentials.json`，MCP server / SDK 自动 fallback 读取；省掉用户每次手动复制 token 进 env
+### 功能增强（P1/P2）
 
-### P2（可缓但有价值）
-
+- [ ] **Token 体验：`sciverse auth login` device-code flow**（P1）— 写 `~/.sciverse/credentials.json`，MCP server / SDK 自动 fallback 读取；省掉用户每次手动复制 token 进 env
 - [ ] **MCP `progress` 通知** — `semantic_search` quality 模式 2-4s，借 MCP progress notifications 输出"正在 LLM 改写 query / 召回 X 篇"，避免 agent UI 静默等待
 - [ ] **eval baseline** — `evals/`：一批 query → 期望 tool 调用 → recall@k，CI 跑；当前 description 调优靠"真实 Agent 反馈"但没基线
 - [ ] **MCP server 接 SLS `app_logs`** — 当前出错只写 stderr，没结构化日志
@@ -281,41 +281,33 @@ export SCIVERSE_API_TOKEN=sv-...
 - [ ] **Offline mock** — SDK 加 `MOCK=1` 模式返回 fixture，方便 agent 开发者无 token 本地调试
 - [ ] **`read_full_content` 高阶 wrapper** — `read_content` 上限 16KB，agent 经常循环 offset 浪费 turn，封装一次拿完
 
-### 今天落地后的 follow-up
+### v0.2.0 发布后验证（合 main 触发）
 
-- [x] ~~**npm 发布前置**~~ — 已采用无 scope 名 `sciverse-mcp-server`（避免 `@sciverse` org 注册成本）；GitLab CI 新增 `agent-tools:release-mcp` job，main + packages/mcp/** 变更时 `npm publish` 到 npmjs.org，version 独立维护、tag 前缀 `sciverse-mcp-v` 避免与 SDK 冲突
-- [ ] **首次 npm publish 验证** — 第一次 main 合并触发 `release-mcp` 后，去 https://www.npmjs.com/package/sciverse-mcp-server 验证发包成功；如需 npm 用户身份配置可在 GitLab CI variable 补 `NPM_TOKEN`（与 SDK release job 共用）
-- [x] ~~**Plugin Marketplace `<repo-url>` 占位符**~~ — 已替换为 `https://github.com/opendatalab/SciVerse-agent-tools`
-- [ ] **mirror 切换为 public** — 当前 GitHub mirror 是 private。`claude /plugin marketplace add` 需要 public repo 才能匿名 clone。手动操作：mirror Settings → Danger Zone → Change visibility → Public
-- [ ] **派生漂移 CI 验证** — 这次顺手把 ClawHub `skill/*` 重生成后的版本也提交了，需要跑一次 CI 确认"派生产物漂移检测"job 还能正常报警
-- [x] ~~**CHANGELOG 版本号**~~ — 已 bump 到 `0.2.0`（openapi.yaml + Python/TS SDK + MCP 同步；skill 独立维护在 0.1.5）
-- [x] ~~**完善 PyPI / npm 包 metadata**~~ — 三个包均补齐 `repository` / `homepage` / `bugs` / `documentation` / `changelog` URLs（指向 `github.com/opendatalab/SciVerse-agent-tools`），Python `pyproject.toml` 原 Homepage URL 拼错一并修正
-- [x] ~~**根级 LICENSE 文件**~~ — 已加 Apache-2.0 全文
-- [x] ~~**examples 中 Anthropic model id 用 alias**~~ — 注释提示按需替换为最新 model id（Anthropic SDK 不需 alias，但有最新发布时可替换）
-- [x] ~~**README 加 `await c.aclose()` 长生命周期 client 示例**~~ — API 速览段新增"长生命周期 client"小节
+合 dev → main 时这些 job 才跑，需关注：
 
-### ClawHub skill：迁移到组织账号 + GitHub 公开 mirror
+- [ ] **`agent-tools:drift-check`**（MR-only）— 验证派生产物 idempotent，特别是这次 ClawHub skill name/slug 改动后
+- [ ] **`agent-tools:release-mcp`** — 首次发 `sciverse-mcp-server@0.2.0` 到 npmjs.org，去 https://www.npmjs.com/package/sciverse-mcp-server 验证；如缺 npm 身份需 GitLab CI variable 补 `NPM_TOKEN`
+- [ ] **`agent-tools:release`** — PyPI + TS SDK 0.2.0 发布
+- [ ] **`agent-tools:publish-skill`** — ClawHub 发 `sciverse-academic-retrieval` 0.1.5（独立版本）
+- [ ] **`agent-tools:mirror-sync`** — `git subtree split` + filter-branch 脱敏 + 推到 GitHub mirror（已手动跑过一次，CI 形态待验）
 
-旧形态：ClawHub 上 `sciverse-agent-tools` skill 由个人账号 publish。
-新形态：`@sciverse` 组织名下 `academic-retrieval` slug，全局唯一 ID 为 `sciverse-academic-retrieval`。
+### 运维 / 手动操作（你来做）
 
-**Phase 1 — ClawHub 组织账号**
+- [ ] **GitHub mirror 切换为 public** — Settings → Danger Zone → Change visibility → Public。public 后 `claude /plugin marketplace add` 才能匿名 clone
+- [ ] **GitLab runner IP 加 dev 网关白名单** — 当前 `agent-tools:contract` job 因 dev 网关返 403（鉴权前拦截）暂设 `allow_failure: true`；白名单生效后移除该 flag 恢复 strict 契约校验
+- [ ] **mirror repo 补 `CONTRIBUTING.md`** — 说明这是单向 mirror，issue 欢迎，PR 会被 cherry-pick 回主仓
+- [ ] **mirror repo About 段** — 描述 + topics（`mcp`、`agent-tools`、`claude-code`、`sciverse`）提升 discoverability
 
-- [x] 在 https://clawhub.ai 创建 `sciverse` 组织，owner 已就位
-- [x] 在 ClawHub web 上把 skill 迁到 `@sciverse` 组织，发布为 `sciverse-academic-retrieval`（slug `academic-retrieval`）
-- [x] 派生器 `generators/to_clawhub_skill.py` 同步：`SKILL_NAME = "sciverse-academic-retrieval"` + `SKILL_SLUG = "academic-retrieval"`，manifest 加 `slug` 字段，SKILL.md frontmatter 加 `slug` 字段，标题用 slug。
-- [x] 版本号独立 bump：派生器读 `skill/manifest.json` 已有 `version`，不再被 openapi.yaml 拽回（manifest 现 `0.1.5`，openapi `0.1.2`，二者解耦）
-- [x] CI variable `CLAWHUB_TOKEN`：保留 owner 个人 token（ClawHub 无组织级 token 概念，由 owner 个人身份代表组织 publish，与 GitHub PAT 模式一致）。owner 变更时需同步替换。
-- [ ] 用户安装命令更新：`openclaw skills install academic-retrieval`（README 已改，待发布说明同步）
+### 公告 / 链路稳定后细化
 
-**Phase 2 — GitHub 公开 mirror**（基础设施已就位）
+- [ ] **用户安装命令公告** — `openclaw skills install academic-retrieval`（README 已改，待对外发布说明同步）
+- [ ] **`agent-tools:publish-skill` 改用 `--source-repo` 直发** — mirror public 后移除 `/tmp` workaround，加 `--source-repo opendatalab/SciVerse-agent-tools --source-commit ${MIRROR_SHA}`，让 ClawHub 详情页有可审计 source 链接
+- [ ] **ClawHub 详情页 Source repo 填 `opendatalab/SciVerse-agent-tools`** — mirror public + publish-skill 切到 `--source-repo` 后自动生效
 
-- [x] 创建 `github.com/opendatalab/SciVerse-agent-tools` mirror repo（含 agent-tools/ 子目录完整 history，首次手动 `git subtree split` 推送）
-- [x] GitLab CI sync job `agent-tools:mirror-sync`：main 分支 + agent-tools/ 变更触发，`git subtree split` 后 `--force` 推到 mirror，`allow_failure: true`（不阻塞 release）
-- [ ] **mirror 切到 public**（同上一节 TODO）
-- [ ] 在 mirror repo 加 `CONTRIBUTING.md`：说明本仓库是单向 mirror，issue 欢迎，PR 会被 cherry-pick 回主仓
-- [ ] 更新 `agent-tools:publish-skill` job：mirror 稳定后改为从仓库目录直发并加 `--source-repo opendatalab/SciVerse-agent-tools` flag（参见 publish-skill job 内的 v0.2 TODO 注释）
-- [ ] ClawHub 详情页 Source repo 填 `opendatalab/SciVerse-agent-tools`
+### ClawHub `CLAWHUB_TOKEN` 维护
+
+- [x] 当前用 owner 个人 token 代表 `@sciverse` 组织 publish（ClawHub 无组织级 token 概念）
+- [ ] **owner 变更时需同步替换** GitLab CI variable `CLAWHUB_TOKEN`
 
 **回滚预案**：保留旧个人账号 + 旧 GitLab publish job 至少一个 release cycle 作为热备，确认新链路无问题后再下线。
 
