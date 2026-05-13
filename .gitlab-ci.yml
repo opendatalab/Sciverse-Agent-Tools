@@ -265,6 +265,15 @@ agent-tools:mirror-sync:
     - git config user.name "GitLab CI Mirror"
     # subtree split：抽 agent-tools/ 子目录的独立历史到临时分支 mirror-sync
     - git subtree split --prefix=agent-tools -b mirror-sync
-    # 单向 mirror：用 --force（subtree SHA 因 commit graph 微变可能与上次不同，
+    # 脱敏：所有 commit author/committer 统一署名为 SciVerse Bot，避免 GitLab 主仓内部
+    # 贡献者真名/邮箱泄漏到公开 mirror。time stamps 与 commit message 保留。
+    - |
+      FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter '
+      export GIT_AUTHOR_NAME="SciVerse Bot"
+      export GIT_AUTHOR_EMAIL="noreply@sciverse.space"
+      export GIT_COMMITTER_NAME="SciVerse Bot"
+      export GIT_COMMITTER_EMAIL="noreply@sciverse.space"
+      ' mirror-sync
+    # 单向 mirror：用 --force（subtree SHA + filter-branch 重写后必然变化，
     # 公开仓库无人会反向 push，安全覆盖）。
     - git push --force "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/opendatalab/SciVerse-agent-tools.git" mirror-sync:main
