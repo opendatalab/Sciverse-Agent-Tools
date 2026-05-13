@@ -21,6 +21,8 @@ tags:
 servers:
   - url: https://api.sciverse.space
     description: 生产环境
+  - url: https://api-dev.sciverse.space
+    description: 开发环境
 
 paths:
   /meta-search:
