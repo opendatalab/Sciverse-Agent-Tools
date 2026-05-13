@@ -1,6 +1,6 @@
-# @sciverse/mcp-server
+# sciverse-mcp-server
 
-[![npm](https://img.shields.io/npm/v/@sciverse/mcp-server.svg)](https://www.npmjs.com/package/@sciverse/mcp-server)
+[![npm](https://img.shields.io/npm/v/sciverse-mcp-server.svg)](https://www.npmjs.com/package/sciverse-mcp-server)
 
 SciVerse 开放平台官方 MCP (Model Context Protocol) server。把三个学术文献检索工具暴露给任何 MCP 兼容的 coding agent —— Claude Code、Cursor、Codex CLI、Windsurf、Continue 等。
 
@@ -10,21 +10,21 @@ SciVerse 开放平台官方 MCP (Model Context Protocol) server。把三个学�
 
 ```bash
 export SCIVERSE_API_TOKEN=sv-xxx   # 从 https://sciverse.space 控制台申请
-npx -y @sciverse/mcp-server        # stdio 启动；coding agent 通常会代你 spawn
+npx -y sciverse-mcp-server        # stdio 启动；coding agent 通常会代你 spawn
 ```
 
 ## 在 coding agent 里接入
 
 ### Claude Code
 
-项目级 `.mcp.json`（也可以用 `claude mcp add sciverse npx -- -y @sciverse/mcp-server`）：
+项目级 `.mcp.json`（也可以用 `claude mcp add sciverse npx -- -y sciverse-mcp-server`）：
 
 ```json
 {
   "mcpServers": {
     "sciverse": {
       "command": "npx",
-      "args": ["-y", "@sciverse/mcp-server"],
+      "args": ["-y", "sciverse-mcp-server"],
       "env": { "SCIVERSE_API_TOKEN": "sv-xxx" }
     }
   }
@@ -42,7 +42,7 @@ npx -y @sciverse/mcp-server        # stdio 启动；coding agent 通常会代你
 ```toml
 [mcp_servers.sciverse]
 command = "npx"
-args = ["-y", "@sciverse/mcp-server"]
+args = ["-y", "sciverse-mcp-server"]
 env = { SCIVERSE_API_TOKEN = "sv-xxx" }
 ```
 

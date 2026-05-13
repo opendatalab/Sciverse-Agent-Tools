@@ -7,7 +7,7 @@
 - description 是 model-facing trigger，须明确何时该调用此 skill
 - 正文为 markdown，描述前置条件、能力、典型 composition pattern
 - 同时输出 Plugin Marketplace 入口：`agent-tools/.claude-plugin/marketplace.json`
-- 依赖另一个并行 agent 维护的 `@sciverse/mcp-server` npm 包
+- 依赖另一个并行 agent 维护的 `sciverse-mcp-server` npm 包
 
 Claude Code 官方 spec 参考：
 - 路径：`~/.claude/skills/<skill-name>/SKILL.md`（用户级）/ `.claude/skills/...`（项目级）
@@ -29,7 +29,7 @@ SKILL_DESCRIPTION = (
     "literature by author/year/journal, finding paper chunks for RAG-style "
     "citations, or expanding original text around a known paper offset. "
     "Provides three SciVerse tools (search_papers, semantic_search, read_content) "
-    "via the @sciverse/mcp-server MCP server."
+    "via the sciverse-mcp-server MCP server."
 )
 
 PLUGIN_CATEGORY = "research"
@@ -76,13 +76,13 @@ def generate_skill_md(openapi_path: Path) -> str:
         "",
         "## Prerequisites",
         "",
-        "This skill is a thin wrapper around the `@sciverse/mcp-server` MCP server.",
+        "This skill is a thin wrapper around the `sciverse-mcp-server` MCP server.",
         "Before invoking any tool, ensure the server is reachable:",
         "",
         "1. Install the MCP server:",
         "",
         "   ```bash",
-        "   npm install -g @sciverse/mcp-server",
+        "   npm install -g sciverse-mcp-server",
         "   ```",
         "",
         "   Or add it to your project `.mcp.json`:",
@@ -92,7 +92,7 @@ def generate_skill_md(openapi_path: Path) -> str:
         '     "mcpServers": {',
         '       "sciverse": {',
         '         "command": "npx",',
-        '         "args": ["-y", "@sciverse/mcp-server"],',
+        '         "args": ["-y", "sciverse-mcp-server"],',
         '         "env": { "SCIVERSE_API_TOKEN": "${SCIVERSE_API_TOKEN}" }',
         "       }",
         "     }",

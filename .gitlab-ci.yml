@@ -179,6 +179,49 @@ agent-tools:release:
     - git tag -a "agent-tools-v${VERSION}" -m "agent-tools v${VERSION}"
     - git push origin "agent-tools-v${VERSION}"
 
+# MCP server (sciverse-mcp-server) 独立发布到 npmjs.org。
+# 与 release job 解耦的原因：
+# - version 在 packages/mcp/package.json 独立维护（不绑 openapi.yaml），
+#   MCP SDK 升级 / bug fix 可以独立 bump 而不动 SDK 包。
+# - tag 前缀 sciverse-mcp-v 避免与 agent-tools-v（SDK 共用）冲突。
+# - 触发条件只看 packages/mcp/** + openapi.yaml（后者影响派生 tool schema）。
+agent-tools:release-mcp:
+  stage: publish
+  image: docker.shlab.tech/public/node:20.15.0-buster
+  allow_failure: true
+  variables:
+    NPM_CONFIG_REGISTRY: "https://registry.npmmirror.com"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - agent-tools/packages/mcp/**/*
+        - agent-tools/openapi.yaml
+  before_script:
+    - sed -i 's|deb.debian.org|mirrors.aliyun.com|g; s|security.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+    - apt-get update && apt-get install -y --no-install-recommends git
+  script:
+    - cd agent-tools/packages/mcp
+    - VERSION=$(node -e "console.log(require('./package.json').version)")
+    - echo "Releasing sciverse-mcp-server v${VERSION}"
+    # tag 幂等：同版本号多次触发只发一次
+    - |
+      if git rev-parse "sciverse-mcp-v${VERSION}" >/dev/null 2>&1; then
+          echo "tag sciverse-mcp-v${VERSION} already exists, skipping release"
+          exit 0
+      fi
+    # 装 deps 走 mirror，publish 走 npmjs.org（同 agent-tools:release 模式）
+    - npm ci --registry=https://registry.npmmirror.com
+    - npm run build
+    - echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+    - npm publish --registry=https://registry.npmjs.org
+    - cd ../../..
+    # tag 主仓 commit
+    - git config user.email "ci@gitlab.shlab.tech"
+    - git config user.name "GitLab CI"
+    - git remote set-url origin "https://oauth2:${GL_TOKEN}@gitlab.shlab.tech/${CI_PROJECT_PATH}.git"
+    - git tag -a "sciverse-mcp-v${VERSION}" -m "sciverse-mcp-server v${VERSION}"
+    - git push origin "sciverse-mcp-v${VERSION}"
+
 agent-tools:publish-skill:
   stage: publish
   image: docker.shlab.tech/public/node:20.15.0-buster

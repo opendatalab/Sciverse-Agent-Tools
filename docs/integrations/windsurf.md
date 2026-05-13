@@ -17,7 +17,7 @@
   "mcpServers": {
     "sciverse": {
       "command": "npx",
-      "args": ["-y", "@sciverse/mcp-server"],
+      "args": ["-y", "sciverse-mcp-server"],
       "env": {
         "SCIVERSE_API_TOKEN": "sv-xxx"
       }
@@ -50,7 +50,7 @@ Cascade 会调用 `semantic_search` → `read_content` 完成 RAG 回答。
 | 配置文件路径找不到 | macOS 通常是 `~/.codeium/windsurf/`；Windows 是 `%USERPROFILE%\.codeium\windsurf\`；以官方 docs 为准 |
 | 401 / `INVALID_API_KEY` | Token 失效，回控制台生成新的 |
 | HTTP 429 | 配额耗尽 |
-| `npx` 拉包失败 | 改成 `"command": "sciverse-mcp"`，先全局装 `npm install -g @sciverse/mcp-server` |
+| `npx` 拉包失败 | 改成 `"command": "sciverse-mcp"`，先全局装 `npm install -g sciverse-mcp-server` |
 
 ## 进阶
 

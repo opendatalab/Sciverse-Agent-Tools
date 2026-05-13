@@ -1,6 +1,6 @@
 ---
 name: sciverse
-description: Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides three SciVerse tools (search_papers, semantic_search, read_content) via the @sciverse/mcp-server MCP server.
+description: Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides three SciVerse tools (search_papers, semantic_search, read_content) via the sciverse-mcp-server MCP server.
 ---
 
 # SciVerse — Academic Paper Retrieval
@@ -22,13 +22,13 @@ the underlying index only covers peer-reviewed and preprint scientific literatur
 
 ## Prerequisites
 
-This skill is a thin wrapper around the `@sciverse/mcp-server` MCP server.
+This skill is a thin wrapper around the `sciverse-mcp-server` MCP server.
 Before invoking any tool, ensure the server is reachable:
 
 1. Install the MCP server:
 
    ```bash
-   npm install -g @sciverse/mcp-server
+   npm install -g sciverse-mcp-server
    ```
 
    Or add it to your project `.mcp.json`:
@@ -38,7 +38,7 @@ Before invoking any tool, ensure the server is reachable:
      "mcpServers": {
        "sciverse": {
          "command": "npx",
-         "args": ["-y", "@sciverse/mcp-server"],
+         "args": ["-y", "sciverse-mcp-server"],
          "env": { "SCIVERSE_API_TOKEN": "${SCIVERSE_API_TOKEN}" }
        }
      }

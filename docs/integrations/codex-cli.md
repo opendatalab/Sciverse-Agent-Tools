@@ -15,7 +15,7 @@
 ```toml
 [mcp_servers.sciverse]
 command = "npx"
-args = ["-y", "@sciverse/mcp-server"]
+args = ["-y", "sciverse-mcp-server"]
 env = { SCIVERSE_API_TOKEN = "sv-xxx" }
 ```
 
@@ -24,7 +24,7 @@ env = { SCIVERSE_API_TOKEN = "sv-xxx" }
 ```toml
 [mcp_servers.sciverse]
 command = "npx"
-args = ["-y", "@sciverse/mcp-server"]
+args = ["-y", "sciverse-mcp-server"]
 env = { SCIVERSE_API_TOKEN = "sv-xxx", SCIVERSE_BASE_URL = "https://api.sciverse.space" }
 ```
 
@@ -57,7 +57,7 @@ Codex 应当调用 `search_papers` 完成结构化检索。
 | 现象 | 排查 |
 |---|---|
 | Codex 启动报错说找不到 MCP server | 检查 `command` 路径，确认本机 `node`/`npx` 已在 PATH |
-| 第一次启动卡很久 | `npx -y` 在拉包，正常；之后会走缓存，或预装 `npm install -g @sciverse/mcp-server` 改 command 为 `sciverse-mcp` |
+| 第一次启动卡很久 | `npx -y` 在拉包，正常；之后会走缓存，或预装 `npm install -g sciverse-mcp-server` 改 command 为 `sciverse-mcp` |
 | 401 / `INVALID_API_KEY` | Token 失效或没正确传到 env |
 | TOML 解析报错 | TOML 对引号敏感，env 必须是 `{ KEY = "value" }`，不是 JSON 风格的 `{"KEY":"value"}` |
 | 看不到 sciverse 工具被调 | 把 prompt 写明确："use the sciverse search_papers tool to ..." |

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- 新 npm 包 `@sciverse/mcp-server`（`packages/mcp/`）—— stdio 形态 MCP server，把三个检索 tool 暴露给 Claude Code / Cursor / Codex CLI / Windsurf 等支持 MCP 的 coding agent。Tool schema 构建期从 `openapi.yaml` 派生。
+- 新 npm 包 `sciverse-mcp-server`（`packages/mcp/`）—— stdio 形态 MCP server，把三个检索 tool 暴露给 Claude Code / Cursor / Codex CLI / Windsurf 等支持 MCP 的 coding agent。Tool schema 构建期从 `openapi.yaml` 派生。
 - Claude Code 官方 Agent Skill 形态派生（`skill-claude-code/`）+ Plugin Marketplace 入口（`.claude-plugin/marketplace.json`）。
 - 主流 coding agent 接入指南（Claude Code / Cursor / Codex CLI / Windsurf），见 `docs/integrations/`。
 - GitHub 公开 mirror `opendatalab/SciVerse-agent-tools` + GitLab CI `agent-tools:mirror-sync` job：main 分支变更后自动 `git subtree split` 推到 mirror，给社区可审计 source 链接（替代原 README 路线图中"v0.2 GitHub mirror"计划）。
@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - ClawHub skill 迁到 `@sciverse` 组织：`name` 由 `sciverse-agent-tools` 改为 `sciverse-academic-retrieval`，slug `academic-retrieval`，安装命令 `openclaw skills install academic-retrieval`。
 - 派生器 `to_clawhub_skill.py`：manifest.json 和 SKILL.md frontmatter 新增 `slug` 字段；version 不再被 openapi.yaml 强制覆盖，读取 manifest.json 现有 version（首次生成时 fallback 到 openapi），允许 skill 独立 bump。
+- npm 包名由 `@sciverse/mcp-server` 改为无 scope 的 `sciverse-mcp-server`（避免 npmjs.org 组织注册成本）。所有引用同步替换：README / docs/integrations / Claude skill 派生器 + 产物 / 测试。
+- GitLab CI 新增 `agent-tools:release-mcp` job：main + `packages/mcp/**` 变更时 `npm publish` 到 npmjs.org；version 独立读 `packages/mcp/package.json`（不绑 openapi.yaml），tag 前缀 `sciverse-mcp-v` 区分于 SDK 的 `agent-tools-v`。
 
 ## [0.1.2] - 2026-04-30
 

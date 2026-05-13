@@ -225,10 +225,10 @@ cp -r agent-tools/skill-claude-code .claude/skills/sciverse
 
 **配合 MCP server**
 
-Claude Code skill 形态依赖 `@sciverse/mcp-server`（由另一个并行 agent 维护），先安装：
+Claude Code skill 形态依赖 `sciverse-mcp-server`（由另一个并行 agent 维护），先安装：
 
 ```bash
-npm install -g @sciverse/mcp-server
+npm install -g sciverse-mcp-server
 export SCIVERSE_API_TOKEN=sv-...
 ```
 
@@ -236,7 +236,7 @@ export SCIVERSE_API_TOKEN=sv-...
 
 ## 其他 coding agent
 
-通过 MCP server [`@sciverse/mcp-server`](./packages/mcp/) 接入主流 coding agent：
+通过 MCP server [`sciverse-mcp-server`](./packages/mcp/) 接入主流 coding agent：
 
 | Agent | 接入指南 |
 |---|---|
@@ -263,12 +263,13 @@ export SCIVERSE_API_TOKEN=sv-...
 
 ### 今天落地后的 follow-up
 
-- [ ] **npm 发布前置** — `@sciverse/mcp-server` 需要在 npmjs.org 注册 `@sciverse` org；或改无 scope 名 `sciverse-mcp-server`。决定后在 GitLab CI 加 `npm publish` job（参考 `agent-tools:release` PyPI 那个 job）
+- [x] ~~**npm 发布前置**~~ — 已采用无 scope 名 `sciverse-mcp-server`（避免 `@sciverse` org 注册成本）；GitLab CI 新增 `agent-tools:release-mcp` job，main + packages/mcp/** 变更时 `npm publish` 到 npmjs.org，version 独立维护、tag 前缀 `sciverse-mcp-v` 避免与 SDK 冲突
+- [ ] **首次 npm publish 验证** — 第一次 main 合并触发 `release-mcp` 后，去 https://www.npmjs.com/package/sciverse-mcp-server 验证发包成功；如需 npm 用户身份配置可在 GitLab CI variable 补 `NPM_TOKEN`（与 SDK release job 共用）
 - [x] ~~**Plugin Marketplace `<repo-url>` 占位符**~~ — 已替换为 `https://github.com/opendatalab/SciVerse-agent-tools`
 - [ ] **mirror 切换为 public** — 当前 GitHub mirror 是 private。`claude /plugin marketplace add` 需要 public repo 才能匿名 clone。手动操作：mirror Settings → Danger Zone → Change visibility → Public
 - [ ] **派生漂移 CI 验证** — 这次顺手把 ClawHub `skill/*` 重生成后的版本也提交了，需要跑一次 CI 确认"派生产物漂移检测"job 还能正常报警
 - [ ] **CHANGELOG 版本号** — `[Unreleased]` 累积了多条 Added（MCP / Claude skill / 接入文档 / mirror sync），下次发布前 bump 到 `0.2.0` 并定型 `[Unreleased]`
-- [ ] **完善 PyPI / npm 包 metadata**：repository / homepage / documentation / changelog / bugs URLs（含新 `@sciverse/mcp-server`）
+- [ ] **完善 PyPI / npm 包 metadata**：repository / homepage / documentation / changelog / bugs URLs（含新 `sciverse-mcp-server`）
 - [ ] **根级 LICENSE 文件**（Apache-2.0）
 - [ ] **examples 中 Anthropic model id 用 alias**（替换 `claude-opus-4-7` 或注明可替换）
 - [ ] **README 加 `await c.aclose()` 长生命周期 client 示例**

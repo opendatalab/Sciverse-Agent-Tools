@@ -71,7 +71,7 @@ def test_skill_md_lists_all_three_tools():
 
 def test_skill_md_mentions_mcp_server_dep():
     md = generate_skill_md(REAL_OPENAPI)
-    assert "@sciverse/mcp-server" in md, (
+    assert "sciverse-mcp-server" in md, (
         "SKILL.md should reference the MCP server package"
     )
     assert "SCIVERSE_API_TOKEN" in md

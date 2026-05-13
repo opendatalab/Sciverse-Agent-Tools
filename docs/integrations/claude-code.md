@@ -13,7 +13,7 @@
 ### 用 `claude mcp add` 一行命令
 
 ```bash
-claude mcp add sciverse --env SCIVERSE_API_TOKEN=sv-xxx -- npx -y @sciverse/mcp-server
+claude mcp add sciverse --env SCIVERSE_API_TOKEN=sv-xxx -- npx -y sciverse-mcp-server
 ```
 
 ### 或手动写 `.mcp.json`
@@ -25,7 +25,7 @@ claude mcp add sciverse --env SCIVERSE_API_TOKEN=sv-xxx -- npx -y @sciverse/mcp-
   "mcpServers": {
     "sciverse": {
       "command": "npx",
-      "args": ["-y", "@sciverse/mcp-server"],
+      "args": ["-y", "sciverse-mcp-server"],
       "env": {
         "SCIVERSE_API_TOKEN": "sv-xxx"
       }
@@ -82,7 +82,7 @@ Claude 会依次调用 `semantic_search` → `read_content` 完成 RAG 回答。
 | HTTP 401 / `INVALID_API_KEY` | Token 错或已撤销，去 https://sciverse.space 重新生成 |
 | HTTP 429 | 当前 Tier 配额已耗尽，看控制台或升级 Tier |
 | `SCIVERSE_BASE_URL must point to *.sciverse.space` | 自定义 URL 必须是 `*.sciverse.space` 子域名（防 token 泄漏） |
-| `npx` 拉包慢 | 加 `--registry https://registry.npmmirror.com`，或预装 `npm install -g @sciverse/mcp-server` 后把 `command` 改为 `sciverse-mcp` |
+| `npx` 拉包慢 | 加 `--registry https://registry.npmmirror.com`，或预装 `npm install -g sciverse-mcp-server` 后把 `command` 改为 `sciverse-mcp` |
 
 ## 进阶
 

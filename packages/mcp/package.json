@@ -1,5 +1,5 @@
 {
-  "name": "@sciverse/mcp-server",
+  "name": "sciverse-mcp-server",
   "version": "0.1.2",
   "description": "SciVerse MCP server — exposes academic paper retrieval (search_papers / semantic_search / read_content) to MCP-compatible coding agents (Claude Code, Cursor, Codex CLI, Windsurf, ...).",
   "license": "Apache-2.0",

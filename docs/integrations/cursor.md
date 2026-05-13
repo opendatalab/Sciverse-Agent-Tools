@@ -19,7 +19,7 @@
   "mcpServers": {
     "sciverse": {
       "command": "npx",
-      "args": ["-y", "@sciverse/mcp-server"],
+      "args": ["-y", "sciverse-mcp-server"],
       "env": {
         "SCIVERSE_API_TOKEN": "sv-xxx"
       }
@@ -34,7 +34,7 @@
 
 - Name: `sciverse`
 - Type: `command`
-- Command: `npx -y @sciverse/mcp-server`
+- Command: `npx -y sciverse-mcp-server`
 - Env: `SCIVERSE_API_TOKEN=sv-xxx`
 
 > 如果你的 Cursor 版本菜单位置不同，参阅官方文档：https://docs.cursor.com/context/model-context-protocol
@@ -58,7 +58,7 @@ Cursor 应当连续调用 `semantic_search` → `read_content`，把结果整合
 | MCP 图标显示 `0 tools` | 重启 Cursor；用 `Reload Window` 命令；查看 `Output > MCP Logs` |
 | `Authentication failed` / 401 | Token 失效，回控制台生成新的；env 是否有多余引号/空格 |
 | 配置改完不生效 | Cursor 缓存 MCP server，必须 `Reload MCP Servers` 或重启 |
-| `npx` 拉包慢 | 配置改为 `"command": "sciverse-mcp"`，先全局装 `npm install -g @sciverse/mcp-server` |
+| `npx` 拉包慢 | 配置改为 `"command": "sciverse-mcp"`，先全局装 `npm install -g sciverse-mcp-server` |
 | HTTP 429 | 配额超限，看控制台 |
 
 ## 进阶
