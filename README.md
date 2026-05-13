@@ -120,6 +120,19 @@ async with AgentToolsClient(base_url=..., token=...) as c:
 返回值类型为 `dict[str, Any]`，**响应 schema 详见 [`openapi.yaml`](./openapi.yaml)**。  
 高级用户可用 `from sciverse_agent_tools.types import SearchPapersRequest, ...` 做类型化构造与校验。
 
+**长生命周期 client**（如 web server / agent runtime，client 不随单次 request 起灭）：
+
+```python
+client = AgentToolsClient(base_url="https://api.sciverse.space", token=TOKEN)
+try:
+    # 复用 client 处理多请求
+    while serving:
+        r = await client.semantic_search(query=...)
+        ...
+finally:
+    await client.aclose()  # 显式关闭底层 httpx 连接池
+```
+
 ### TypeScript SDK
 
 ```ts
@@ -275,11 +288,11 @@ export SCIVERSE_API_TOKEN=sv-...
 - [x] ~~**Plugin Marketplace `<repo-url>` 占位符**~~ — 已替换为 `https://github.com/opendatalab/SciVerse-agent-tools`
 - [ ] **mirror 切换为 public** — 当前 GitHub mirror 是 private。`claude /plugin marketplace add` 需要 public repo 才能匿名 clone。手动操作：mirror Settings → Danger Zone → Change visibility → Public
 - [ ] **派生漂移 CI 验证** — 这次顺手把 ClawHub `skill/*` 重生成后的版本也提交了，需要跑一次 CI 确认"派生产物漂移检测"job 还能正常报警
-- [ ] **CHANGELOG 版本号** — `[Unreleased]` 累积了多条 Added（MCP / Claude skill / 接入文档 / mirror sync），下次发布前 bump 到 `0.2.0` 并定型 `[Unreleased]`
-- [ ] **完善 PyPI / npm 包 metadata**：repository / homepage / documentation / changelog / bugs URLs（含新 `sciverse-mcp-server`）
-- [ ] **根级 LICENSE 文件**（Apache-2.0）
-- [ ] **examples 中 Anthropic model id 用 alias**（替换 `claude-opus-4-7` 或注明可替换）
-- [ ] **README 加 `await c.aclose()` 长生命周期 client 示例**
+- [x] ~~**CHANGELOG 版本号**~~ — 已 bump 到 `0.2.0`（openapi.yaml + Python/TS SDK + MCP 同步；skill 独立维护在 0.1.5）
+- [x] ~~**完善 PyPI / npm 包 metadata**~~ — 三个包均补齐 `repository` / `homepage` / `bugs` / `documentation` / `changelog` URLs（指向 `github.com/opendatalab/SciVerse-agent-tools`），Python `pyproject.toml` 原 Homepage URL 拼错一并修正
+- [x] ~~**根级 LICENSE 文件**~~ — 已加 Apache-2.0 全文
+- [x] ~~**examples 中 Anthropic model id 用 alias**~~ — 注释提示按需替换为最新 model id（Anthropic SDK 不需 alias，但有最新发布时可替换）
+- [x] ~~**README 加 `await c.aclose()` 长生命周期 client 示例**~~ — API 速览段新增"长生命周期 client"小节
 
 ### ClawHub skill：迁移到组织账号 + GitHub 公开 mirror
 

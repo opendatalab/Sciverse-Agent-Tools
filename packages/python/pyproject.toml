@@ -1,6 +1,6 @@
 [project]
 name = "sciverse-agent-tools"
-version = "0.1.2"
+version = "0.2.0"
 description = "SciVerse Agent Tools — OpenAI/Anthropic/LangChain compatible tool schema and async client for SciVerse retrieval APIs"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -13,7 +13,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sciverse/agent-tools"
+Homepage = "https://github.com/opendatalab/SciVerse-agent-tools"
+Repository = "https://github.com/opendatalab/SciVerse-agent-tools.git"
+Documentation = "https://github.com/opendatalab/SciVerse-agent-tools#readme"
+Changelog = "https://github.com/opendatalab/SciVerse-agent-tools/blob/main/CHANGELOG.md"
+Issues = "https://github.com/opendatalab/SciVerse-agent-tools/issues"
 
 [build-system]
 requires = ["hatchling"]

@@ -39,6 +39,8 @@ async def main() -> None:
             "mcp__sciverse__semantic_search",
             "mcp__sciverse__read_content",
         ],
+        # 按需指定 model（默认走 SDK 配置的 Claude Code 默认模型）
+        # 例如：model="claude-opus-4-7" 或 model="claude-sonnet-4-6"
         system_prompt=(
             "你是学术文献检索助手。优先用 semantic_search 找相关 chunk，"
             "需要扩展上下文时用 read_content。每个引用都附 doc_id 与 title。"

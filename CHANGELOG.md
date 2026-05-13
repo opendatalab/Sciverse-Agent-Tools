@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-13
+
+Coding-agent 接入大版本：补齐 MCP / Claude Code Skill / 接入文档三条入口，
+ClawHub skill 迁组织，公开 mirror 接通。
+
 ### Added
 - 新 npm 包 `sciverse-mcp-server`（`packages/mcp/`）—— stdio 形态 MCP server，把三个检索 tool 暴露给 Claude Code / Cursor / Codex CLI / Windsurf 等支持 MCP 的 coding agent。Tool schema 构建期从 `openapi.yaml` 派生。
 - Claude Code 官方 Agent Skill 形态派生（`skill-claude-code/`）+ Plugin Marketplace 入口（`.claude-plugin/marketplace.json`）。
@@ -20,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - npm 包名由 `@sciverse/mcp-server` 改为无 scope 的 `sciverse-mcp-server`（避免 npmjs.org 组织注册成本）。所有引用同步替换：README / docs/integrations / Claude skill 派生器 + 产物 / 测试。
 - GitLab CI 新增 `agent-tools:release-mcp` job：main + `packages/mcp/**` 变更时 `npm publish` 到 npmjs.org；version 独立读 `packages/mcp/package.json`（不绑 openapi.yaml），tag 前缀 `sciverse-mcp-v` 区分于 SDK 的 `agent-tools-v`。
 - `examples/` 新增 Agent SDK 形态示例：`python_claude_agent_sdk.py`（Claude Agent SDK + `mcp_servers` 注入）和 `ts_openai_agents.ts`（`@openai/agents` + `MCPServerStdio`）。与已有的"自己写 tool calling 回环"示例互补，演示 coding-agent 风格 agent loop 由 SDK 处理。
+- 根级 `LICENSE`（Apache-2.0 全文）。
+- 三个发布包补全 metadata：`repository` / `homepage` / `bugs` / `documentation` / `changelog` URLs（指向 `github.com/opendatalab/SciVerse-agent-tools`），Python `pyproject.toml` 中原本拼写错误的 Homepage URL 一并修正。
+- README API 速览段新增"长生命周期 client"段，演示手动 `await c.aclose()` 关闭连接池的用法（web server / agent runtime 场景）。
+
+### Changed
+- 版本号 bump `0.1.2` → `0.2.0`（openapi.yaml + Python/TS SDK 同步；MCP `sciverse-mcp-server` 与 SDK 对齐首发 `0.2.0`；ClawHub skill 仍独立维护在 `0.1.5`）。
+- examples 中 `claude-opus-4-7` 加注释"按需替换为最新 model id 或 alias"。
 
 ## [0.1.2] - 2026-04-30
 

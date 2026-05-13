@@ -33,6 +33,7 @@ async def main(question: str) -> None:
         messages = [{"role": "user", "content": question}]
         for _ in range(5):  # 最多 5 轮 tool 调用
             resp = anthropic.messages.create(
+                # 按需替换为最新 model id 或 alias（如 claude-opus-latest）
                 model="claude-opus-4-7",
                 max_tokens=4096,
                 tools=ANTHROPIC_TOOLS,
