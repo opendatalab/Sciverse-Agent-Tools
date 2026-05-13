@@ -73,5 +73,6 @@ def test_skill_md_uses_english_static_sections():
     assert "## When to use" in md
     assert "## Authentication" in md
     assert "## Tools" in md
-    assert "## Composition patterns" in md
+    assert "## Bootstrap: learn the schema first" in md
+    assert "## Recipes" in md
     assert "## Exit codes" in md

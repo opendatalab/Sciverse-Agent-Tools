@@ -13,8 +13,9 @@
 
 ## 底层协议
 
-所有 agent 都通过 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接入。`sciverse-mcp-server` 是 stdio 形态的 MCP server，包装 SciVerse 三个 API：
+所有 agent 都通过 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接入。`sciverse-mcp-server` 是 stdio 形态的 MCP server，包装 SciVerse 四个 API：
 
+- `list_catalog` — 字段 introspection（agent 第一次碰到不确定的字段先调此接口）
 - `search_papers` — 结构化元数据检索
 - `semantic_search` — 自然语言语义检索（RAG）
 - `read_content` — 按字节区间读取文献原文

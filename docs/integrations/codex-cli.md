@@ -52,6 +52,14 @@ Codex 应当调用 `search_papers` 完成结构化检索。
 
 应触发 `semantic_search` → `read_content`。
 
+或测试 schema-aware 精确查询：
+
+```
+列出 SciVerse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA 的 Nature 期刊论文。
+```
+
+会先调 `list_catalog` 学 schema，再构造 `search_papers` filter。
+
 ## 常见问题
 
 | 现象 | 排查 |

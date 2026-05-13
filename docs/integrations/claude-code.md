@@ -64,13 +64,21 @@ claude /plugin install sciverse
 /mcp
 ```
 
-应能看到 `sciverse` 列出三个 tool：`search_papers`、`semantic_search`、`read_content`。
+应能看到 `sciverse` 列出四个 tool：`list_catalog`、`search_papers`、`semantic_search`、`read_content`。
 
-Hello-world prompt：
+Hello-world prompt（RAG 流程）：
 
 ```
 找 3 篇关于 Transformer 注意力机制的论文，引用具体段落。
 ```
+
+也可以先让 agent 学习 schema 再做精确查询：
+
+```
+先列出 SciVerse 有哪些字段、access_oa_status 有哪些可能值，然后帮我找 2024 年以来 gold OA 状态的 Nature 期刊论文。
+```
+
+Claude 会先调 `list_catalog(include_sample_values=true)` 拿到字段表 + 枚举值样本，再用 `search_papers` 精确构造 filter。
 
 Claude 会依次调用 `semantic_search` → `read_content` 完成 RAG 回答。
 

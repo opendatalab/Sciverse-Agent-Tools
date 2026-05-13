@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 新 tool `list_catalog`（第 4 个）—— 字段 introspection 接口。返回所有可用字段、类型、能否过滤/排序、默认返回字段集、FilterOperator 清单；`include_sample_values=true` 时拉取 enum-like 字段的 top-20 取值样本（OpenSearch terms aggregation，缓存 24h）。Agent 在构造 `search_papers` 前先调用此接口学 schema，避免猜字段名 / 枚举值导致 0 hit 或 4xx。
+- metadata-service `MetadataService.GetCatalog` RPC + 57 字段全填 `description` 字段（业务说明）。
+- platform-console `GET /meta-catalog` 路由（rate limit 60 req/60s，与 meta-search 一致）。
+- SKILL.md（ClawHub + Claude Code 两份）新增 "Bootstrap: learn the schema first" + "Recipes" 段，引导 agent 先调 list_catalog 再做精确查询，含 5 种典型组合 pattern（RAG / DOI 查找 / OA 过滤 / enum 字段过滤 / hybrid）。
+- 接入指南 4 篇（claude-code / cursor / codex-cli / windsurf）新增 "schema-aware 精确查询" Hello-world prompt。
+
 ## [0.2.0] - 2026-05-13
 
 Coding-agent 接入大版本：补齐 MCP / Claude Code Skill / 接入文档三条入口，

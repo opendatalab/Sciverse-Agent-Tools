@@ -77,11 +77,12 @@ def test_skill_md_mentions_mcp_server_dep():
     assert "SCIVERSE_API_TOKEN" in md
 
 
-def test_skill_md_has_when_to_use_section():
+def test_skill_md_has_required_sections():
     md = generate_skill_md(REAL_OPENAPI)
     assert "## When to use" in md
     assert "## Prerequisites" in md
-    assert "## Composition patterns" in md
+    assert "## Bootstrap: learn the schema first" in md
+    assert "## Recipes" in md
 
 
 def test_marketplace_json_structure():

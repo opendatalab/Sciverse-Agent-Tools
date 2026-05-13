@@ -80,21 +80,48 @@ Returns: text fragment, bytes_returned, next_offset, more (boolean).
 
 **Invoke**: `node scripts/read_content.mjs '<JSON args>'`
 
-## Composition patterns
+## Bootstrap: learn the schema first
 
-Typical RAG flow:
-
-```
-semantic_search(query=...)
-    └─▶ hits[i].doc_id, hits[i].offset
-            └─▶ read_content(doc_id, offset)
-```
-
-Structured filter + metadata lookup:
+If you're unsure which fields exist or what values an enum takes
+(e.g. `metadata_type`, `language`, `access_oa_status`), call
+`list_catalog` once at the start. Sample values are returned for
+low-cardinality fields. Use it instead of guessing field names —
+guessing wastes turns.
 
 ```
-search_papers(authors=[...], year_from=2020)
-    └─▶ list of hits[].doc_id
+list_catalog(include_sample_values=true)
+    └─▶ fields[].name + sample_values  →  precise filter construction
+```
+
+## Recipes
+
+**RAG flow (natural-language Q&A):**
+
+```
+semantic_search(query=...) → hits[i].doc_id, hits[i].offset
+    └─▶ read_content(doc_id, offset)
+```
+
+**Lookup by DOI:**
+
+```
+search_papers(filters_advanced=[{field: "doi", value: "10.1038/..."}])
+```
+
+**OA + year filter:**
+
+```
+search_papers(
+    year_from=2024,
+    filters_advanced=[{field: "access_is_oa", value: "true"}]
+)
+```
+
+**Structured + semantic hybrid:**
+
+```
+search_papers(authors=[...], year_from=2020) → doc_ids
+semantic_search(query=...) → filter hits client-side by doc_ids
 ```
 
 ## Exit codes
