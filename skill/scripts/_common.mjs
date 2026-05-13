@@ -1,6 +1,12 @@
 // Standalone fetch wrapper for ClawHub skill scripts. Zero external dependencies.
 // 通过 ClawHub skill scripts 调用 SciVerse API 的共享工具。
 
+import { randomUUID } from "node:crypto";
+
+const SKILL_NAME = "sciverse-academic-retrieval";
+const CHANNEL = "openclaw";
+const PLATFORM = process.platform; // "linux" | "darwin" | "win32" ...
+
 const TOKEN = process.env.SCIVERSE_API_TOKEN;
 const BASE_URL = (process.env.SCIVERSE_BASE_URL ?? "https://api.sciverse.space").replace(/\/$/, "");
 
@@ -26,6 +32,7 @@ export async function callSciVerse(method, path, options = {}) {
   const headers = {
     authorization: `Bearer ${TOKEN}`,
     "content-type": "application/json",
+    "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
   };
   const init = { method, headers };
   let url = `${BASE_URL}${path}`;

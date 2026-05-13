@@ -1,10 +1,16 @@
 """SciVerse Agent Tools 异步 HTTP client。"""
 from __future__ import annotations
 
+import platform
+import uuid
 from types import TracebackType
 from typing import Any
 
 import httpx
+
+_SKILL_NAME = "sciverse-academic-retrieval"
+_CHANNEL = "python-sdk"
+_PLATFORM = platform.system().lower()  # "linux" | "darwin" | "windows"
 
 
 _PASSTHROUGH = ("query", "page", "page_size", "fields")
@@ -79,7 +85,12 @@ class AgentToolsClient:
             base_url=self._base_url,
             timeout=timeout,
             headers={"Authorization": f"Bearer {token}"},
+            event_hooks={"request": [self._inject_request_id]},
         )
+
+    @staticmethod
+    async def _inject_request_id(request: httpx.Request) -> None:
+        request.headers["X-Request-Id"] = f"{_SKILL_NAME}-{_PLATFORM}-{_CHANNEL}-{uuid.uuid4()}"
 
     async def __aenter__(self) -> "AgentToolsClient":
         return self

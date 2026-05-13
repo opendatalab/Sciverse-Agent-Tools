@@ -6,6 +6,7 @@
 
 import type { Config } from "./config.js";
 import { ENDPOINTS } from "./generated/tools.js";
+import { randomUUID } from "node:crypto";
 
 export interface ToolResult {
   isError: boolean;
@@ -65,6 +66,10 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
   return out;
 }
 
+const SKILL_NAME = "sciverse-academic-retrieval";
+const CHANNEL = "mcp";
+const PLATFORM = process.platform;
+
 async function call(
   config: Config,
   method: "GET" | "POST",
@@ -82,6 +87,7 @@ async function call(
     headers: {
       authorization: `Bearer ${config.token}`,
       "content-type": "application/json",
+      "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
     },
   };
   if (options.body !== undefined) {

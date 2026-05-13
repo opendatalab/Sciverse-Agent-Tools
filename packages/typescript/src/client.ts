@@ -1,7 +1,13 @@
+import { randomUUID } from "node:crypto";
+
 export interface AgentToolsClientOptions {
   baseUrl: string;
   token: string;
 }
+
+const SKILL_NAME = "sciverse-academic-retrieval";
+const CHANNEL = "typescript-sdk";
+const PLATFORM = process.platform;
 
 const PASSTHROUGH = ["query", "page", "page_size", "fields"] as const;
 
@@ -80,6 +86,7 @@ export class AgentToolsClient {
         ...(init.headers ?? {}),
         authorization: `Bearer ${this.token}`,
         "content-type": "application/json",
+        "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
       },
     });
     if (!res.ok) {
