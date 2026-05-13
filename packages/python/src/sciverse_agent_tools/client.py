@@ -126,6 +126,18 @@ class AgentToolsClient:
         resp.raise_for_status()
         return resp.json()
 
+    async def list_catalog(self, *, include_sample_values: bool = False) -> dict[str, Any]:
+        """对应 GET /meta-catalog。
+
+        返回字段 catalog：每个字段的名称 / 类型 / filterable / sortable / default_returned /
+        描述 / 适用 FilterOperator，外加 enum-like 字段的样本值（include_sample_values=True 时）。
+        Agent 第一次接触 SciVerse 或碰到字段不确定时建议先调一次再构造 search_papers。
+        """
+        params = {"include_sample_values": str(include_sample_values).lower()}
+        resp = await self._client.get("/meta-catalog", params=params)
+        resp.raise_for_status()
+        return resp.json()
+
     async def read_content(self, *, doc_id: str, offset: int = 0, limit: int = 4096) -> dict[str, Any]:
         """对应 GET /content。"""
         params = {"doc_id": doc_id, "offset": offset, "limit": limit}

@@ -141,6 +141,28 @@ class ReadContentResponse(BaseModel):
     )
 
 
+class FieldCatalogEntry(BaseModel):
+    name: str = Field(
+        ..., description="字段名（与 search_papers 的 filters[].field 一致）。"
+    )
+    type: str = Field(
+        ...,
+        description="业务类型，如 String / Integer / Boolean / Float / List[string] / List[object] / Object。",
+    )
+    filterable: bool
+    sortable: bool
+    searchable: bool = Field(..., description="是否参与 query（BM25 全文搜索）。")
+    default_returned: bool = Field(..., description="未指定 fields 时是否默认返回。")
+    description: str | None = Field(None, description="人类可读的字段说明（中文）。")
+    sample_values: list[str] | None = Field(
+        None,
+        description="该字段的取值样本（仅 enum-like 字段；高 cardinality 字段为空）。",
+    )
+    operators: list[str] | None = Field(
+        None, description="适用的 FilterOperator 名（参考性，后端不强校验）。"
+    )
+
+
 class ApiError(BaseModel):
     code: str
     message: str
@@ -156,3 +178,17 @@ class SearchPapersResponse(BaseModel):
 
 class SemanticSearchResponse(BaseModel):
     hits: list[SearchChunk]
+
+
+class CatalogResponse(BaseModel):
+    fields: list[FieldCatalogEntry]
+    default_fields: list[str] = Field(
+        ..., description="search_papers 不传 fields 时默认返回的字段名清单。"
+    )
+    filter_operators: list[str] = Field(
+        ...,
+        description='支持的 FilterOperator 名（不带 FILTER_OP_ 前缀，如 "EQ" / "IN" / "CONTAINS"）。',
+    )
+    index_name: str = Field(
+        ..., description="后端 OpenSearch 索引名（诊断 / 排错用）。"
+    )

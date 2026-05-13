@@ -66,6 +66,31 @@ class SemanticSearchTool(BaseTool):
         raise NotImplementedError("bind a client via .with_client(...)")
 
 
+class ListCatalogArgs(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    include_sample_values: bool = Field(False, description='是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。')
+
+
+class ListCatalogTool(BaseTool):
+    name: str = "list_catalog"
+    description: str = """返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、
+是否默认返回、字段说明、FilterOperator 清单等。
+适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」
+「`metadata_type` 的合法取值是？」
+不适用：实际查询文献，那是 search_papers / semantic_search 的事。
+典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，
+把 schema 装进 working memory，后续精确构造 search_papers 的 filters。
+include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
+"""
+    args_schema: type[BaseModel] = ListCatalogArgs
+
+    def _run(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("bind a client via .with_client(...)")
+
+    async def _arun(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("bind a client via .with_client(...)")
+
+
 class ReadContentArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
     doc_id: str = Field(..., description='文献 ID（来自 search_papers / semantic_search）。')

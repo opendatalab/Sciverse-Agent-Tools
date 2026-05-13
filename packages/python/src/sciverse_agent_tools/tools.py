@@ -1,6 +1,10 @@
 """Auto-generated. Do not edit. Run scripts/build.sh."""
+import json
+
 TOOLS_VERSION = "0.2.0"
-OPENAI_TOOLS = [
+
+OPENAI_TOOLS = json.loads(r"""
+[
   {
     "type": "function",
     "function": {
@@ -156,6 +160,24 @@ OPENAI_TOOLS = [
   {
     "type": "function",
     "function": {
+      "name": "list_catalog",
+      "description": "返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、\n是否默认返回、字段说明、FilterOperator 清单等。\n适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」\n「`metadata_type` 的合法取值是？」\n不适用：实际查询文献，那是 search_papers / semantic_search 的事。\n典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，\n把 schema 装进 working memory，后续精确构造 search_papers 的 filters。\ninclude_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "include_sample_values": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "read_content",
       "description": "按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，\n用于扩展上下文（往前/往后读更多字节）。\n返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。",
       "parameters": {
@@ -184,7 +206,10 @@ OPENAI_TOOLS = [
     }
   }
 ]
-ANTHROPIC_TOOLS = [
+""")
+
+ANTHROPIC_TOOLS = json.loads(r"""
+[
   {
     "name": "search_papers",
     "description": "按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。\n适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。\n不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。\n返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。",
@@ -332,6 +357,21 @@ ANTHROPIC_TOOLS = [
     }
   },
   {
+    "name": "list_catalog",
+    "description": "返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、\n是否默认返回、字段说明、FilterOperator 清单等。\n适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」\n「`metadata_type` 的合法取值是？」\n不适用：实际查询文献，那是 search_papers / semantic_search 的事。\n典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，\n把 schema 装进 working memory，后续精确构造 search_papers 的 filters。\ninclude_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "include_sample_values": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。"
+        }
+      },
+      "required": []
+    }
+  },
+  {
     "name": "read_content",
     "description": "按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，\n用于扩展上下文（往前/往后读更多字节）。\n返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。",
     "input_schema": {
@@ -359,3 +399,4 @@ ANTHROPIC_TOOLS = [
     }
   }
 ]
+""")

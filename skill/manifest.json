@@ -169,6 +169,22 @@
       }
     },
     {
+      "name": "list_catalog",
+      "description": "Returns the schema catalog for search_papers: every field name, type,\nwhether it's filterable / sortable, default-return status, human\ndescription, and applicable FilterOperators.\nUse when: \"Which field do I filter by DOI?\", \"What values can\naccess_oa_status take?\", \"What's the right enum for metadata_type?\".\nNot for: actually searching papers (use search_papers / semantic_search).\nTypical pattern: call once when first encountering SciVerse or facing\nan ambiguous field need, then construct precise search_papers filters\nfrom the returned schema.\nPass include_sample_values=true to also fetch top-20 values for\nenum-like fields (OpenSearch terms aggregation, 24h cached).",
+      "script": "scripts/list_catalog.mjs",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "include_sample_values": {
+            "type": "boolean",
+            "default": false,
+            "description": "是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。"
+          }
+        },
+        "required": []
+      }
+    },
+    {
       "name": "read_content",
       "description": "Read a UTF-8 byte range of a paper's original text. Typically used with\na doc_id/offset returned by semantic_search to expand context (read\nmore bytes before or after a chunk).\nReturns: text fragment, bytes_returned, next_offset, more (boolean).",
       "script": "scripts/read_content.mjs",

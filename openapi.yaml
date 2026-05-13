@@ -17,6 +17,8 @@ tags:
     description: 检索类操作（结构化元数据 + 语义检索）
   - name: content
     description: 原文读取类操作
+  - name: introspection
+    description: 字段 catalog / schema introspection
 
 servers:
   - url: https://api.sciverse.space
@@ -103,6 +105,48 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ApiError' }
+  /meta-catalog:
+    get:
+      tags: [introspection]
+      summary: 列出所有可用字段、能否过滤/排序、枚举值样本
+      operationId: list_catalog
+      description: |
+        返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、
+        是否默认返回、字段说明、FilterOperator 清单等。
+        适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」
+        「`metadata_type` 的合法取值是？」
+        不适用：实际查询文献，那是 search_papers / semantic_search 的事。
+        典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，
+        把 schema 装进 working memory，后续精确构造 search_papers 的 filters。
+        include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
+      x-en-summary: List available fields, filterability, and sample values
+      x-en-description: |
+        Returns the schema catalog for search_papers: every field name, type,
+        whether it's filterable / sortable, default-return status, human
+        description, and applicable FilterOperators.
+        Use when: "Which field do I filter by DOI?", "What values can
+        access_oa_status take?", "What's the right enum for metadata_type?".
+        Not for: actually searching papers (use search_papers / semantic_search).
+        Typical pattern: call once when first encountering SciVerse or facing
+        an ambiguous field need, then construct precise search_papers filters
+        from the returned schema.
+        Pass include_sample_values=true to also fetch top-20 values for
+        enum-like fields (OpenSearch terms aggregation, 24h cached).
+      parameters:
+        - name: include_sample_values
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+          description: 是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。
+      responses:
+        '200':
+          description: catalog
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CatalogResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+
   /content:
     get:
       tags: [content]
@@ -304,6 +348,55 @@ components:
         more:
           type: boolean
           description: 为 true 表示可能还有后续字节，可用 next_offset 继续请求。
+
+    CatalogResponse:
+      type: object
+      required: [fields, default_fields, filter_operators, index_name]
+      properties:
+        fields:
+          type: array
+          items: { $ref: '#/components/schemas/FieldCatalogEntry' }
+        default_fields:
+          type: array
+          items: { type: string }
+          description: search_papers 不传 fields 时默认返回的字段名清单。
+        filter_operators:
+          type: array
+          items: { type: string }
+          description: 支持的 FilterOperator 名（不带 FILTER_OP_ 前缀，如 "EQ" / "IN" / "CONTAINS"）。
+        index_name:
+          type: string
+          description: 后端 OpenSearch 索引名（诊断 / 排错用）。
+
+    FieldCatalogEntry:
+      type: object
+      required: [name, type, filterable, sortable, searchable, default_returned]
+      properties:
+        name:
+          type: string
+          description: 字段名（与 search_papers 的 filters[].field 一致）。
+        type:
+          type: string
+          description: 业务类型，如 String / Integer / Boolean / Float / List[string] / List[object] / Object。
+        filterable: { type: boolean }
+        sortable: { type: boolean }
+        searchable:
+          type: boolean
+          description: 是否参与 query（BM25 全文搜索）。
+        default_returned:
+          type: boolean
+          description: 未指定 fields 时是否默认返回。
+        description:
+          type: string
+          description: 人类可读的字段说明（中文）。
+        sample_values:
+          type: array
+          items: { type: string }
+          description: 该字段的取值样本（仅 enum-like 字段；高 cardinality 字段为空）。
+        operators:
+          type: array
+          items: { type: string }
+          description: 适用的 FilterOperator 名（参考性，后端不强校验）。
 
     ApiError:
       type: object

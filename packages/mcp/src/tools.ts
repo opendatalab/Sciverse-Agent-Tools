@@ -140,6 +140,12 @@ export async function executeTool(
       return call(config, "POST", endpoint.path, { body: toBackendPayload(args) });
     case "semantic_search":
       return call(config, "POST", endpoint.path, { body: args });
+    case "list_catalog": {
+      const { include_sample_values } = args as { include_sample_values?: boolean };
+      return call(config, "GET", endpoint.path, {
+        query: { include_sample_values: String(Boolean(include_sample_values)) },
+      });
+    }
     case "read_content": {
       const { doc_id, offset, limit } = args as {
         doc_id?: string;

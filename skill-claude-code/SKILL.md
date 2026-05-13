@@ -83,6 +83,20 @@ chunk, score, title, offset.
 Typical chain: semantic_search → pick chunk → read_content(doc_id,
 offset).
 
+### list_catalog
+
+Returns the schema catalog for search_papers: every field name, type,
+whether it's filterable / sortable, default-return status, human
+description, and applicable FilterOperators.
+Use when: "Which field do I filter by DOI?", "What values can
+access_oa_status take?", "What's the right enum for metadata_type?".
+Not for: actually searching papers (use search_papers / semantic_search).
+Typical pattern: call once when first encountering SciVerse or facing
+an ambiguous field need, then construct precise search_papers filters
+from the returned schema.
+Pass include_sample_values=true to also fetch top-20 values for
+enum-like fields (OpenSearch terms aggregation, 24h cached).
+
 ### read_content
 
 Read a UTF-8 byte range of a paper's original text. Typically used with

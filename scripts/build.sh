@@ -36,11 +36,17 @@ from pathlib import Path
 openai = json.loads(Path("dist/openai-tools.json").read_text(encoding="utf-8"))
 anthropic = json.loads(Path("dist/anthropic-tools.json").read_text(encoding="utf-8"))
 target = Path("packages/python/src/sciverse_agent_tools/tools.py")
+# 注意：JSON 的 false/true/null 不是 Python literal。某些 schema 含 `default: false`
+# 时，直接把 json.dumps 字符串嵌入 Python 文件会 NameError。
+# 改用 `json.loads(r"""...""")` 在模块加载时解析。
+openai_blob = json.dumps(openai["tools"], ensure_ascii=False, indent=2)
+anthropic_blob = json.dumps(anthropic["tools"], ensure_ascii=False, indent=2)
 target.write_text(
-    f'"""Auto-generated. Do not edit. Run scripts/build.sh."""\n'
-    f'TOOLS_VERSION = {json.dumps(openai["version"])}\n'
-    f'OPENAI_TOOLS = {json.dumps(openai["tools"], ensure_ascii=False, indent=2)}\n'
-    f'ANTHROPIC_TOOLS = {json.dumps(anthropic["tools"], ensure_ascii=False, indent=2)}\n',
+    '"""Auto-generated. Do not edit. Run scripts/build.sh."""\n'
+    'import json\n\n'
+    f'TOOLS_VERSION = {json.dumps(openai["version"])}\n\n'
+    f'OPENAI_TOOLS = json.loads(r"""\n{openai_blob}\n""")\n\n'
+    f'ANTHROPIC_TOOLS = json.loads(r"""\n{anthropic_blob}\n""")\n',
     encoding="utf-8"
 )
 print(f"wrote {target}")

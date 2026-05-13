@@ -88,6 +88,23 @@ describe("executeTool", () => {
     expect(captured[0]!.init.method).toBe("GET");
   });
 
+  it("list_catalog: 默认不拉 sample_values", async () => {
+    const captured = mockFetch(200, { fields: [], default_fields: [], filter_operators: [], index_name: "xinghe_meta" });
+    await executeTool(CONFIG, "list_catalog", {});
+    expect(captured[0]!.url).toBe(
+      "https://api.sciverse.space/meta-catalog?include_sample_values=false",
+    );
+    expect(captured[0]!.init.method).toBe("GET");
+  });
+
+  it("list_catalog: include_sample_values=true 时拼到 querystring", async () => {
+    const captured = mockFetch(200, { fields: [], default_fields: [], filter_operators: [], index_name: "xinghe_meta" });
+    await executeTool(CONFIG, "list_catalog", { include_sample_values: true });
+    expect(captured[0]!.url).toBe(
+      "https://api.sciverse.space/meta-catalog?include_sample_values=true",
+    );
+  });
+
   it("read_content: 缺 doc_id 时返回 isError", async () => {
     const captured = mockFetch(200, {});
     const result = await executeTool(CONFIG, "read_content", {});

@@ -26,6 +26,20 @@ export interface paths {
      */
     post: operations["semantic_search"];
   };
+  "/meta-catalog": {
+    /**
+     * 列出所有可用字段、能否过滤/排序、枚举值样本
+     * @description 返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、
+     * 是否默认返回、字段说明、FilterOperator 清单等。
+     * 适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」
+     * 「`metadata_type` 的合法取值是？」
+     * 不适用：实际查询文献，那是 search_papers / semantic_search 的事。
+     * 典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，
+     * 把 schema 装进 working memory，后续精确构造 search_papers 的 filters。
+     * include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
+     */
+    get: operations["list_catalog"];
+  };
   "/content": {
     /**
      * 按字节区间读取文献原文片段
@@ -143,6 +157,33 @@ export interface components {
       /** @description 为 true 表示可能还有后续字节，可用 next_offset 继续请求。 */
       more: boolean;
     };
+    CatalogResponse: {
+      fields: components["schemas"]["FieldCatalogEntry"][];
+      /** @description search_papers 不传 fields 时默认返回的字段名清单。 */
+      default_fields: string[];
+      /** @description 支持的 FilterOperator 名（不带 FILTER_OP_ 前缀，如 "EQ" / "IN" / "CONTAINS"）。 */
+      filter_operators: string[];
+      /** @description 后端 OpenSearch 索引名（诊断 / 排错用）。 */
+      index_name: string;
+    };
+    FieldCatalogEntry: {
+      /** @description 字段名（与 search_papers 的 filters[].field 一致）。 */
+      name: string;
+      /** @description 业务类型，如 String / Integer / Boolean / Float / List[string] / List[object] / Object。 */
+      type: string;
+      filterable: boolean;
+      sortable: boolean;
+      /** @description 是否参与 query（BM25 全文搜索）。 */
+      searchable: boolean;
+      /** @description 未指定 fields 时是否默认返回。 */
+      default_returned: boolean;
+      /** @description 人类可读的字段说明（中文）。 */
+      description?: string;
+      /** @description 该字段的取值样本（仅 enum-like 字段；高 cardinality 字段为空）。 */
+      sample_values?: string[];
+      /** @description 适用的 FilterOperator 名（参考性，后端不强校验）。 */
+      operators?: string[];
+    };
     ApiError: {
       code: string;
       message: string;
@@ -236,6 +277,35 @@ export interface operations {
           "application/json": components["schemas"]["ApiError"];
         };
       };
+    };
+  };
+  /**
+   * 列出所有可用字段、能否过滤/排序、枚举值样本
+   * @description 返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、
+   * 是否默认返回、字段说明、FilterOperator 清单等。
+   * 适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」
+   * 「`metadata_type` 的合法取值是？」
+   * 不适用：实际查询文献，那是 search_papers / semantic_search 的事。
+   * 典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，
+   * 把 schema 装进 working memory，后续精确构造 search_papers 的 filters。
+   * include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
+   */
+  list_catalog: {
+    parameters: {
+      query?: {
+        /** @description 是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。 */
+        include_sample_values?: boolean;
+      };
+    };
+    responses: {
+      /** @description catalog */
+      200: {
+        content: {
+          "application/json": components["schemas"]["CatalogResponse"];
+        };
+      };
+      401: components["responses"]["Unauthorized"];
+      502: components["responses"]["BadGateway"];
     };
   };
   /**

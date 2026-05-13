@@ -106,6 +106,12 @@ export class AgentToolsClient {
     return this.request("/agentic-search", { method: "POST", body: JSON.stringify(cleaned) });
   }
 
+  async listCatalog(params: { include_sample_values?: boolean } = {}): Promise<unknown> {
+    const qs = new URLSearchParams();
+    qs.set("include_sample_values", String(Boolean(params.include_sample_values)));
+    return this.request(`/meta-catalog?${qs.toString()}`, { method: "GET" });
+  }
+
   async readContent(params: { doc_id: string; offset?: number; limit?: number }): Promise<unknown> {
     const qs = new URLSearchParams();
     qs.set("doc_id", params.doc_id);
