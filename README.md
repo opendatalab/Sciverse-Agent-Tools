@@ -91,10 +91,17 @@ const resp = await openai.chat.completions.create({
 
 完整端到端示例（含 tool 调用回环）见 [`examples/`](./examples/)：
 
+**SDK 直接调用（自己写 tool calling 回环）：**
+
 - `python_anthropic_rag.py` — Anthropic + 三个 tool 的 RAG agent
 - `python_openai_function_call.py` — OpenAI function calling
 - `ts_openai.ts` — TypeScript + OpenAI
 - `ts_langchain_agent.ts` — TypeScript + LangChain
+
+**Agent SDK（agent loop 由 SDK 处理，更贴近 coding-agent 风格）：**
+
+- `python_claude_agent_sdk.py` — Claude Agent SDK + `sciverse-mcp-server` MCP server
+- `ts_openai_agents.ts` — `@openai/agents` + `sciverse-mcp-server` MCP server
 
 ## API 速览
 
@@ -249,7 +256,7 @@ export SCIVERSE_API_TOKEN=sv-...
 
 ### 立即可做（P1 剩余）
 
-- [ ] **Claude Agent SDK / OpenAI Agents SDK 示例** — `examples/` 当前是 `messages.create` 风格的 tool-calling 回环；补 `claude-agent-sdk` / `@openai/agents` 的 `mcpServers` 注入示例（coding-agent 风格应用主流走 Agent SDK）
+- [x] ~~**Claude Agent SDK / OpenAI Agents SDK 示例**~~ — `examples/python_claude_agent_sdk.py` 和 `examples/ts_openai_agents.ts` 演示 `mcpServers` 直接挂 `sciverse-mcp-server`，agent loop 由 SDK 处理
 - [ ] **Token 体验：`sciverse auth login` device-code flow** — 写 `~/.sciverse/credentials.json`，MCP server / SDK 自动 fallback 读取；省掉用户每次手动复制 token 进 env
 
 ### P2（可缓但有价值）

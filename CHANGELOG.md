@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 派生器 `to_clawhub_skill.py`：manifest.json 和 SKILL.md frontmatter 新增 `slug` 字段；version 不再被 openapi.yaml 强制覆盖，读取 manifest.json 现有 version（首次生成时 fallback 到 openapi），允许 skill 独立 bump。
 - npm 包名由 `@sciverse/mcp-server` 改为无 scope 的 `sciverse-mcp-server`（避免 npmjs.org 组织注册成本）。所有引用同步替换：README / docs/integrations / Claude skill 派生器 + 产物 / 测试。
 - GitLab CI 新增 `agent-tools:release-mcp` job：main + `packages/mcp/**` 变更时 `npm publish` 到 npmjs.org；version 独立读 `packages/mcp/package.json`（不绑 openapi.yaml），tag 前缀 `sciverse-mcp-v` 区分于 SDK 的 `agent-tools-v`。
+- `examples/` 新增 Agent SDK 形态示例：`python_claude_agent_sdk.py`（Claude Agent SDK + `mcp_servers` 注入）和 `ts_openai_agents.ts`（`@openai/agents` + `MCPServerStdio`）。与已有的"自己写 tool calling 回环"示例互补，演示 coding-agent 风格 agent loop 由 SDK 处理。
 
 ## [0.1.2] - 2026-04-30
 
