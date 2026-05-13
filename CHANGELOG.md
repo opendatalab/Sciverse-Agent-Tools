@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub 公开 mirror `opendatalab/SciVerse-agent-tools` + GitLab CI `agent-tools:mirror-sync` job：main 分支变更后自动 `git subtree split` 推到 mirror，给社区可审计 source 链接（替代原 README 路线图中"v0.2 GitHub mirror"计划）。
 - README 中 Claude Code Plugin Marketplace URL 占位符替换为 `https://github.com/opendatalab/SciVerse-agent-tools`。
 
+### Changed
+- ClawHub skill 迁到 `@sciverse` 组织：`name` 由 `sciverse-agent-tools` 改为 `sciverse-academic-retrieval`，slug `academic-retrieval`，安装命令 `openclaw skills install academic-retrieval`。
+- 派生器 `to_clawhub_skill.py`：manifest.json 和 SKILL.md frontmatter 新增 `slug` 字段；version 不再被 openapi.yaml 强制覆盖，读取 manifest.json 现有 version（首次生成时 fallback 到 openapi），允许 skill 独立 bump。
+
 ## [0.1.2] - 2026-04-30
 
 ### Fixed

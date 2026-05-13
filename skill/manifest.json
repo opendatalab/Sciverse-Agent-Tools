@@ -73,7 +73,10 @@
             "description": "高级过滤逃生舱（仅当上述字段不够用时使用）。",
             "items": {
               "type": "object",
-              "required": ["field", "value"],
+              "required": [
+                "field",
+                "value"
+              ],
               "properties": {
                 "field": {
                   "type": "string"
@@ -99,7 +102,11 @@
           },
           "sort_by_year": {
             "type": "string",
-            "enum": ["desc", "asc", "none"],
+            "enum": [
+              "desc",
+              "asc",
+              "none"
+            ],
             "default": "desc"
           },
           "page": {
@@ -122,7 +129,9 @@
       "script": "scripts/semantic_search.mjs",
       "input_schema": {
         "type": "object",
-        "required": ["query"],
+        "required": [
+          "query"
+        ],
         "properties": {
           "query": {
             "type": "string",
@@ -140,12 +149,19 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["web", "pdf"]
+              "enum": [
+                "web",
+                "pdf"
+              ]
             }
           },
           "mode": {
             "type": "string",
-            "enum": ["fast", "balanced", "quality"],
+            "enum": [
+              "fast",
+              "balanced",
+              "quality"
+            ],
             "default": "balanced",
             "description": "fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。\n"
           }
@@ -175,7 +191,9 @@
             "maximum": 16384
           }
         },
-        "required": ["doc_id"]
+        "required": [
+          "doc_id"
+        ]
       }
     }
   ]

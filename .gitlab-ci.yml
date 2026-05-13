@@ -195,11 +195,14 @@ agent-tools:publish-skill:
     # 否则 ClawHub CLI 会从 .git 检测到 GitLab remote（非 GitHub 格式），
     # 触发 "--source-repo and --source-commit must be set together" 错误。
     # 复制后 CLI 找不到 .git context，干净跳过 source 元数据。
-    # v0.2 迁到 GitHub mirror 后改回从仓库目录直发并加 --source-repo flag。
-    - cp -r agent-tools/skill /tmp/sciverse-agent-tools-skill
-    - cd /tmp/sciverse-agent-tools-skill
+    # TODO（mirror 切 public 后）：改为从仓库目录直发并加
+    #   --source-repo opendatalab/SciVerse-agent-tools
+    #   --source-commit <mirror-sha>
+    # 让 ClawHub 详情页 source 链接指向公开 mirror，可审计。
+    - cp -r agent-tools/skill /tmp/sciverse-academic-retrieval
+    - cd /tmp/sciverse-academic-retrieval
     - VERSION=$(node -e "console.log(require('./manifest.json').version)")
-    - echo "Publishing sciverse-agent-tools skill v${VERSION} to ClawHub"
+    - echo "Publishing sciverse-academic-retrieval skill v${VERSION} to ClawHub"
     - |
       if [ -z "${CLAWHUB_TOKEN:-}" ]; then
           echo "::warning:: CLAWHUB_TOKEN 未配置，skill 发布跳过。"

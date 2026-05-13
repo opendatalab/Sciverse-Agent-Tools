@@ -275,15 +275,17 @@ export SCIVERSE_API_TOKEN=sv-...
 
 ### ClawHub skill：迁移到组织账号 + GitHub 公开 mirror
 
-当前 ClawHub 上 `sciverse-agent-tools` skill 由个人账号 publish。目标：迁到 SciVerse 组织账号 + GitHub 公开 mirror，以提升 trust score、可审计 source、支持团队协作。
+旧形态：ClawHub 上 `sciverse-agent-tools` skill 由个人账号 publish。
+新形态：`@sciverse` 组织名下 `academic-retrieval` slug，全局唯一 ID 为 `sciverse-academic-retrieval`。
 
-**Phase 1 — ClawHub 组织账号**（待手动操作）
+**Phase 1 — ClawHub 组织账号**
 
-1. 在 https://clawhub.ai 创建/使用组织 `sciverse`（如组织功能需要申请，联系 ClawHub admin）
-2. 在 ClawHub web console 把现有 skill `sciverse-agent-tools` 的 ownership transfer 到 `sciverse` 组织（具体路径以 ClawHub 文档为准；如不支持原地迁移，新组织下重新发布并把旧 skill `deprecate` 到新地址）
-3. 在 ClawHub 组织设置里生成**组织级 publish token**，替换 GitLab CI 中的 `CLAWHUB_TOKEN`（原个人 token 作废）
-4. 如需在 skill name 加 namespace 前缀（`sciverse/sciverse-agent-tools`），更新 `generators/to_clawhub_skill.py` 中 `SKILL_NAME`，并跑 `bash scripts/build.sh` 同步产物
-5. 验证：https://clawhub.ai/sciverse 出现组织页 + skill 列表，`clawhub install sciverse-agent-tools`（或新 namespace 名）仍可装
+- [x] 在 https://clawhub.ai 创建 `sciverse` 组织，owner 已就位
+- [x] 在 ClawHub web 上把 skill 迁到 `@sciverse` 组织，发布为 `sciverse-academic-retrieval`（slug `academic-retrieval`）
+- [x] 派生器 `generators/to_clawhub_skill.py` 同步：`SKILL_NAME = "sciverse-academic-retrieval"` + `SKILL_SLUG = "academic-retrieval"`，manifest 加 `slug` 字段，SKILL.md frontmatter 加 `slug` 字段，标题用 slug。
+- [x] 版本号独立 bump：派生器读 `skill/manifest.json` 已有 `version`，不再被 openapi.yaml 拽回（manifest 现 `0.1.5`，openapi `0.1.2`，二者解耦）
+- [ ] CI variable `CLAWHUB_TOKEN` 替换为组织级 token（当前仍为个人 token；owner 切组织前需做）
+- [ ] 用户安装命令更新：`openclaw skills install academic-retrieval`（README 已改，待发布说明同步）
 
 **Phase 2 — GitHub 公开 mirror**（基础设施已就位）
 

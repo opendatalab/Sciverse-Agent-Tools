@@ -12,7 +12,12 @@ from pathlib import Path
 from ._common import get_request_schema, iter_operations, load_openapi
 
 
-SKILL_NAME = "sciverse-agent-tools"
+# ClawHub 命名约定（2026-05 迁到 @sciverse 组织后）：
+#   - `name` = 组织 namespace + slug，作为唯一全局 ID（如 `sciverse-academic-retrieval`）
+#   - `slug` = 公开 URL slug，用户安装时填的名字（`openclaw skills install <slug>`）
+# 这两个字段都写进 manifest.json + SKILL.md frontmatter。
+SKILL_NAME = "sciverse-academic-retrieval"
+SKILL_SLUG = "academic-retrieval"
 SKILL_DESCRIPTION_EN = (
     "SciVerse academic paper retrieval: structured metadata search, semantic "
     "chunk retrieval for RAG, and byte-range content reading. For agent "
@@ -31,9 +36,20 @@ def _en_description(node: dict) -> str:
     ).strip()
 
 
-def generate_manifest(openapi_path: Path) -> dict:
+def _read_existing_version(manifest_path: Path) -> str | None:
+    """读 manifest.json 现有 version。允许 skill 独立 bump（与 SDK/MCP 版本号脱钩）。
+    首次生成（manifest 不存在）则返回 None，由调用方 fallback 到 openapi 版本。"""
+    if not manifest_path.exists():
+        return None
+    try:
+        return json.loads(manifest_path.read_text(encoding="utf-8")).get("version")
+    except json.JSONDecodeError:
+        return None
+
+
+def generate_manifest(openapi_path: Path, *, existing_version: str | None = None) -> dict:
     spec = load_openapi(openapi_path)
-    version = spec["info"].get("x-sciverse-tools-version", spec["info"]["version"])
+    version = existing_version or spec["info"].get("x-sciverse-tools-version", spec["info"]["version"])
 
     tools = []
     for _path, _method, op in iter_operations(spec):
@@ -48,6 +64,7 @@ def generate_manifest(openapi_path: Path) -> dict:
     return {
         "name": SKILL_NAME,
         "version": version,
+        "slug": SKILL_SLUG,
         "description": SKILL_DESCRIPTION_EN,
         "runtime": "node>=18",
         "license": "Apache-2.0",
@@ -69,20 +86,21 @@ def generate_manifest(openapi_path: Path) -> dict:
     }
 
 
-def generate_skill_md(openapi_path: Path) -> str:
+def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None) -> str:
     spec = load_openapi(openapi_path)
-    version = spec["info"].get("x-sciverse-tools-version", spec["info"]["version"])
+    version = existing_version or spec["info"].get("x-sciverse-tools-version", spec["info"]["version"])
 
     lines = [
         "---",
         f"name: {SKILL_NAME}",
+        f"slug: {SKILL_SLUG}",
         f"version: {version}",
         f"description: {SKILL_DESCRIPTION_EN}",
         "license: Apache-2.0",
         "homepage: https://sciverse.space",
         "---",
         "",
-        f"# {SKILL_NAME}",
+        f"# {SKILL_SLUG}",
         "",
         SKILL_DESCRIPTION_EN,
         "",
@@ -148,17 +166,21 @@ def generate_skill_md(openapi_path: Path) -> str:
 def main() -> None:
     root = Path(__file__).resolve().parent.parent
     openapi = root / "openapi.yaml"
-
-    manifest = generate_manifest(openapi)
     manifest_path = root / "skill" / "manifest.json"
+    skill_md_path = root / "skill" / "SKILL.md"
+
+    # 优先保留 manifest.json 已有 version（人工/ClawHub 上传时 bump 过），
+    # 避免每次跑 build 把 version 拽回 openapi.yaml。
+    existing_version = _read_existing_version(manifest_path)
+
+    manifest = generate_manifest(openapi, existing_version=existing_version)
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    print(f"wrote {manifest_path.relative_to(root)}")
+    print(f"wrote {manifest_path.relative_to(root)} (version {manifest['version']})")
 
-    skill_md = generate_skill_md(openapi)
-    skill_md_path = root / "skill" / "SKILL.md"
+    skill_md = generate_skill_md(openapi, existing_version=existing_version)
     skill_md_path.write_text(skill_md, encoding="utf-8")
     print(f"wrote {skill_md_path.relative_to(root)}")
 

@@ -1,16 +1,28 @@
 from pathlib import Path
 
-from generators.to_clawhub_skill import generate_manifest, generate_skill_md
+from generators.to_clawhub_skill import (
+    SKILL_NAME,
+    SKILL_SLUG,
+    generate_manifest,
+    generate_skill_md,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "minimal_openapi.yaml"
 
 
 def test_manifest_basic_fields():
     m = generate_manifest(FIXTURE)
-    assert m["name"] == "sciverse-agent-tools"
-    assert m["version"] == "1.0.0"  # fixture 中是 1.0.0
+    assert m["name"] == SKILL_NAME == "sciverse-academic-retrieval"
+    assert m["slug"] == SKILL_SLUG == "academic-retrieval"
+    assert m["version"] == "1.0.0"  # fixture 没传 existing_version → fallback openapi.yaml
     assert m["runtime"] == "node>=18"
     assert "do_foo" in {t["name"] for t in m["tools"]}
+
+
+def test_manifest_existing_version_overrides_openapi():
+    """允许 skill 独立 bump version：传 existing_version 优先于 openapi.yaml。"""
+    m = generate_manifest(FIXTURE, existing_version="9.9.9")
+    assert m["version"] == "9.9.9"
 
 
 def test_manifest_tool_entry_points():
@@ -23,8 +35,15 @@ def test_manifest_tool_entry_points():
 def test_skill_md_has_frontmatter():
     md = generate_skill_md(FIXTURE)
     assert md.startswith("---\n")
-    assert "name: sciverse-agent-tools" in md
+    assert "name: sciverse-academic-retrieval" in md
+    assert "slug: academic-retrieval" in md
     assert "version: 1.0.0" in md
+
+
+def test_skill_md_existing_version_overrides_openapi():
+    md = generate_skill_md(FIXTURE, existing_version="7.7.7")
+    assert "version: 7.7.7" in md
+    assert "version: 1.0.0" not in md
 
 
 def test_skill_md_lists_all_tools():
