@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新 npm 包 `@sciverse/mcp-server`（`packages/mcp/`）—— stdio 形态 MCP server，把三个检索 tool 暴露给 Claude Code / Cursor / Codex CLI / Windsurf 等支持 MCP 的 coding agent。Tool schema 构建期从 `openapi.yaml` 派生。
 - Claude Code 官方 Agent Skill 形态派生（`skill-claude-code/`）+ Plugin Marketplace 入口（`.claude-plugin/marketplace.json`）。
 - 主流 coding agent 接入指南（Claude Code / Cursor / Codex CLI / Windsurf），见 `docs/integrations/`。
+- GitHub 公开 mirror `opendatalab/SciVerse-agent-tools` + GitLab CI `agent-tools:mirror-sync` job：main 分支变更后自动 `git subtree split` 推到 mirror，给社区可审计 source 链接（替代原 README 路线图中"v0.2 GitHub mirror"计划）。
+- README 中 Claude Code Plugin Marketplace URL 占位符替换为 `https://github.com/opendatalab/SciVerse-agent-tools`。
 
 ## [0.1.2] - 2026-04-30
 

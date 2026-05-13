@@ -52,7 +52,7 @@ claude mcp add sciverse --env SCIVERSE_API_TOKEN=sv-xxx -- npx -y @sciverse/mcp-
 cp -r path/to/agent-tools/skill-claude-code ~/.claude/skills/sciverse
 
 # 或 Plugin Marketplace 一键安装
-claude /plugin marketplace add <repo-url>
+claude /plugin marketplace add https://github.com/opendatalab/SciVerse-agent-tools
 claude /plugin install sciverse
 ```
 

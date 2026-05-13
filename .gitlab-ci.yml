@@ -237,3 +237,34 @@ agent-tools:publish-skill:
         echo "Publish attempt $i failed, retrying in 10s..."
         sleep 10
       done
+
+# 单向 sync agent-tools/ 子目录到 GitHub 公开 mirror (opendatalab/SciVerse-agent-tools)。
+# 主仓库（本 GitLab repo）是权威源，mirror 仅供社区审计 / ClawHub source 链接。
+# - GIT_DEPTH=0：默认 shallow clone 不够 subtree split 抽完整历史。
+# - allow_failure：mirror sync 抽风不影响 release / publish-skill。
+# - 仅 main 触发，与其他 publish job 节奏一致；mirror = 稳定版，不暴露 dev 中间态。
+# 配置：在 GitLab Settings → CI/CD → Variables 加 GITHUB_MIRROR_TOKEN (masked + protected)，
+# 值为 GitHub fine-grained PAT，权限 opendatalab/SciVerse-agent-tools Contents:R&W。
+agent-tools:mirror-sync:
+  stage: publish
+  image: docker.shlab.tech/public/node:20.15.0-buster
+  allow_failure: true
+  variables:
+    GIT_DEPTH: 0
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      <<: *agent-tools-changes
+  script:
+    - |
+      if [ -z "${GITHUB_MIRROR_TOKEN:-}" ]; then
+          echo "::warning:: GITHUB_MIRROR_TOKEN 未配置，mirror sync 跳过。"
+          echo "请在 GitLab Project Settings → CI/CD → Variables 配置（masked + protected）。"
+          exit 0
+      fi
+    - git config user.email "ci@gitlab.shlab.tech"
+    - git config user.name "GitLab CI Mirror"
+    # subtree split：抽 agent-tools/ 子目录的独立历史到临时分支 mirror-sync
+    - git subtree split --prefix=agent-tools -b mirror-sync
+    # 单向 mirror：用 --force（subtree SHA 因 commit graph 微变可能与上次不同，
+    # 公开仓库无人会反向 push，安全覆盖）。
+    - git push --force "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/opendatalab/SciVerse-agent-tools.git" mirror-sync:main
