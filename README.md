@@ -267,28 +267,37 @@ export SCIVERSE_API_TOKEN=sv-...
 
 ## TODO / 路线图
 
-> v0.2.0（2026-05-13）已落地：MCP server 包、Claude Code Skill 派生、4 篇接入指南、GitHub 公开 mirror（含 author 脱敏 sync）、ClawHub 组织迁移（`@sciverse/academic-retrieval`）、Agent SDK 示例、LICENSE、包 metadata。明细见 [CHANGELOG.md](./CHANGELOG.md)。
+> **v0.2.0**（2026-05-13）：MCP server 包、Claude Code Skill 派生、4 篇接入指南、GitHub 公开 mirror（含 author 脱敏 sync）、ClawHub 组织迁移(`@sciverse/academic-retrieval`)、Agent SDK 示例、LICENSE、包 metadata。
 >
-> 下面是**剩余未完成项**，已完成项不再列出。
+> **v0.3 累计**（2026-05-13/14，未发版，`[Unreleased]`）：
+> - 第 4 个 tool `list_catalog` —— 字段 introspection + enum 取值样本（OpenSearch terms agg + 24h 缓存）
+> - SKILL.md 升级 "Bootstrap: learn the schema first" + "Recipes" 段（5 种典型组合 pattern）
+> - 接入指南 4 篇加 schema-aware 精确查询的 Hello-world prompt
+> - `platform-console/metadata-guide.md` 加 /meta-catalog 接口说明 + 引导 agent 优先调
+> - `GetCatalogResponse` 不暴露 `index_name`（后端实现细节）
+> - 旁路：`/meta-search` 支持 cursor 深翻页（另一个 agent，09d41a6）
+>
+> 明细见 [CHANGELOG.md](./CHANGELOG.md)。下面仅列**剩余未完成项**。
 
 ### 功能增强（P1/P2）
 
-- [ ] **Token 体验：`sciverse auth login` device-code flow**（P1）— 写 `~/.sciverse/credentials.json`，MCP server / SDK 自动 fallback 读取；省掉用户每次手动复制 token 进 env
+- [ ] **Token 体验：`sciverse auth login` device-code flow**（P1，最后一项 P1）— 写 `~/.sciverse/credentials.json`，MCP server / SDK 自动 fallback 读取；省掉用户每次手动复制 token 进 env
+- [ ] **`get_paper(doc_id)` 单接口**（P2，待决策）— catalog 已揭示 doc_id 是 filterable，agent 用 `search_papers(filters_advanced=[{field:"doc_id", value:"p_xxx"}])` 即可。先观察 agent 实际行为再决定是否做专用接口
 - [ ] **MCP `progress` 通知** — `semantic_search` quality 模式 2-4s，借 MCP progress notifications 输出"正在 LLM 改写 query / 召回 X 篇"，避免 agent UI 静默等待
-- [ ] **eval baseline** — `evals/`：一批 query → 期望 tool 调用 → recall@k，CI 跑；当前 description 调优靠"真实 Agent 反馈"但没基线
+- [ ] **eval baseline** — `evals/`：一批 query → 期望 tool 调用 → recall@k，CI 跑。catalog 已落地后更好做：可设"agent 看 schema 后能否正确构造 OA 查询"recall 测试
 - [ ] **MCP server 接 SLS `app_logs`** — 当前出错只写 stderr，没结构化日志
 - [ ] **更多框架适配** — Vercel AI SDK（TS 圈最热）、LlamaIndex（README 提了但 examples 没有）、Dify / Coze（国内工具市场上架）
 - [ ] **Offline mock** — SDK 加 `MOCK=1` 模式返回 fixture，方便 agent 开发者无 token 本地调试
 - [ ] **`read_full_content` 高阶 wrapper** — `read_content` 上限 16KB，agent 经常循环 offset 浪费 turn，封装一次拿完
 
-### v0.2.0 发布后验证（合 main 触发）
+### v0.2/v0.3 发布后验证（合 main 触发）
 
 合 dev → main 时这些 job 才跑，需关注：
 
-- [ ] **`agent-tools:drift-check`**（MR-only）— 验证派生产物 idempotent，特别是这次 ClawHub skill name/slug 改动后
-- [ ] **`agent-tools:release-mcp`** — 首次发 `sciverse-mcp-server@0.2.0` 到 npmjs.org，去 https://www.npmjs.com/package/sciverse-mcp-server 验证；如缺 npm 身份需 GitLab CI variable 补 `NPM_TOKEN`
+- [ ] **`agent-tools:drift-check`**（MR-only）— 验证派生产物 idempotent，特别是 v0.3 增加 list_catalog 后所有派生形态（MCP / OpenAI / Anthropic / LangChain / ClawHub manifest / Claude Code SKILL.md / Plugin Marketplace）
+- [ ] **`agent-tools:release-mcp`** — 首发 `sciverse-mcp-server@0.2.0` 到 npmjs.org，去 https://www.npmjs.com/package/sciverse-mcp-server 验证；如缺 npm 身份需 GitLab CI variable 补 `NPM_TOKEN`
 - [ ] **`agent-tools:release`** — PyPI + TS SDK 0.2.0 发布
-- [ ] **`agent-tools:publish-skill`** — ClawHub 发 `sciverse-academic-retrieval` 0.1.5（独立版本）
+- [ ] **`agent-tools:publish-skill`** — ClawHub 发 `sciverse-academic-retrieval` 0.1.5（独立版本，与 SDK 解耦）
 - [ ] **`agent-tools:mirror-sync`** — `git subtree split` + filter-branch 脱敏 + 推到 GitHub mirror（已手动跑过一次，CI 形态待验）
 
 ### 运维 / 手动操作（你来做）
@@ -297,6 +306,11 @@ export SCIVERSE_API_TOKEN=sv-...
 - [ ] **GitLab runner IP 加 dev 网关白名单** — 当前 `agent-tools:contract` job 因 dev 网关返 403（鉴权前拦截）暂设 `allow_failure: true`；白名单生效后移除该 flag 恢复 strict 契约校验
 - [ ] **mirror repo 补 `CONTRIBUTING.md`** — 说明这是单向 mirror，issue 欢迎，PR 会被 cherry-pick 回主仓
 - [ ] **mirror repo About 段** — 描述 + topics（`mcp`、`agent-tools`、`claude-code`、`sciverse`）提升 discoverability
+
+### v0.3 发版前置（计划中）
+
+- [ ] **CHANGELOG `[Unreleased]` → `[0.3.0]` 定型** — 加日期 + 一句话主题（"Agent self-discovery: list_catalog + Recipes"）
+- [ ] **版本号 bump 0.2.0 → 0.3.0** — `openapi.yaml` `info.version` + `x-sciverse-tools-version`；Python/TS SDK + MCP `package.json` 自动同步；ClawHub skill 单独 bump（`manifest.json` 由 0.1.5 → 0.1.6 含 list_catalog）
 
 ### 公告 / 链路稳定后细化
 
