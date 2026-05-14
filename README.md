@@ -267,7 +267,7 @@ export SCIVERSE_API_TOKEN=sv-...
 
 ## 路线图
 
-TODO 与发版计划在仓库根 [`TODO.md`](../TODO.md) 维护（与代码改动解耦，不在 `agent-tools/` 发布范围内）。
+TODO 与发版计划在仓库根 [`agent-tools-todo.md`](../agent-tools-todo.md) 维护（与代码改动解耦，不在 `agent-tools/` 发布范围内）。
 
 ## License
 
