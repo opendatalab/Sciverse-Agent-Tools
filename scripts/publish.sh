@@ -112,9 +112,7 @@ for i in 1 2 3; do
        --owner sciverse \
        --slug academic-retrieval \
        --version "${VERSION}" \
-       --name "sciverse academic retrieval" \
-       --source-repo "${GITHUB_REPOSITORY:-opendatalab/Sciverse-Agent-Tools}" \
-       --source-commit "${GITHUB_SHA:-HEAD}" 2>&1); then
+       --name "sciverse academic retrieval" 2>&1); then
     echo "${OUTPUT}"
     echo "ClawHub publish OK (attempt $i)"
     break

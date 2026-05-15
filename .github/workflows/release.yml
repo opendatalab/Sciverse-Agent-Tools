@@ -73,9 +73,6 @@ jobs:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
-          # 让 scripts/publish.sh 在 source-commit 用得到当前 sha
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_SHA: ${{ github.sha }}
         run: |
           # 用 npx 拉 semantic-release + 所需插件（避免 repo 加 package.json
           # 单独管理 dev deps）
