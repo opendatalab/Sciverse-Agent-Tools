@@ -1,3 +1,9 @@
+## [0.4.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.3...v0.4.4) (2026-05-15)
+
+### Bug Fixes
+
+* 5 tool 全面对齐 — README 重写 + __version__ 走 importlib.metadata + examples 补齐 dispatch ([78bb97f](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/78bb97f02c1718a96782affae7a8916470cb030e))
+
 ## [0.4.3](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.2...v0.4.3) (2026-05-15)
 
 ### Bug Fixes
