@@ -5,9 +5,10 @@ description: Use when the user needs academic paper retrieval — searching scie
 
 # SciVerse — Academic Paper Retrieval
 
-Retrieval skill for the SciVerse open platform. Exposes three tools
-for working with scientific literature: structured metadata search,
-semantic chunk retrieval for RAG, and byte-range content reading.
+Retrieval skill for the SciVerse open platform. Exposes five tools
+for working with scientific literature: field introspection,
+structured metadata search, semantic chunk retrieval for RAG,
+byte-range content reading, and figure / table image fetching.
 
 ## When to use
 
@@ -56,7 +57,7 @@ Optional: set `SCIVERSE_BASE_URL` to override the default API base URL
 
 ## Tools
 
-All three tools are exposed by the MCP server. Claude Code will surface
+All five tools are exposed by the MCP server. Claude Code will surface
 them automatically when this skill is active.
 
 ### search_papers

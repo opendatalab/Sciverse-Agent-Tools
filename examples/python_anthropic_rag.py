@@ -1,4 +1,8 @@
-"""端到端示例：使用 Anthropic + SciVerse 三个 tool 跑一次 RAG。
+"""端到端示例：使用 Anthropic + SciVerse 五个 tool 跑一次 RAG。
+
+`ANTHROPIC_TOOLS` 包含全部 5 个 schema（list_catalog / search_papers /
+semantic_search / read_content / get_resource），dispatch 表必须覆盖
+全部，否则模型一调没接的 tool 就会 fall through。
 
 运行：
     pip install anthropic sciverse
@@ -7,6 +11,7 @@
     python examples/python_anthropic_rag.py
 """
 import asyncio
+import base64
 import json
 import os
 
@@ -18,12 +23,18 @@ TOKEN = os.environ["SCIVERSE_API_TOKEN"]
 
 
 async def call_tool(client: AgentToolsClient, name: str, args: dict) -> dict:
+    if name == "list_catalog":
+        return await client.list_catalog(**args)
     if name == "search_papers":
         return await client.search_papers(**args)
     if name == "semantic_search":
         return await client.semantic_search(**args)
     if name == "read_content":
         return await client.read_content(**args)
+    if name == "get_resource":
+        # 二进制 → base64，agent 可直接当 image block 使用
+        img_bytes, mime = await client.get_resource(**args)
+        return {"data": base64.b64encode(img_bytes).decode(), "mime_type": mime}
     raise ValueError(f"unknown tool {name}")
 
 

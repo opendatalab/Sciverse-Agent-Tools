@@ -1,4 +1,7 @@
-"""端到端示例：使用 OpenAI function calling + SciVerse 三个 tool。
+"""端到端示例：使用 OpenAI function calling + SciVerse 五个 tool。
+
+`OPENAI_TOOLS` 包含全部 5 个 schema；dispatch 表必须全覆盖，否则模型
+调到没接的 tool 时 KeyError。
 
 运行：
     pip install openai sciverse
@@ -7,6 +10,7 @@
     python examples/python_openai_function_call.py
 """
 import asyncio
+import base64
 import json
 import os
 
@@ -15,6 +19,19 @@ from sciverse import OPENAI_TOOLS, AgentToolsClient
 
 BASE_URL = os.environ.get("SCIVERSE_BASE_URL", "https://api.sciverse.space")
 TOKEN = os.environ["SCIVERSE_API_TOKEN"]
+
+
+async def call_tool(sv: AgentToolsClient, name: str, args: dict):
+    if name == "get_resource":
+        img_bytes, mime = await sv.get_resource(**args)
+        return {"data": base64.b64encode(img_bytes).decode(), "mime_type": mime}
+    handler = {
+        "list_catalog": sv.list_catalog,
+        "search_papers": sv.search_papers,
+        "semantic_search": sv.semantic_search,
+        "read_content": sv.read_content,
+    }[name]
+    return await handler(**args)
 
 
 async def main(question: str) -> None:
@@ -34,12 +51,7 @@ async def main(question: str) -> None:
                 return
             for call in msg.tool_calls:
                 args = json.loads(call.function.arguments)
-                handler = {
-                    "search_papers": sv.search_papers,
-                    "semantic_search": sv.semantic_search,
-                    "read_content": sv.read_content,
-                }[call.function.name]
-                result = await handler(**args)
+                result = await call_tool(sv, call.function.name, args)
                 messages.append({
                     "role": "tool",
                     "tool_call_id": call.id,

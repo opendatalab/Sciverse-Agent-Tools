@@ -1,4 +1,6 @@
 """SciVerse Agent Tools - Python SDK."""
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
 from sciverse.client import AgentToolsClient
 from sciverse.credentials import (
     credentials_path,
@@ -10,7 +12,11 @@ from sciverse.credentials import (
 )
 from sciverse.tools import OPENAI_TOOLS, ANTHROPIC_TOOLS, TOOLS_VERSION
 
-__version__ = "0.3.0"
+try:
+    __version__ = _pkg_version("sciverse")
+except PackageNotFoundError:
+    __version__ = "0.0.0+unknown"
+
 __all__ = [
     "AgentToolsClient",
     "OPENAI_TOOLS",

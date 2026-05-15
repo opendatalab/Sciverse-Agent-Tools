@@ -23,9 +23,11 @@ export SCIVERSE_API_TOKEN=sv-xxx       # obtain from https://sciverse.space
 
 | Tool | Purpose |
 |---|---|
+| `list_catalog` | Field introspection (call once to learn available fields + enum values) |
 | `search_papers` | Structured metadata search (authors/year/journal/subjects) |
 | `semantic_search` | Natural-language semantic chunk retrieval (for RAG) |
 | `read_content` | Byte-range read of a paper's original text |
+| `get_resource` | Fetch figure / table image bytes referenced inside `read_content` Markdown |
 
 See `SKILL.md` for full agent-facing documentation.
 
@@ -71,9 +73,11 @@ export SCIVERSE_API_TOKEN=sv-xxx   # 从 https://sciverse.space 控制台申请
 
 | Tool | 用途 |
 |---|---|
+| `list_catalog` | 字段 introspection（首次接入调一次，学习可用字段和 enum 取值） |
 | `search_papers` | 按作者/年份/期刊/学科结构化检索文献元数据 |
 | `semantic_search` | 自然语言语义检索文献片段（RAG 用） |
 | `read_content` | 按字节区间读取文献原文片段 |
+| `get_resource` | 取 `read_content` Markdown 中引用的图片字节流（多模态 RAG） |
 
 agent 视角的完整文档见 `SKILL.md`（英文）。
 

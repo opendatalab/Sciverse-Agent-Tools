@@ -2,19 +2,73 @@
 
 **English** | [简体中文](./README.zh-CN.md)
 
-Standardized tool schemas and SDKs that expose SciVerse Open Platform retrieval capabilities to LLM agents.
+Standardized tool schemas and SDKs that expose [SciVerse Open Platform](https://sciverse.space) academic retrieval capabilities to LLM agents.
 
 | Tool | Use case |
 |---|---|
+| `list_catalog` | Discover available fields, filter operators, and enum sample values |
 | `search_papers` | Structured metadata search (author / year / journal / discipline) |
 | `semantic_search` | Natural-language semantic search over passages (RAG) |
 | `read_content` | Fetch a byte-range slice of the source document (extend RAG context) |
+| `get_resource` | Fetch figure / table image bytes referenced inside `read_content` Markdown |
 
-## 5-minute quickstart
+All five tools share the same Bearer-Token authentication and are exposed identically through the Python SDK, the TypeScript SDK, the MCP server, the Claude Code skill, and the ClawHub skill. The canonical schema is [`openapi.yaml`](./openapi.yaml).
+
+## Pick your integration path
+
+| Path | Best for | Setup |
+|---|---|---|
+| **Claude Code skill** | Anyone using Claude Code / VS Code | One-line install via Plugin Marketplace (below) |
+| **MCP server** | Any MCP-capable coding agent (Cursor, Codex CLI, Windsurf, …) | Add to `.mcp.json` — [integration guides](./docs/integrations/) |
+| **Python / TypeScript SDK** | Custom agents (OpenAI / Anthropic / LangChain / LlamaIndex / …) | `pip install sciverse` or `npm install sciverse` |
+| **CLI** | Shell scripts, quick exploration, no agent loop | Comes with the Python SDK — `sciverse auth login` |
+
+## Quickstart — Claude Code
+
+```bash
+claude /plugin marketplace add https://github.com/opendatalab/Sciverse-Agent-Tools
+claude /plugin install sciverse
+```
+
+The skill depends on `sciverse-mcp-server`; install it once:
+
+```bash
+npm install -g sciverse-mcp-server
+export SCIVERSE_API_TOKEN=sv-...     # get one from https://sciverse.space
+```
+
+Or declare the MCP server per-project — see [`skill-claude-code/SKILL.md`](./skill-claude-code/SKILL.md).
+
+## Quickstart — other MCP-capable agents
+
+Drop this snippet into your agent's MCP config (`.mcp.json` for Claude Code / Cursor, `~/.codex/config.toml` for Codex CLI, etc.):
+
+```json
+{
+  "mcpServers": {
+    "sciverse": {
+      "command": "npx",
+      "args": ["-y", "sciverse-mcp-server"],
+      "env": { "SCIVERSE_API_TOKEN": "${SCIVERSE_API_TOKEN}" }
+    }
+  }
+}
+```
+
+Per-agent step-by-step guides:
+
+| Agent | Guide |
+|---|---|
+| Claude Code | [docs/integrations/claude-code.md](./docs/integrations/claude-code.md) |
+| Cursor | [docs/integrations/cursor.md](./docs/integrations/cursor.md) |
+| Codex CLI | [docs/integrations/codex-cli.md](./docs/integrations/codex-cli.md) |
+| Windsurf | [docs/integrations/windsurf.md](./docs/integrations/windsurf.md) |
+
+## Quickstart — SDK
 
 ### 1. Get a Bearer token
 
-Sign in to the [SciVerse Developer Console](https://sciverse.space) and request an API token.
+Sign in to the [SciVerse Developer Console](https://sciverse.space) and create an API token.
 
 ### 2. Install the SDK
 
@@ -26,7 +80,21 @@ pip install sciverse
 npm install sciverse
 ```
 
-### 3. Direct calls
+### 3. Configure credentials (any one of the three)
+
+```bash
+# A. Environment variable (recommended for servers / CI)
+export SCIVERSE_API_TOKEN=sv-...
+
+# B. Persisted credentials file (recommended for local dev — ~/.sciverse/credentials.json, 0600)
+sciverse auth login
+
+# C. Pass token explicitly to the client (recommended only when secrets come from a vault)
+```
+
+Resolution order: explicit argument → `SCIVERSE_API_TOKEN` env → `~/.sciverse/credentials.json`.
+
+### 4. Call the SDK
 
 **Python:**
 
@@ -35,10 +103,8 @@ import asyncio
 from sciverse import AgentToolsClient
 
 async def main():
-    async with AgentToolsClient(
-        base_url="https://api.sciverse.space",
-        token="<TOKEN>",
-    ) as c:
+    # token / base_url omitted — resolved from env or credentials file
+    async with AgentToolsClient() as c:
         r = await c.semantic_search(query="Transformer attention mechanism")
         for hit in r["hits"][:3]:
             print(hit["title"], hit["score"])
@@ -51,16 +117,12 @@ asyncio.run(main())
 ```ts
 import { AgentToolsClient } from "sciverse";
 
-const c = new AgentToolsClient({
-  baseUrl: "https://api.sciverse.space",
-  token: process.env.SCIVERSE_API_TOKEN!,
-});
-
+const c = new AgentToolsClient();  // reads SCIVERSE_API_TOKEN from env
 const r: any = await c.semanticSearch({ query: "Transformer attention mechanism" });
 r.hits.slice(0, 3).forEach((h: any) => console.log(h.title, h.score));
 ```
 
-### 4. Plug into an agent framework
+### 5. Plug into an agent framework
 
 **Anthropic Claude (Python):**
 
@@ -72,7 +134,7 @@ client = Anthropic()
 msg = client.messages.create(
     model="claude-opus-4-7",
     max_tokens=2048,
-    tools=ANTHROPIC_TOOLS,
+    tools=ANTHROPIC_TOOLS,   # all 5 tool schemas
     messages=[{"role": "user", "content": "Find a few papers on Transformers"}]
 )
 ```
@@ -91,57 +153,80 @@ const resp = await openai.chat.completions.create({
 });
 ```
 
-End-to-end examples (including the tool-calling loop) live in [`examples/`](./examples/):
+End-to-end examples (full tool-calling loop) live in [`examples/`](./examples/):
 
 **Direct SDK use (you own the tool-calling loop):**
 
-- `python_anthropic_rag.py` — Anthropic + a 3-tool RAG agent
+- `python_anthropic_rag.py` — Anthropic + 5-tool RAG agent
 - `python_openai_function_call.py` — OpenAI function calling
 - `ts_openai.ts` — TypeScript + OpenAI
 - `ts_langchain_agent.ts` — TypeScript + LangChain
 
 **Agent SDKs (the SDK drives the agent loop, closer to coding-agent style):**
 
-- `python_claude_agent_sdk.py` — Claude Agent SDK + the `sciverse-mcp-server` MCP server
-- `ts_openai_agents.ts` — `@openai/agents` + the `sciverse-mcp-server` MCP server
+- `python_claude_agent_sdk.py` — Claude Agent SDK + `sciverse-mcp-server`
+- `ts_openai_agents.ts` — `@openai/agents` + `sciverse-mcp-server`
+
+## CLI
+
+The `sciverse` Python package ships with a CLI:
+
+```bash
+sciverse auth login                                  # paste token, saved to ~/.sciverse/credentials.json
+sciverse auth status                                 # show resolved token source + endpoint
+sciverse auth logout                                 # delete credentials file
+
+sciverse catalog --samples                           # list_catalog with enum samples
+sciverse search --author Hinton --year-from 2020     # search_papers
+sciverse semantic-search "attention mechanism"       # semantic_search
+sciverse content <doc_id> --offset 0 --limit 4096    # read_content
+sciverse resource <file_name> -o figure.png          # get_resource (binary → file)
+```
+
+JSON goes to stdout (pipe through `| jq`), errors to stderr.
 
 ## API at a glance
 
 ### Python SDK
 
 ```python
-async with AgentToolsClient(base_url=..., token=...) as c:
-    # 1. Structured search
+async with AgentToolsClient() as c:           # token from env / credentials file
+    # 1. Field discovery — call once when first integrating
+    await c.list_catalog(include_sample_values=True)
+    # 2. Structured search
     await c.search_papers(query=..., authors=[...], year_from=2020, page_size=10)
-    # 2. Semantic search (mode: fast / balanced / quality)
+    # 3. Semantic search (mode: fast / balanced / quality)
     await c.semantic_search(query=..., top_k=10, mode="balanced")
-    # 3. Read a byte range of the source content
+    # 4. Byte-range read of original content
     await c.read_content(doc_id=..., offset=0, limit=4096)
+    # 5. Figure / table image bytes (multimodal RAG)
+    img_bytes, mime = await c.get_resource(file_name="dt=.../p_.../f3.png")
 ```
 
-Return values are typed as `dict[str, Any]`. **The full response schema lives in [`openapi.yaml`](./openapi.yaml).**  
+Return values are typed as `dict[str, Any]`. **The full response schema lives in [`openapi.yaml`](./openapi.yaml).**
 Advanced users can `from sciverse.types import SearchPapersRequest, ...` for typed construction and validation.
 
-**Long-lived client** (e.g. a web server or agent runtime where the client outlives a single request):
+**Long-lived client** (web server, agent runtime — outlives a single request):
 
 ```python
-client = AgentToolsClient(base_url="https://api.sciverse.space", token=TOKEN)
+client = AgentToolsClient()
 try:
-    # Reuse the client across many requests
     while serving:
         r = await client.semantic_search(query=...)
         ...
 finally:
-    await client.aclose()  # Explicitly close the underlying httpx connection pool
+    await client.aclose()   # close underlying httpx connection pool
 ```
 
 ### TypeScript SDK
 
 ```ts
-const c = new AgentToolsClient({ baseUrl, token });
+const c = new AgentToolsClient();   // token from env
+await c.listCatalog({ include_sample_values: true });
 await c.searchPapers({ query, authors, year_from, page_size });
 await c.semanticSearch({ query, top_k, mode });
 await c.readContent({ doc_id, offset, limit });
+const { bytes, mimeType } = await c.getResource({ file_name });
 ```
 
 Return values are typed as `unknown` — cast them yourself:
@@ -177,27 +262,44 @@ try {
 | HTTP status | Meaning |
 |---|---|
 | 401 | Token missing or invalid |
-| 400 | Bad request parameters |
-| 429 | Quota exceeded (production gateway only) |
+| 400 | Bad request parameters (e.g. unknown filter field — call `list_catalog` to discover valid fields) |
+| 429 | Quota / rate limit exceeded (production gateway only) |
 | 502 / 503 | Upstream service unavailable |
 
-## How the three tools compose
+## How the five tools compose
 
-A typical RAG flow:
+**1. Natural-language RAG (the common case):**
 
 ```
 semantic_search(query="...")
-    └─▶ hits[i].doc_id, hits[i].offset
-            └─▶ read_content(doc_id, offset)  # fetch extended context
+    └─▶ for each hit: read_content(doc_id, offset, limit=8192)
+            └─▶ cite doc_id + title in the answer
 ```
 
-Filter + semantic hybrid:
+**2. Bootstrap then filter precisely:**
 
 ```
-search_papers(authors=[...], year_from=2020)  # narrow by structured filters first
+list_catalog(include_sample_values=true)         # first time only — learn fields + enum values
+    └─▶ search_papers(filters_advanced=[...])    # construct precise filters
+```
+
+**3. Structured pre-filter + semantic refine (hybrid):**
+
+```
+search_papers(authors=[...], year_from=2020)     # narrow by structured filters first
     └─▶ list of hits[].doc_id
-            └─▶ semantic_search(query="...")  # semantic search within the narrowed set
-                                              # (SDK limitation: filter the second pass yourself)
+            └─▶ semantic_search(query="...")     # semantic search within the narrowed set
+                                                 # (filter the second pass yourself —
+                                                 #  semantic_search has no doc_id whitelist)
+```
+
+**4. Multimodal RAG with figures:**
+
+```
+semantic_search(query="...")
+    └─▶ read_content(doc_id, offset) returns Markdown containing ![Fig 3](dt=xxx/p_yyy/f3.png)
+            └─▶ get_resource(file_name="dt=xxx/p_yyy/f3.png")
+                    └─▶ image bytes + mime type — feed directly to a multimodal model
 ```
 
 ## Versioning & changelog
@@ -221,51 +323,6 @@ clawhub install sciverse
 ```
 
 See [`clawhub/README.md`](./clawhub/README.md) for details.
-
-## Claude Code users
-
-SciVerse ships an official Claude Code Agent Skill (a parallel skill format to OpenClaw).
-
-**Option 1: via the Plugin Marketplace (recommended)**
-
-```bash
-claude /plugin marketplace add https://github.com/opendatalab/Sciverse-Agent-Tools
-claude /plugin install sciverse
-```
-
-**Option 2: manual install**
-
-Copy the entire `skill-claude-code/` directory into one of Claude Code's skill load paths:
-
-```bash
-# User-level
-cp -r skill-claude-code ~/.claude/skills/sciverse
-
-# Or project-level
-cp -r skill-claude-code .claude/skills/sciverse
-```
-
-**Pair with the MCP server**
-
-The Claude Code skill depends on `sciverse-mcp-server` (maintained by a sibling agent). Install it first:
-
-```bash
-npm install -g sciverse-mcp-server
-export SCIVERSE_API_TOKEN=sv-...
-```
-
-Or declare it in your project's `.mcp.json` — see `skill-claude-code/SKILL.md`.
-
-## Other coding agents
-
-Plug into mainstream coding agents through the [`sciverse-mcp-server`](./packages/mcp/) MCP server:
-
-| Agent | Integration guide |
-|---|---|
-| Claude Code | [docs/integrations/claude-code.md](./docs/integrations/claude-code.md) |
-| Cursor | [docs/integrations/cursor.md](./docs/integrations/cursor.md) |
-| Codex CLI | [docs/integrations/codex-cli.md](./docs/integrations/codex-cli.md) |
-| Windsurf | [docs/integrations/windsurf.md](./docs/integrations/windsurf.md) |
 
 ## License
 

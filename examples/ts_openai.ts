@@ -1,5 +1,8 @@
 /**
- * 端到端示例：TypeScript + OpenAI function calling + SciVerse 三个 tool。
+ * 端到端示例：TypeScript + OpenAI function calling + SciVerse 五个 tool。
+ *
+ * `OPENAI_TOOLS` 包含全部 5 个 schema；dispatch 表必须全覆盖，否则模型
+ * 调到没接的 tool 时返回 undefined。
  *
  * 运行：
  *   npm install openai sciverse tsx
@@ -15,9 +18,14 @@ const sv = new AgentToolsClient({
 const openai = new OpenAI();
 
 const dispatch: Record<string, (args: any) => Promise<any>> = {
+  list_catalog: (a) => sv.listCatalog(a),
   search_papers: (a) => sv.searchPapers(a),
   semantic_search: (a) => sv.semanticSearch(a),
   read_content: (a) => sv.readContent(a),
+  get_resource: async (a) => {
+    const { bytes, mimeType } = await sv.getResource(a);
+    return { data: Buffer.from(bytes).toString("base64"), mime_type: mimeType };
+  },
 };
 
 async function main(question: string) {

@@ -8,7 +8,7 @@
 - Node.js 18+
 - Claude Code 已安装
 
-## 接入方式 A：MCP server（推荐，三个 tool 全开）
+## 接入方式 A：MCP server（推荐，五个 tool 全开）
 
 ### 用 `claude mcp add` 一行命令
 
