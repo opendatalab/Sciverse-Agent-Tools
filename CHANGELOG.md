@@ -1,3 +1,5 @@
+## [0.4.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.1...v0.4.2) (2026-05-15)
+
 # Changelog
 
 All notable changes to `sciverse` are documented here.
