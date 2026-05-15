@@ -4,13 +4,13 @@
  * 把 SciVerse client 包装成 DynamicStructuredTool 给 LangGraph / Agent 使用。
  *
  * 运行：
- *   npm install @langchain/openai @langchain/core zod sciverse-agent-tools tsx
+ *   npm install @langchain/openai @langchain/core zod sciverse tsx
  *   SCIVERSE_API_TOKEN=... OPENAI_API_KEY=... npx tsx examples/ts_langchain_agent.ts
  */
 import { ChatOpenAI } from "@langchain/openai";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-import { AgentToolsClient } from "sciverse-agent-tools";
+import { AgentToolsClient } from "sciverse";
 
 const sv = new AgentToolsClient({
   baseUrl: process.env.SCIVERSE_BASE_URL ?? "https://api.sciverse.space",

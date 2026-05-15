@@ -1,7 +1,7 @@
 import pytest
 import respx
 from httpx import Response
-from sciverse_agent_tools import AgentToolsClient
+from sciverse import AgentToolsClient
 
 
 @pytest.mark.asyncio

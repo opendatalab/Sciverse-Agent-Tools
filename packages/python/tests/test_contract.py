@@ -3,7 +3,7 @@ import os
 import httpx
 import pytest
 
-from sciverse_agent_tools import AgentToolsClient
+from sciverse import AgentToolsClient
 
 pytestmark = pytest.mark.skipif(
     not (os.getenv("SCIVERSE_TEST_TOKEN") and os.getenv("SCIVERSE_TEST_BASE_URL")),

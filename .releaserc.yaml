@@ -1,0 +1,74 @@
+# semantic-release config。
+#
+# 每次 push 到 main 后 GitHub Actions 的 release.yml workflow 会跑
+# semantic-release：算 next version → bump 五处 version 文件 → 重派生
+# dist/ + tools.* + SKILL.md → 串行发 PyPI / npm / ClawHub → commit
+# bump 改动 + 创建 GitHub Release。
+tagFormat: "v${version}"
+branches:
+  - main
+plugins:
+  # 1. 分析 commit message 决定 next version
+  - - "@semantic-release/commit-analyzer"
+    - preset: conventionalcommits
+      releaseRules:
+        - type: feat
+          release: minor
+        - type: fix
+          release: patch
+        - type: perf
+          release: patch
+        - type: refactor
+          release: patch
+        - type: docs
+          release: patch
+        - type: chore
+          # build / CI / 文档机械改动一般不需要发版
+          release: false
+        - type: style
+          release: false
+        - type: test
+          release: false
+        - breaking: true
+          release: major
+
+  # 2. 生成 release notes
+  - - "@semantic-release/release-notes-generator"
+    - preset: conventionalcommits
+
+  # 3. 把 release notes 追加到 CHANGELOG.md
+  - "@semantic-release/changelog"
+
+  # 4. 同步 agent-tools 五处 version 文件 + 重派生（dist/ + tools.* +
+  #    SKILL.md 等），统一版本号
+  - - "@semantic-release/exec"
+    - prepareCmd: "node scripts/bump-versions.mjs ${nextRelease.version}"
+      # publishCmd 在每次 release 触发后跑，串行发 PyPI / npm / ClawHub
+      publishCmd: "bash scripts/publish.sh ${nextRelease.version}"
+
+  # 5. commit bump 改动 + 派生产物 + tag
+  - - "@semantic-release/git"
+    - assets:
+        - openapi.yaml
+        - packages/python/pyproject.toml
+        - packages/python/uv.lock
+        - packages/typescript/package.json
+        - packages/mcp/package.json
+        - packages/mcp/package-lock.json
+        - clawhub/manifest.json
+        - clawhub/SKILL.md
+        - skill-claude-code/SKILL.md
+        - .claude-plugin/marketplace.json
+        - dist/**
+        - packages/python/src/sciverse/tools.py
+        - packages/python/src/sciverse/types.py
+        - packages/typescript/src/tools.ts
+        - packages/typescript/src/types.ts
+        - CHANGELOG.md
+      message: |
+        chore(release): v${nextRelease.version} [skip ci]
+
+        ${nextRelease.notes}
+
+  # 6. 创建 GitHub Release 页（含 release notes + 产物链接）
+  - "@semantic-release/github"

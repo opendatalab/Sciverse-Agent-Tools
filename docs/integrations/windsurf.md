@@ -64,4 +64,4 @@ agent 会先调 `list_catalog` 学 schema 再构造 `search_papers` filter。
 
 - **企业代理**：在 `env` 里加 `HTTPS_PROXY` 让 `npx` / fetch 走公司代理
 - **自定义 base URL**：在 `env` 加 `SCIVERSE_BASE_URL=https://api.sciverse.space`（仅 `*.sciverse.space` 子域名被接受，防 token 泄漏）
-- **降级到 SDK**：若 Windsurf 版本不支持 MCP，可在 Codeium Chat 里用 [`sciverse-agent-tools`](../../packages/typescript/) npm 包做 function calling
+- **降级到 SDK**：若 Windsurf 版本不支持 MCP，可在 Codeium Chat 里用 [`sciverse`](../../packages/typescript/) npm 包做 function calling

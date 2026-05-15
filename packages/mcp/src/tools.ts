@@ -8,9 +8,15 @@ import type { Config } from "./config.js";
 import { ENDPOINTS } from "./generated/tools.js";
 import { randomUUID } from "node:crypto";
 
+// MCP content block 类型：text（普通响应）+ image（get_resource binary）。
+// image type 是 MCP 1.0 标准能力，data 为 base64，mimeType 必填。
+export type ContentBlock =
+  | { type: "text"; text: string }
+  | { type: "image"; data: string; mimeType: string };
+
 export interface ToolResult {
   isError: boolean;
-  content: { type: "text"; text: string }[];
+  content: ContentBlock[];
 }
 
 interface FilterEntry {
@@ -66,7 +72,7 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
   return out;
 }
 
-const SKILL_NAME = "sciverse-academic-retrieval";
+const SKILL_NAME = "sciverse";
 const CHANNEL = "mcp";
 const PLATFORM = process.platform;
 
@@ -122,6 +128,45 @@ function safeParse(text: string): unknown {
   }
 }
 
+async function callBinary(
+  config: Config,
+  path: string,
+  query: Record<string, unknown>,
+): Promise<ToolResult> {
+  const url = new URL(`${config.baseUrl}${path}`);
+  for (const [k, v] of Object.entries(query)) {
+    if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+  }
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      authorization: `Bearer ${config.token}`,
+      accept: "image/*",
+      "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
+    },
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    return {
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ status: res.status, body: safeParse(body) }, null, 2),
+        },
+      ],
+    };
+  }
+  const mimeType = (res.headers.get("content-type") || "application/octet-stream")
+    .split(";")[0]!
+    .trim();
+  const buf = Buffer.from(await res.arrayBuffer());
+  return {
+    isError: false,
+    content: [{ type: "image", data: buf.toString("base64"), mimeType }],
+  };
+}
+
 export async function executeTool(
   config: Config,
   name: string,
@@ -159,6 +204,16 @@ export async function executeTool(
         };
       }
       return call(config, "GET", endpoint.path, { query: { doc_id, offset, limit } });
+    }
+    case "get_resource": {
+      const { file_name } = args as { file_name?: string };
+      if (!file_name) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: JSON.stringify({ error: "file_name is required" }) }],
+        };
+      }
+      return callBinary(config, endpoint.path, { file_name });
     }
     default:
       return {

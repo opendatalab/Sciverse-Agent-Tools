@@ -49,6 +49,18 @@ export interface paths {
      */
     get: operations["read_content"];
   };
+  "/resource": {
+    /**
+     * 取文献附属图片（论文中的 Figure / Table 等）
+     * @description 按文件名取文献中嵌入的图片字节流（PNG / JPG 等）。
+     * 触发场景：read_content 返回的 Markdown 中含 `![alt](file_name)` 形式的图片占位，
+     * agent 需要把图给用户看时调本接口。
+     * 入参 file_name 来自 markdown 内的 url 段（相对路径，禁止 `\\` 或 `..`）。
+     * 返回：HTTP 二进制流 + image/* Content-Type。
+     * SDK / MCP server 包装层会做 base64 + mime 转换以便 agent 多模态使用。
+     */
+    get: operations["get_resource"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -326,6 +338,36 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["ReadContentResponse"];
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      502: components["responses"]["BadGateway"];
+    };
+  };
+  /**
+   * 取文献附属图片（论文中的 Figure / Table 等）
+   * @description 按文件名取文献中嵌入的图片字节流（PNG / JPG 等）。
+   * 触发场景：read_content 返回的 Markdown 中含 `![alt](file_name)` 形式的图片占位，
+   * agent 需要把图给用户看时调本接口。
+   * 入参 file_name 来自 markdown 内的 url 段（相对路径，禁止 `\\` 或 `..`）。
+   * 返回：HTTP 二进制流 + image/* Content-Type。
+   * SDK / MCP server 包装层会做 base64 + mime 转换以便 agent 多模态使用。
+   */
+  get_resource: {
+    parameters: {
+      query: {
+        /** @description 图片相对路径，来自 read_content Markdown 中的 `![alt](file_name)` 占位。禁止 `\\` 与 `..`，不能以 `/` 开头。 */
+        file_name: string;
+      };
+    };
+    responses: {
+      /** @description 图片二进制流 */
+      200: {
+        content: {
+          "image/png": string;
+          "image/jpeg": string;
+          "image/*": string;
         };
       };
       400: components["responses"]["BadRequest"];

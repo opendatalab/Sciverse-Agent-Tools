@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.1",
   "tools": [
     {
       "type": "function",
@@ -197,6 +197,25 @@
           },
           "required": [
             "doc_id"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_resource",
+        "description": "按文件名取文献中嵌入的图片字节流（PNG / JPG 等）。\n触发场景：read_content 返回的 Markdown 中含 `![alt](file_name)` 形式的图片占位，\nagent 需要把图给用户看时调本接口。\n入参 file_name 来自 markdown 内的 url 段（相对路径，禁止 `\\\\` 或 `..`）。\n返回：HTTP 二进制流 + image/* Content-Type。\nSDK / MCP server 包装层会做 base64 + mime 转换以便 agent 多模态使用。",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "file_name": {
+              "type": "string",
+              "description": "图片相对路径，来自 read_content Markdown 中的 `![alt](file_name)` 占位。禁止 `\\\\` 与 `..`，不能以 `/` 开头。"
+            }
+          },
+          "required": [
+            "file_name"
           ]
         }
       }

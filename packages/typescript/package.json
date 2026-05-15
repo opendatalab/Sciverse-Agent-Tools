@@ -1,16 +1,16 @@
 {
-  "name": "sciverse-agent-tools",
-  "version": "0.3.0",
+  "name": "sciverse",
+  "version": "0.4.1",
   "description": "SciVerse Agent Tools — OpenAI/Anthropic/LangChain compatible tool schema and async client for SciVerse retrieval APIs",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/opendatalab/SciVerse-agent-tools/tree/main/packages/typescript",
+  "homepage": "https://github.com/opendatalab/Sciverse-Agent-Tools/tree/main/packages/typescript",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/opendatalab/SciVerse-agent-tools.git",
+    "url": "git+https://github.com/opendatalab/Sciverse-Agent-Tools.git",
     "directory": "packages/typescript"
   },
   "bugs": {
-    "url": "https://github.com/opendatalab/SciVerse-agent-tools/issues"
+    "url": "https://github.com/opendatalab/Sciverse-Agent-Tools/issues"
   },
   "author": "SciVerse Platform Team",
   "keywords": [

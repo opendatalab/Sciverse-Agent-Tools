@@ -104,6 +104,18 @@ a doc_id/offset returned by semantic_search to expand context (read
 more bytes before or after a chunk).
 Returns: text fragment, bytes_returned, next_offset, more (boolean).
 
+### get_resource
+
+Returns the binary bytes of a paper figure / table image referenced
+inside read_content's Markdown via `![alt](file_name)` placeholders.
+Use when the user asks to see / display / describe a figure and
+read_content output contains an image reference.
+Input file_name comes from the Markdown URL part (relative path,
+no `\\` or `..`).
+Returns: raw image stream + image/* Content-Type. The SDK / MCP
+server wraps the bytes as base64 + mimeType so Claude (multimodal)
+can read the image directly.
+
 ## Bootstrap: learn the schema first
 
 If you don't yet know which fields exist or what values they take
@@ -171,6 +183,19 @@ search_papers(authors=["Hinton"], year_from=2020, page_size=50)
     └─▶ collect hits[].doc_id list
 semantic_search(query="attention", top_k=20)
     └─▶ filter hits to those whose doc_id appears in step-1 list
+```
+
+**6. Show a figure / image from the paper:**
+
+When `read_content` Markdown contains `![alt](file_name)` placeholders
+and the user wants to see the figure (e.g. "show me Figure 3"),
+fetch the binary with `get_resource`. The MCP server wraps the bytes
+as a base64 image content block so Claude can read it directly.
+
+```
+read_content(doc_id, offset) → markdown with ![Figure 3](dt=xxx/p_yyy/f3.png)
+    └─▶ get_resource(file_name="dt=xxx/p_yyy/f3.png")
+    └─▶ Claude sees the image inline
 ```
 
 ## Notes for Claude

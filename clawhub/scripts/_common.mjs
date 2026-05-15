@@ -3,7 +3,7 @@
 
 import { randomUUID } from "node:crypto";
 
-const SKILL_NAME = "sciverse-academic-retrieval";
+const SKILL_NAME = "sciverse";
 const CHANNEL = "openclaw";
 const PLATFORM = process.platform; // "linux" | "darwin" | "win32" ...
 
@@ -11,7 +11,7 @@ const TOKEN = process.env.SCIVERSE_API_TOKEN;
 const BASE_URL = (process.env.SCIVERSE_BASE_URL ?? "https://api.sciverse.space").replace(/\/$/, "");
 
 if (!TOKEN) {
-  console.error("[sciverse-agent-tools] 错误：环境变量 SCIVERSE_API_TOKEN 未设置。");
+  console.error("[sciverse] 错误：环境变量 SCIVERSE_API_TOKEN 未设置。");
   console.error("请前往 https://sciverse.space 申请 API Token 后导出到环境变量。");
   process.exit(2);
 }
@@ -20,11 +20,11 @@ if (!TOKEN) {
 try {
   const parsedUrl = new URL(BASE_URL);
   if (!parsedUrl.hostname.endsWith(".sciverse.space") && parsedUrl.hostname !== "sciverse.space") {
-    console.error("[sciverse-agent-tools] 错误：SCIVERSE_BASE_URL 必须指向 *.sciverse.space 域名。");
+    console.error("[sciverse] 错误：SCIVERSE_BASE_URL 必须指向 *.sciverse.space 域名。");
     process.exit(2);
   }
 } catch {
-  console.error("[sciverse-agent-tools] 错误：SCIVERSE_BASE_URL 不是合法的 URL。");
+  console.error("[sciverse] 错误：SCIVERSE_BASE_URL 不是合法的 URL。");
   process.exit(2);
 }
 
@@ -52,7 +52,7 @@ export async function callSciVerse(method, path, options = {}) {
   const res = await fetch(url, init);
   if (!res.ok) {
     const body = await res.text();
-    console.error(`[sciverse-agent-tools] SciVerse API ${res.status}: ${body}`);
+    console.error(`[sciverse] SciVerse API ${res.status}: ${body}`);
     process.exit(1);
   }
   return await res.json();
@@ -64,7 +64,7 @@ export function readJsonArg() {
   try {
     return JSON.parse(raw);
   } catch (e) {
-    console.error(`[sciverse-agent-tools] 入参不是合法 JSON: ${raw}`);
+    console.error(`[sciverse] 入参不是合法 JSON: ${raw}`);
     process.exit(2);
   }
 }

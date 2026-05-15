@@ -1,27 +1,74 @@
+## [0.4.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.0...v0.4.1) (2026-05-15)
+
+### Changed
+- 从 sciverse-console monorepo 抽出，独立维护在 GitHub `opendatalab/Sciverse-Agent-Tools`。PyPI / npm / ClawHub 发布 + 版本号管理交给独立 repo 上的 semantic-release。
+- 仓库 URL 从 `SciVerse-agent-tools` 修正为 `Sciverse-Agent-Tools`（与 GitHub 实际仓库名一致），所有 packages metadata + README + Plugin Marketplace 链接同步更新。
+
+### Fixed
+- 修 GitHub Actions 上 `build.sh` 跑 rollup 缺 linux x64 binary（npm cli#4828），改用 `rm package-lock.json && npm install` 重新解析。
+- `publish.sh` 一系列稳定性修复：PyPI 步骤兼容已存在 venv、去重 `npm ci`、各步骤版本-exists check 实现幂等；ClawHub publish 改用 `npm install -g clawhub@latest` 取代 `npx clawhub@latest`（GitHub Actions ubuntu npm 11 misparses npx@latest 形式）。
+
 # Changelog
 
-All notable changes to `sciverse-agent-tools` are documented here.
+All notable changes to `sciverse` are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-05-14
+> v0.3 还未发版（CHANGELOG 段已定型，等合 main 触发 publish 链路）。
+> 累计内容：Agent self-discovery（list_catalog + Recipes）+ 论文图片
+> 取回（get_resource）+ Python CLI（`sciverse auth login`）+ breaking
+> rename（包名 → `sciverse`、目录 `skill/` → `clawhub/`）。
 
-Agent self-discovery：让 agent 能"先学 schema 再发查询"，避免猜字段名 / 枚举值。
+### Changed
+- **Breaking rename**：Python SDK 包名 / 模块名 + TypeScript SDK 包名统一改为 `sciverse`（最短可用名）：
+  - PyPI 包 `sciverse-agent-tools` → `sciverse`
+  - Python 模块目录 `src/sciverse_agent_tools/` → `src/sciverse/`，所有 `from sciverse_agent_tools` import 同步替换为 `from sciverse`
+  - npm 包 `sciverse-agent-tools` → `sciverse`（TS 导入同步）
+  - 用户层影响：`pip install sciverse` / `npm install sciverse`
+  - MCP server 包 `sciverse-mcp-server`、ClawHub skill `sciverse-academic-retrieval`、Claude Code skill `sciverse` 均不动（各有独立命名空间）
+- **目录重命名**：`agent-tools/skill/` → `agent-tools/clawhub/`，避免与 Claude Code 官方 skill（`skill-claude-code/`）混淆，直接对应 ClawHub 平台
+- GitHub Actions workflow `publish-skill.yml` 触发 paths / cp 源路径同步
+- **ClawHub publish 改为本地手动**：GitLab `agent-tools:publish-skill` job 整段注释；GitHub Actions `publish-skill.yml` rename 为 `.disabled` 后缀（GitHub Actions 不加载）。命令模板见仓库根 README.md「手动发布」段：`clawhub skill publish . --owner sciverse --slug academic-retrieval --version $(node -e "...") --name "sciverse academic retrieval"`。SDK / MCP server 的 PyPI / npm 自动发布不变。
+- **架构重构（2026-05-15）**：agent-tools 从 sciverse-console monorepo 抽出，独立维护在 GitHub `opendatalab/Sciverse-Agent-Tools`。PyPI / npm / ClawHub 发布 + 版本号管理交给独立 repo 上的 semantic-release。原因：monorepo 整体 semantic-release（`.releaserc.yaml` `scope: agent-tools, release: false`）显式排除 agent-tools，导致 SDK 版本号靠手动 bump 容易忘；但又不能直接接入 monorepo 主 release（不然 `fix(metadata-service)` 会污染 PyPI 包版本）；中间一度尝试过 GitLab → GitHub 单向 subtree mirror + semantic-release 跑在 mirror 上的方案，但 mirror 每次 force-push 会洗掉 semantic-release 的 chore commit + tag，最终落到独立 repo 方案。
+  - 主仓 GitLab 删除 `agent-tools/` 子目录 + 相关 CI job。
+  - 独立 repo 配 `.github/workflows/release.yml`（semantic-release 入口）+ `test.yml`（PR + push 测试套件）。
+  - `.releaserc.yaml`：commit-analyzer / release-notes-generator / changelog / exec(bump-versions + publish) / git / github 6 个 plugin 全链路。
+  - `scripts/bump-versions.mjs`：semantic-release prepareCmd 入口，同步 openapi.yaml / Python pyproject / TS package.json / MCP package.json / ClawHub manifest 五处 version 后跑 build.sh 重派生。
+  - `scripts/publish.sh`：semantic-release publishCmd 入口，串行发 PyPI / npm sciverse / npm sciverse-mcp-server / ClawHub（带 `--source-repo` + `--source-commit`），任一步失败 fast-fail。
+  - `CONTRIBUTING.md`：说明 issue / PR 直接到独立 repo + Conventional Commits 与版本号映射规则。
 
 ### Added
+- Python CLI `sciverse`（两类子命令）：
+  - **凭据管理**：`sciverse auth login [--token <t>] [--endpoint <url>] [--no-browser]` / `auth status` / `auth logout`
+  - **直接调检索 API**（JSON 到 stdout，可 `| jq`）：
+    - `sciverse search [QUERY] [--author --year-from --year-to --journal --subject --title-contains --sort-by-year --page --page-size]`
+    - `sciverse semantic-search QUERY [--top-k --mode]`
+    - `sciverse content DOC_ID [--offset --limit]`
+    - `sciverse catalog [--samples]`
+    - `sciverse resource FILE_NAME [-o out.png]`（不传 -o 时写 stdout，适合管道 `> figure.png`）
+  - 通过 `pyproject.toml [project.scripts]` 暴露，`pip install sciverse` / `pipx install sciverse` 后即可用
+- 共享凭据机制：`sciverse.credentials` 模块提供 `resolve_token()` / `resolve_endpoint()`，按 [显式参数 → 环境变量 → 凭据文件 → 默认值] 顺序解析。
+- `AgentToolsClient` 构造时 token / base_url 都变可选 —— 不传时按上述顺序 fallback，让 `pip install sciverse && sciverse auth login` 之后用户无须再传 token 即可跑 SDK。
+- TypeScript SDK + MCP server 加同款凭据 fallback：
+  - `packages/typescript/src/credentials.ts` 和 `packages/mcp/src/credentials.ts`（两个包独立维护同源契约：路径 `~/.sciverse/credentials.json`、JSON 格式、解析顺序）
+  - TS SDK `AgentToolsClient` options 改 `token?` / `baseUrl?`，都可省略，按 [显式 → SCIVERSE_API_TOKEN/SCIVERSE_BASE_URL env → 凭据文件 → 默认] 顺序
+  - MCP server `config.ts` 同样 fallback，启动失败信息引导用户跑 `pip install sciverse && sciverse auth login`
+  - 21 个新测试覆盖（TS 11 + MCP 10）：env 优先文件、文件 fallback、`*.sciverse.space` 域名白名单仍生效
+  - 现在跑一次 Python CLI 之后，**Python SDK + TS SDK + MCP server 三个客户端形态都自动认到凭据**，零额外配置
 - 新 tool `list_catalog`（第 4 个）—— 字段 introspection 接口。返回所有可用字段、类型、能否过滤/排序、默认返回字段集、FilterOperator 清单；`include_sample_values=true` 时拉取 enum-like 字段的 top-20 取值样本（OpenSearch terms aggregation，缓存 24h）。Agent 在构造 `search_papers` 前先调用此接口学 schema，避免猜字段名 / 枚举值导致 0 hit 或 4xx。
 - metadata-service `MetadataService.GetCatalog` RPC + 57 字段全填 `description` 字段（业务说明）。
 - platform-console `GET /meta-catalog` 路由（与 meta-search 共享 60 req/60s 用户级额度）。
 - SKILL.md（ClawHub + Claude Code 两份）新增 "Bootstrap: learn the schema first" + "Recipes" 段，引导 agent 先调 list_catalog 再做精确查询，含 5 种典型组合 pattern（RAG / DOI 查找 / OA 过滤 / enum 字段过滤 / hybrid）。
 - 接入指南 4 篇（claude-code / cursor / codex-cli / windsurf）新增 "schema-aware 精确查询" Hello-world prompt。
 - `platform-console/metadata-guide.md` 增加 "Catalog 接口（字段 introspection）" 整节 + 字段总表前后加引导段，建议 agent / SDK 优先调 catalog 接口。
+- 新 tool `get_resource`（第 5 个）—— 取文献附属图片字节流。触发场景：`read_content` 返回的 Markdown 含 `![alt](file_name)` 占位时，agent 可调本接口拿图片 binary，MCP server 包装为 `image` content block + base64 + mimeType，Claude（multimodal）可直接读图。SDK 返回 `(bytes, mime_type)` tuple。SKILL.md Recipes 新增"展示论文图片"pattern。
 
-### Changed
+### Changed（v0.3 累计，续上 Changed 段）
 - `GetCatalogResponse` 移除 `index_name` 字段（后端 OpenSearch 实现细节不该暴露给外部）。诊断由 metadata-service 端 SLS app_logs 承担。
-- ClawHub skill version 由 0.1.5 → 0.1.6（含 list_catalog；skill 与 SDK 版本仍独立维护）。
+- ClawHub skill version 由 0.1.5 → 0.1.6（含 list_catalog；skill 与 SDK 版本仍独立维护，name 仍为 `sciverse-academic-retrieval` 不跟 SDK 包改名）。
 
 ## [0.2.0] - 2026-05-13
 
@@ -32,8 +79,8 @@ ClawHub skill 迁组织，公开 mirror 接通。
 - 新 npm 包 `sciverse-mcp-server`（`packages/mcp/`）—— stdio 形态 MCP server，把三个检索 tool 暴露给 Claude Code / Cursor / Codex CLI / Windsurf 等支持 MCP 的 coding agent。Tool schema 构建期从 `openapi.yaml` 派生。
 - Claude Code 官方 Agent Skill 形态派生（`skill-claude-code/`）+ Plugin Marketplace 入口（`.claude-plugin/marketplace.json`）。
 - 主流 coding agent 接入指南（Claude Code / Cursor / Codex CLI / Windsurf），见 `docs/integrations/`。
-- GitHub 公开 mirror `opendatalab/SciVerse-agent-tools` + GitLab CI `agent-tools:mirror-sync` job：main 分支变更后自动 `git subtree split` 推到 mirror，给社区可审计 source 链接（替代原 README 路线图中"v0.2 GitHub mirror"计划）。
-- README 中 Claude Code Plugin Marketplace URL 占位符替换为 `https://github.com/opendatalab/SciVerse-agent-tools`。
+- GitHub 公开 mirror `opendatalab/Sciverse-Agent-Tools` + GitLab CI `agent-tools:mirror-sync` job：main 分支变更后自动 `git subtree split` 推到 mirror，给社区可审计 source 链接（替代原 README 路线图中"v0.2 GitHub mirror"计划）。
+- README 中 Claude Code Plugin Marketplace URL 占位符替换为 `https://github.com/opendatalab/Sciverse-Agent-Tools`。
 
 ### Changed
 - ClawHub skill 迁到 `@sciverse` 组织：`name` 由 `sciverse-agent-tools` 改为 `sciverse-academic-retrieval`，slug `academic-retrieval`，安装命令 `openclaw skills install academic-retrieval`。
@@ -42,7 +89,7 @@ ClawHub skill 迁组织，公开 mirror 接通。
 - GitLab CI 新增 `agent-tools:release-mcp` job：main + `packages/mcp/**` 变更时 `npm publish` 到 npmjs.org；version 独立读 `packages/mcp/package.json`（不绑 openapi.yaml），tag 前缀 `sciverse-mcp-v` 区分于 SDK 的 `agent-tools-v`。
 - `examples/` 新增 Agent SDK 形态示例：`python_claude_agent_sdk.py`（Claude Agent SDK + `mcp_servers` 注入）和 `ts_openai_agents.ts`（`@openai/agents` + `MCPServerStdio`）。与已有的"自己写 tool calling 回环"示例互补，演示 coding-agent 风格 agent loop 由 SDK 处理。
 - 根级 `LICENSE`（Apache-2.0 全文）。
-- 三个发布包补全 metadata：`repository` / `homepage` / `bugs` / `documentation` / `changelog` URLs（指向 `github.com/opendatalab/SciVerse-agent-tools`），Python `pyproject.toml` 中原本拼写错误的 Homepage URL 一并修正。
+- 三个发布包补全 metadata：`repository` / `homepage` / `bugs` / `documentation` / `changelog` URLs（指向 `github.com/opendatalab/Sciverse-Agent-Tools`），Python `pyproject.toml` 中原本拼写错误的 Homepage URL 一并修正。
 - README API 速览段新增"长生命周期 client"段，演示手动 `await c.aclose()` 关闭连接池的用法（web server / agent runtime 场景）。
 
 ### Changed
@@ -79,7 +126,7 @@ ClawHub skill 迁组织，公开 mirror 接通。
 - 4 份端到端框架接入示例（Anthropic / OpenAI / LangChain × Python/TS）
 - GitLab CI：lint / test / 派生产物漂移检测 / 双包版本号一致性 / 契约测试 / main 分支 PyPI + npm release
 - Bearer Token 鉴权 + 错误透传（`httpx.HTTPStatusError` / `Error` 含 status code）
-- ClawHub skill bundle（`skill/`）：OpenClaw 用户可通过 `clawhub install sciverse-agent-tools` 一键安装
+- ClawHub skill bundle（`skill/`，v0.3 重命名为 `clawhub/`）：OpenClaw 用户可通过 `clawhub install sciverse-agent-tools` 一键安装（v0.2 后改名为 `sciverse-academic-retrieval`）
 
 ### Pre-stable notice
 版本 `0.1.0` 为 pre-stable。前几个 minor 版本会根据真实 Agent 调用反馈迭代 description 措辞，可能小幅 breaking。

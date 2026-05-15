@@ -37,7 +37,7 @@ node scripts/semantic_search.mjs '{"query":"Transformer attention mechanism","to
 
 ## Relationship to the SDK
 
-This skill is **complementary** to the `sciverse-agent-tools` packages on PyPI / npm:
+This skill is **complementary** to the `sciverse` packages on PyPI / npm:
 
 - **This skill** — OpenClaw users only. Zero external deps (Node 18+ native fetch).
 - **PyPI / npm SDK** — Any LLM agent framework (OpenAI, Anthropic, LangChain, LlamaIndex…).
@@ -85,7 +85,7 @@ node scripts/semantic_search.mjs '{"query":"Transformer 注意力机制","top_k"
 
 ### 与 SDK 的关系
 
-本 skill 与 PyPI/npm 上的 `sciverse-agent-tools` 包是**互补**的：
+本 skill 与 PyPI/npm 上的 `sciverse` 包是**互补**的：
 
 - **本 skill**：OpenClaw 用户专用，零外部依赖（仅 Node 18+ native fetch）
 - **PyPI/npm SDK**：任意 LLM Agent 框架（OpenAI / Anthropic / LangChain / LlamaIndex...）

@@ -1,7 +1,7 @@
 [project]
-name = "sciverse-agent-tools-build"
+name = "sciverse-build"
 version = "0.0.0"
-description = "Internal build tooling for sciverse-agent-tools (not published)"
+description = "Internal build tooling for sciverse (not published)"
 requires-python = ">=3.12"
 dependencies = [
     "pyyaml>=6.0",

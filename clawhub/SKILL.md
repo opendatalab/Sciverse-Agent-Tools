@@ -1,7 +1,7 @@
 ---
 name: sciverse-academic-retrieval
 slug: academic-retrieval
-version: 0.1.6
+version: 0.4.1
 description: SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.
 license: Apache-2.0
 homepage: https://sciverse.space
@@ -80,6 +80,20 @@ Returns: text fragment, bytes_returned, next_offset, more (boolean).
 
 **Invoke**: `node scripts/read_content.mjs '<JSON args>'`
 
+### get_resource
+
+Returns the binary bytes of a paper figure / table image referenced
+inside read_content's Markdown via `![alt](file_name)` placeholders.
+Use when the user asks to see / display / describe a figure and
+read_content output contains an image reference.
+Input file_name comes from the Markdown URL part (relative path,
+no `\\` or `..`).
+Returns: raw image stream + image/* Content-Type. The SDK / MCP
+server wraps the bytes as base64 + mimeType so Claude (multimodal)
+can read the image directly.
+
+**Invoke**: `node scripts/get_resource.mjs '<JSON args>'`
+
 ## Bootstrap: learn the schema first
 
 If you're unsure which fields exist or what values an enum takes
@@ -122,6 +136,16 @@ search_papers(
 ```
 search_papers(authors=[...], year_from=2020) → doc_ids
 semantic_search(query=...) → filter hits client-side by doc_ids
+```
+
+**Fetch a paper figure / image:**
+
+When read_content Markdown contains `![alt](file_name)`, call
+`get_resource` with the file_name to fetch image binary.
+
+```
+read_content(doc_id, offset) → markdown ![Figure 3](dt=xxx/p/f3.png)
+    └─▶ get_resource(file_name="dt=xxx/p/f3.png")
 ```
 
 ## Exit codes

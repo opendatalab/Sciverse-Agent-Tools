@@ -8,7 +8,7 @@ from typing import Any
 
 import httpx
 
-_SKILL_NAME = "sciverse-academic-retrieval"
+_SKILL_NAME = "sciverse"
 _CHANNEL = "python-sdk"
 _PLATFORM = platform.system().lower()  # "linux" | "darwin" | "windows"
 
@@ -70,21 +70,34 @@ class AgentToolsClient:
     用法：
         async with AgentToolsClient(base_url=..., token=...) as c:
             r = await c.semantic_search(query="...")
+
+    token / base_url 都可省略 —— 省略时按以下顺序 fallback：
+        1. 显式参数
+        2. 环境变量 SCIVERSE_API_TOKEN / SCIVERSE_BASE_URL
+        3. ~/.sciverse/credentials.json（由 `sciverse auth login` 写入）
+        4. base_url 默认值 https://api.sciverse.space；token 找不到则抛 ValueError
     """
 
     def __init__(
         self,
         *,
-        base_url: str,
-        token: str,
+        base_url: str | None = None,
+        token: str | None = None,
         timeout: float = 30.0,
     ) -> None:
-        self._base_url = base_url.rstrip("/")
-        self._token = token
+        from sciverse.credentials import resolve_endpoint, resolve_token
+        resolved_token = resolve_token(token)
+        if not resolved_token:
+            raise ValueError(
+                "未找到 SciVerse API Token。请显式传 token、或设 SCIVERSE_API_TOKEN 环境变量、"
+                "或运行 `sciverse auth login` 保存凭据到 ~/.sciverse/credentials.json。"
+            )
+        self._base_url = resolve_endpoint(base_url).rstrip("/")
+        self._token = resolved_token
         self._client = httpx.AsyncClient(
             base_url=self._base_url,
             timeout=timeout,
-            headers={"Authorization": f"Bearer {token}"},
+            headers={"Authorization": f"Bearer {resolved_token}"},
             event_hooks={"request": [self._inject_request_id]},
         )
 
@@ -144,3 +157,21 @@ class AgentToolsClient:
         resp = await self._client.get("/content", params=params)
         resp.raise_for_status()
         return resp.json()
+
+    async def get_resource(self, *, file_name: str) -> tuple[bytes, str]:
+        """对应 GET /resource。
+
+        取文献附属图片字节流。触发场景：read_content 返回的 Markdown 中含
+        `![alt](file_name)` 图片占位时，调本接口拿图片 binary。
+
+        返回 (bytes, mime_type)。mime_type 来自响应头 content-type，如
+        "image/png" / "image/jpeg" / "application/octet-stream"。
+        """
+        resp = await self._client.get(
+            "/resource",
+            params={"file_name": file_name},
+            headers={"accept": "image/*"},
+        )
+        resp.raise_for_status()
+        mime = (resp.headers.get("content-type") or "application/octet-stream").split(";")[0].strip()
+        return resp.content, mime

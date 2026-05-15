@@ -612,7 +612,7 @@ wheels = [
 ]
 
 [[package]]
-name = "sciverse-agent-tools-build"
+name = "sciverse-build"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [

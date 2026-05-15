@@ -2,11 +2,11 @@
 
 与 `to_clawhub_skill.py` 平行的另一种 skill 形态：
 
-- 输出目录：`agent-tools/skill-claude-code/`（与 ClawHub 的 `agent-tools/skill/` 区分开）
+- 输出目录：`skill-claude-code/`（与 ClawHub 的 `clawhub/` 区分开）
 - frontmatter 严格只含 `name` 和 `description` 两个字段（Claude Code 官方 spec）
 - description 是 model-facing trigger，须明确何时该调用此 skill
 - 正文为 markdown，描述前置条件、能力、典型 composition pattern
-- 同时输出 Plugin Marketplace 入口：`agent-tools/.claude-plugin/marketplace.json`
+- 同时输出 Plugin Marketplace 入口：`.claude-plugin/marketplace.json`
 - 依赖另一个并行 agent 维护的 `sciverse-mcp-server` npm 包
 
 Claude Code 官方 spec 参考：
@@ -193,6 +193,19 @@ def generate_skill_md(openapi_path: Path) -> str:
         "    └─▶ collect hits[].doc_id list",
         "semantic_search(query=\"attention\", top_k=20)",
         "    └─▶ filter hits to those whose doc_id appears in step-1 list",
+        "```",
+        "",
+        "**6. Show a figure / image from the paper:**",
+        "",
+        "When `read_content` Markdown contains `![alt](file_name)` placeholders",
+        "and the user wants to see the figure (e.g. \"show me Figure 3\"),",
+        "fetch the binary with `get_resource`. The MCP server wraps the bytes",
+        "as a base64 image content block so Claude can read it directly.",
+        "",
+        "```",
+        "read_content(doc_id, offset) → markdown with ![Figure 3](dt=xxx/p_yyy/f3.png)",
+        "    └─▶ get_resource(file_name=\"dt=xxx/p_yyy/f3.png\")",
+        "    └─▶ Claude sees the image inline",
         "```",
         "",
         "## Notes for Claude",

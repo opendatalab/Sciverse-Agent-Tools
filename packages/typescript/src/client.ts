@@ -1,11 +1,21 @@
 import { randomUUID } from "node:crypto";
+import { resolveEndpoint, resolveToken } from "./credentials.js";
 
+/**
+ * AgentToolsClientOptions
+ *
+ * `token` 和 `baseUrl` 都是可选的。未传时按以下顺序 fallback：
+ *   1. 显式参数
+ *   2. 环境变量 SCIVERSE_API_TOKEN / SCIVERSE_BASE_URL
+ *   3. ~/.sciverse/credentials.json（由 `sciverse auth login` Python CLI 写入）
+ *   4. baseUrl 默认值 https://api.sciverse.space；token 找不到则构造抛错
+ */
 export interface AgentToolsClientOptions {
-  baseUrl: string;
-  token: string;
+  baseUrl?: string;
+  token?: string;
 }
 
-const SKILL_NAME = "sciverse-academic-retrieval";
+const SKILL_NAME = "sciverse";
 const CHANNEL = "typescript-sdk";
 const PLATFORM = process.platform;
 
@@ -74,9 +84,16 @@ export class AgentToolsClient {
   private baseUrl: string;
   private token: string;
 
-  constructor(opts: AgentToolsClientOptions) {
-    this.baseUrl = opts.baseUrl.replace(/\/$/, "");
-    this.token = opts.token;
+  constructor(opts: AgentToolsClientOptions = {}) {
+    const token = resolveToken(opts.token);
+    if (!token) {
+      throw new Error(
+        "未找到 SciVerse API Token。请显式传 token、或设 SCIVERSE_API_TOKEN 环境变量、" +
+          "或运行 `pip install sciverse && sciverse auth login` 保存凭据到 ~/.sciverse/credentials.json。",
+      );
+    }
+    this.baseUrl = resolveEndpoint(opts.baseUrl).replace(/\/$/, "");
+    this.token = token;
   }
 
   private async request<T>(path: string, init: RequestInit): Promise<T> {
@@ -110,6 +127,24 @@ export class AgentToolsClient {
     const qs = new URLSearchParams();
     qs.set("include_sample_values", String(Boolean(params.include_sample_values)));
     return this.request(`/meta-catalog?${qs.toString()}`, { method: "GET" });
+  }
+
+  async getResource(params: { file_name: string }): Promise<{ bytes: Uint8Array; mimeType: string }> {
+    const qs = new URLSearchParams({ file_name: params.file_name });
+    const res = await fetch(`${this.baseUrl}/resource?${qs.toString()}`, {
+      method: "GET",
+      headers: {
+        authorization: `Bearer ${this.token}`,
+        accept: "image/*",
+      },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`SciVerse API ${res.status}: ${body}`);
+    }
+    const mimeType = (res.headers.get("content-type") || "application/octet-stream").split(";")[0]!.trim();
+    const buf = new Uint8Array(await res.arrayBuffer());
+    return { bytes: buf, mimeType };
   }
 
   async readContent(params: { doc_id: string; offset?: number; limit?: number }): Promise<unknown> {

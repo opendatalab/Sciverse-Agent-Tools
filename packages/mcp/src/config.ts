@@ -1,5 +1,7 @@
-// 读取环境变量并校验。BASE_URL 仅允许 *.sciverse.space 与 sciverse.space，
-// 防止 token 被泄漏到任意域名（与 ClawHub skill 的 _common.mjs 一致）。
+// Token / endpoint 解析顺序：env → ~/.sciverse/credentials.json → 默认值。
+// BASE_URL 仅允许 *.sciverse.space 与 sciverse.space，防止 token 被泄漏到
+// 任意域名（与 ClawHub skill 的 _common.mjs 一致）。
+import { resolveEndpoint, resolveToken } from "./credentials.js";
 
 export interface Config {
   token: string;
@@ -13,16 +15,15 @@ export class ConfigError extends Error {
   }
 }
 
-const DEFAULT_BASE_URL = "https://api.sciverse.space";
-
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const token = env.SCIVERSE_API_TOKEN;
+  const token = resolveToken(undefined, env);
   if (!token) {
     throw new ConfigError(
-      "SCIVERSE_API_TOKEN is not set. Obtain a Bearer token from https://sciverse.space and export it.",
+      "未找到 SciVerse API Token。请设 SCIVERSE_API_TOKEN 环境变量，或运行 " +
+        "`pip install sciverse && sciverse auth login` 保存凭据到 ~/.sciverse/credentials.json。",
     );
   }
-  const baseUrl = (env.SCIVERSE_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+  const baseUrl = resolveEndpoint(undefined, env).replace(/\/$/, "");
   let parsed: URL;
   try {
     parsed = new URL(baseUrl);

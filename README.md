@@ -18,10 +18,10 @@
 
 ```bash
 # Python
-pip install sciverse-agent-tools
+pip install sciverse
 
 # TypeScript / Node.js
-npm install sciverse-agent-tools
+npm install sciverse
 ```
 
 ### 3. 直接调用
@@ -30,7 +30,7 @@ npm install sciverse-agent-tools
 
 ```python
 import asyncio
-from sciverse_agent_tools import AgentToolsClient
+from sciverse import AgentToolsClient
 
 async def main():
     async with AgentToolsClient(
@@ -47,7 +47,7 @@ asyncio.run(main())
 **TypeScript：**
 
 ```ts
-import { AgentToolsClient } from "sciverse-agent-tools";
+import { AgentToolsClient } from "sciverse";
 
 const c = new AgentToolsClient({
   baseUrl: "https://api.sciverse.space",
@@ -64,7 +64,7 @@ r.hits.slice(0, 3).forEach((h: any) => console.log(h.title, h.score));
 
 ```python
 from anthropic import Anthropic
-from sciverse_agent_tools import ANTHROPIC_TOOLS
+from sciverse import ANTHROPIC_TOOLS
 
 client = Anthropic()
 msg = client.messages.create(
@@ -79,7 +79,7 @@ msg = client.messages.create(
 
 ```ts
 import OpenAI from "openai";
-import { OPENAI_TOOLS } from "sciverse-agent-tools";
+import { OPENAI_TOOLS } from "sciverse";
 
 const openai = new OpenAI();
 const resp = await openai.chat.completions.create({
@@ -118,7 +118,7 @@ async with AgentToolsClient(base_url=..., token=...) as c:
 ```
 
 返回值类型为 `dict[str, Any]`，**响应 schema 详见 [`openapi.yaml`](./openapi.yaml)**。  
-高级用户可用 `from sciverse_agent_tools.types import SearchPapersRequest, ...` 做类型化构造与校验。
+高级用户可用 `from sciverse.types import SearchPapersRequest, ...` 做类型化构造与校验。
 
 **长生命周期 client**（如 web server / agent runtime，client 不随单次 request 起灭）：
 
@@ -145,7 +145,7 @@ await c.readContent({ doc_id, offset, limit });
 返回值类型为 `unknown`，需用户自行 cast：
 
 ```ts
-import type { components } from "sciverse-agent-tools";
+import type { components } from "sciverse";
 type SemanticSearchResp = components["schemas"]["SemanticSearchResponse"];
 const r = await c.semanticSearch({ query: "x" }) as SemanticSearchResp;
 ```
@@ -199,12 +199,11 @@ search_papers(authors=[...], year_from=2020)  # 先按结构化条件缩窄
 
 ## 版本与变更
 
-参见 [CHANGELOG.md](./CHANGELOG.md)。当前版本 **v0.1.0** (pre-stable)，前几个版本会根据真实 Agent 调用反馈调整 description，可能小幅 breaking。
+参见 [CHANGELOG.md](./CHANGELOG.md)。版本号由 [semantic-release](https://semantic-release.gitbook.io/) 根据 [Conventional Commits](https://www.conventionalcommits.org/) 自动管理（详见 [CONTRIBUTING.md](./CONTRIBUTING.md)）。
 
 ## 开发
 
 ```bash
-cd agent-tools
 uv sync
 bash scripts/build.sh   # 重新派生 dist/ 与 packages/*/src/{tools,types}.{py,ts}
 uv run pytest tests/    # 派生器单测
@@ -215,10 +214,10 @@ uv run pytest tests/    # 派生器单测
 通过 [ClawHub](https://clawhub.ai) 一键安装：
 
 ```bash
-clawhub install sciverse-agent-tools
+clawhub install sciverse
 ```
 
-详见 [`skill/README.md`](./skill/README.md)。
+详见 [`clawhub/README.md`](./clawhub/README.md)。
 
 ## Claude Code 用户
 
@@ -227,7 +226,7 @@ SciVerse 提供 Claude Code 官方 Agent Skill 形态（与 OpenClaw 平行的�
 **方式 1：通过 Plugin Marketplace（推荐）**
 
 ```bash
-claude /plugin marketplace add https://github.com/opendatalab/SciVerse-agent-tools
+claude /plugin marketplace add https://github.com/opendatalab/Sciverse-Agent-Tools
 claude /plugin install sciverse
 ```
 
@@ -237,10 +236,10 @@ claude /plugin install sciverse
 
 ```bash
 # 用户级
-cp -r agent-tools/skill-claude-code ~/.claude/skills/sciverse
+cp -r skill-claude-code ~/.claude/skills/sciverse
 
 # 或项目级
-cp -r agent-tools/skill-claude-code .claude/skills/sciverse
+cp -r skill-claude-code .claude/skills/sciverse
 ```
 
 **配合 MCP server**
@@ -264,10 +263,6 @@ export SCIVERSE_API_TOKEN=sv-...
 | Cursor | [docs/integrations/cursor.md](./docs/integrations/cursor.md) |
 | Codex CLI | [docs/integrations/codex-cli.md](./docs/integrations/codex-cli.md) |
 | Windsurf | [docs/integrations/windsurf.md](./docs/integrations/windsurf.md) |
-
-## 路线图
-
-TODO 与发版计划在仓库根 [`agent-tools-todo.md`](../agent-tools-todo.md) 维护（与代码改动解耦，不在 `agent-tools/` 发布范围内）。
 
 ## License
 

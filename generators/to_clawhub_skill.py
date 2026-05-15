@@ -16,6 +16,8 @@ from ._common import get_request_schema, iter_operations, load_openapi
 #   - `name` = 组织 namespace + slug，作为唯一全局 ID（如 `sciverse-academic-retrieval`）
 #   - `slug` = 公开 URL slug，用户安装时填的名字（`openclaw skills install <slug>`）
 # 这两个字段都写进 manifest.json + SKILL.md frontmatter。
+# 注：与 npm/PyPI 包名 `sciverse` 不同；ClawHub 已 publish 过此 skill name，
+# 不能跟着 SDK 包改名（会断裂已有用户的安装链路）。
 SKILL_NAME = "sciverse-academic-retrieval"
 SKILL_SLUG = "academic-retrieval"
 SKILL_DESCRIPTION_EN = (
@@ -179,6 +181,16 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
         "semantic_search(query=...) → filter hits client-side by doc_ids",
         "```",
         "",
+        "**Fetch a paper figure / image:**",
+        "",
+        "When read_content Markdown contains `![alt](file_name)`, call",
+        "`get_resource` with the file_name to fetch image binary.",
+        "",
+        "```",
+        "read_content(doc_id, offset) → markdown ![Figure 3](dt=xxx/p/f3.png)",
+        "    └─▶ get_resource(file_name=\"dt=xxx/p/f3.png\")",
+        "```",
+        "",
         "## Exit codes",
         "",
         "- `0` — success; stdout is the JSON response",
@@ -193,8 +205,8 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
 def main() -> None:
     root = Path(__file__).resolve().parent.parent
     openapi = root / "openapi.yaml"
-    manifest_path = root / "skill" / "manifest.json"
-    skill_md_path = root / "skill" / "SKILL.md"
+    manifest_path = root / "clawhub" / "manifest.json"
+    skill_md_path = root / "clawhub" / "SKILL.md"
 
     # 优先保留 manifest.json 已有 version（人工/ClawHub 上传时 bump 过），
     # 避免每次跑 build 把 version 拽回 openapi.yaml。

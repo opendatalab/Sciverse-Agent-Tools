@@ -1,0 +1,89 @@
+# semantic-release：算 next version → bump 文件 → 派生 → 发包 →
+# commit + tag + GitHub Release。
+#
+# 触发：main 分支 push（merge PR 或直接 push）。
+#
+# Prerequisite — 在 repo Settings → Secrets and variables → Actions 配三个
+# secret：
+#   - PYPI_API_TOKEN     PyPI sciverse 上传 token
+#   - NPM_TOKEN          npm sciverse + sciverse-mcp-server 上传 token
+#   - CLAWHUB_TOKEN      ClawHub publish token
+# GITHUB_TOKEN 默认存在，用于 push commit + 打 tag + 创建 Release。
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# semantic-release 需要 push commit + push tag + 写 Release
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: semantic-release
+    runs-on: ubuntu-latest
+    # 跳过 semantic-release 自己 push 的 commit（commit message 含 [skip ci]）
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # semantic-release 要看完整 commit history 算 next version
+          persist-credentials: true
+
+      - uses: astral-sh/setup-uv@v3
+      - name: Python 3.13
+        run: uv python install 3.13
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install root deps (generators + build.sh)
+        run: uv sync
+
+      - name: Install typescript deps (for build.sh openapi-typescript)
+        working-directory: packages/typescript
+        # rollup native binary 不全（npm cli#4828）：rm lockfile + npm
+        # install 让 npm 在当前 Linux runner 上重新解析 optionalDeps。
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
+
+      - name: Install python SDK deps (for build.sh + publish)
+        working-directory: packages/python
+        run: |
+          uv venv --python 3.13
+          uv sync
+          # publish 需要 twine
+          uv pip install twine
+
+      - name: Install mcp deps (for publish)
+        working-directory: packages/mcp
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+          # 让 scripts/publish.sh 在 source-commit 用得到当前 sha
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          # 用 npx 拉 semantic-release + 所需插件（避免 repo 加 package.json
+          # 单独管理 dev deps）
+          npx --yes \
+            -p semantic-release@24 \
+            -p @semantic-release/changelog \
+            -p @semantic-release/git \
+            -p @semantic-release/github \
+            -p @semantic-release/exec \
+            -p conventional-changelog-conventionalcommits \
+            semantic-release

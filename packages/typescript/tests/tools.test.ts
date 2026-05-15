@@ -7,7 +7,7 @@ describe("tools constants", () => {
     expect(typeof TOOLS_VERSION).toBe("string");
     expect(TOOLS_VERSION).toMatch(/^\d+\.\d+\.\d+/);
     const names = OPENAI_TOOLS.map((t: any) => t.function.name).sort();
-    expect(names).toEqual(["list_catalog", "read_content", "search_papers", "semantic_search"]);
+    expect(names).toEqual(["get_resource", "list_catalog", "read_content", "search_papers", "semantic_search"]);
     expect(ANTHROPIC_TOOLS.map((t: any) => t.name).sort()).toEqual(names);
   });
 });

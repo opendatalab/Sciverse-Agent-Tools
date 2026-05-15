@@ -105,6 +105,34 @@ describe("executeTool", () => {
     );
   });
 
+  it("get_resource: 返回 image content block + base64 + mimeType", async () => {
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const fn = vi.fn(async (url: string, init: RequestInit) => {
+      return new Response(pngBytes, {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      });
+    });
+    vi.stubGlobal("fetch", fn);
+    const result = await executeTool(CONFIG, "get_resource", { file_name: "dt=x/p_y/f3.png" });
+    expect(result.isError).toBe(false);
+    expect(result.content).toHaveLength(1);
+    const block = result.content[0] as { type: string; data: string; mimeType: string };
+    expect(block.type).toBe("image");
+    expect(block.mimeType).toBe("image/png");
+    expect(block.data).toBe(Buffer.from(pngBytes).toString("base64"));
+    expect(fn.mock.calls[0]![0]!.toString()).toBe(
+      "https://api.sciverse.space/resource?file_name=dt%3Dx%2Fp_y%2Ff3.png",
+    );
+  });
+
+  it("get_resource: 缺 file_name 时返回 isError", async () => {
+    const captured = mockFetch(200, {});
+    const result = await executeTool(CONFIG, "get_resource", {});
+    expect(result.isError).toBe(true);
+    expect(captured).toHaveLength(0);
+  });
+
   it("read_content: 缺 doc_id 时返回 isError", async () => {
     const captured = mockFetch(200, {});
     const result = await executeTool(CONFIG, "read_content", {});

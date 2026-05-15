@@ -1,7 +1,7 @@
 """端到端示例：使用 Anthropic + SciVerse 三个 tool 跑一次 RAG。
 
 运行：
-    pip install anthropic sciverse-agent-tools
+    pip install anthropic sciverse
     export SCIVERSE_API_TOKEN=...
     export ANTHROPIC_API_KEY=...
     python examples/python_anthropic_rag.py
@@ -11,7 +11,7 @@ import json
 import os
 
 from anthropic import Anthropic
-from sciverse_agent_tools import ANTHROPIC_TOOLS, AgentToolsClient
+from sciverse import ANTHROPIC_TOOLS, AgentToolsClient
 
 BASE_URL = os.environ.get("SCIVERSE_BASE_URL", "https://api.sciverse.space")
 TOKEN = os.environ["SCIVERSE_API_TOKEN"]

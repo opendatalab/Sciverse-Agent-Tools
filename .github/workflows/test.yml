@@ -1,0 +1,124 @@
+# 在 push / PR 时跑 SDK + MCP 测试 + lint + drift-check，给社区 PR
+# 一个绿勾。
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  python:
+    name: Python SDK + generators
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - name: Python 3.13
+        run: uv python install 3.13
+      - name: Install root deps (generators)
+        run: uv sync
+      - name: Run generator tests
+        run: uv run pytest tests/ -v
+      - name: Install Python SDK
+        working-directory: packages/python
+        run: |
+          uv venv --python 3.13
+          uv sync
+      - name: Run Python SDK tests (skip contract)
+        working-directory: packages/python
+        run: uv run pytest tests/ -v --ignore tests/test_contract.py
+
+  typescript:
+    name: TypeScript SDK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install
+        # 不用 npm ci：lockfile 在维护者 macOS 上生成，只含 darwin rollup
+        # 平台 binary，npm 已知 bug
+        # (https://github.com/npm/cli/issues/4828) 让 optionalDependencies
+        # 在 Linux runner 上拿不到对应 binary。改成 `rm lockfile + npm
+        # install` 重新解析。reproducibility 由 release.yml 的 publishCmd
+        # 串行串起来保证，本 workflow 只做验证。
+        working-directory: packages/typescript
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
+      - name: Typecheck
+        working-directory: packages/typescript
+        run: npm run typecheck
+      - name: Test (excluding contract)
+        working-directory: packages/typescript
+        run: npx vitest run --exclude 'tests/contract.test.ts'
+
+  mcp:
+    name: MCP server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install
+        # 同上：rollup native binary 不全
+        working-directory: packages/mcp
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
+      - name: Build (gen + tsc)
+        working-directory: packages/mcp
+        run: npm run build
+      - name: Test
+        working-directory: packages/mcp
+        run: npm test
+
+  lint-openapi:
+    name: Lint OpenAPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npx --yes @stoplight/spectral-cli@6 lint openapi.yaml
+
+  drift-check:
+    name: Derived-artifact drift check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install deps
+        run: |
+          uv sync
+          # rollup native binary 不全（npm cli#4828），同 typescript / mcp
+          # 测试 job 一样：rm lockfile + npm install
+          (cd packages/typescript && rm -f package-lock.json && npm install --no-audit --no-fund)
+          (cd packages/mcp && rm -f package-lock.json && npm install --no-audit --no-fund)
+      - name: Rebuild derived artifacts
+        run: bash scripts/build.sh
+      - name: Assert no drift
+        run: |
+          if ! git diff --exit-code \
+               dist \
+               packages/python/src/sciverse/types.py \
+               packages/python/src/sciverse/tools.py \
+               packages/typescript/src/types.ts \
+               packages/typescript/src/tools.ts \
+               packages/typescript/package.json \
+               packages/python/pyproject.toml \
+               clawhub/SKILL.md \
+               clawhub/manifest.json; then
+            echo ""
+            echo "派生产物未同步 — 请本地跑 bash scripts/build.sh 后提交"
+            exit 1
+          fi

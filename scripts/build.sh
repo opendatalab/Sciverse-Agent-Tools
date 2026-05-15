@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 全量构建 agent-tools 派生产物：dist/ + packages/*/src/generated/。
-# 单一真相源：agent-tools/openapi.yaml 中 info.version。
+# 全量构建派生产物：dist/ + packages/*/src/generated/。
+# 单一真相源：openapi.yaml 中 info.version。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -19,14 +19,14 @@ uv run python -m generators.to_langchain
 uv run datamodel-codegen \
     --input openapi.yaml \
     --input-file-type openapi \
-    --output packages/python/src/sciverse_agent_tools/types.py \
+    --output packages/python/src/sciverse/types.py \
     --output-model-type pydantic_v2.BaseModel \
     --target-python-version 3.10 \
     --use-schema-description \
     --field-constraints \
     --use-double-quotes \
     --disable-timestamp
-echo "wrote packages/python/src/sciverse_agent_tools/types.py"
+echo "wrote packages/python/src/sciverse/types.py"
 
 # 4. 把 dist/ 下的 tool JSON 嵌入 Python SDK
 uv run python - <<'PY'
@@ -35,7 +35,7 @@ from pathlib import Path
 
 openai = json.loads(Path("dist/openai-tools.json").read_text(encoding="utf-8"))
 anthropic = json.loads(Path("dist/anthropic-tools.json").read_text(encoding="utf-8"))
-target = Path("packages/python/src/sciverse_agent_tools/tools.py")
+target = Path("packages/python/src/sciverse/tools.py")
 # 注意：JSON 的 false/true/null 不是 Python literal。某些 schema 含 `default: false`
 # 时，直接把 json.dumps 字符串嵌入 Python 文件会 NameError。
 # 改用 `json.loads(r"""...""")` 在模块加载时解析。
@@ -53,8 +53,10 @@ print(f"wrote {target}")
 PY
 
 # 5. 派生 TypeScript types
-if [ -d "packages/typescript/node_modules" ]; then
-    npx --prefix packages/typescript openapi-typescript openapi.yaml -o packages/typescript/src/types.ts
+if [ -x "packages/typescript/node_modules/.bin/openapi-typescript" ]; then
+    # 直接调用 node_modules/.bin/，不要走 `npx --prefix`（在 CI 上 npx
+    # 不会从 --prefix 的 node_modules 解析 bin）
+    packages/typescript/node_modules/.bin/openapi-typescript openapi.yaml -o packages/typescript/src/types.ts
     echo "wrote packages/typescript/src/types.ts"
 else
     echo "skipping TS types (run 'npm install' in packages/typescript first)"

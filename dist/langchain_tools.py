@@ -6,7 +6,7 @@ from typing import Any
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, ConfigDict, Field
 
-TOOLS_VERSION = "0.3.0"
+TOOLS_VERSION = "0.4.1"
 
 
 class SearchPapersArgs(BaseModel):
@@ -105,6 +105,29 @@ class ReadContentTool(BaseTool):
 返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。
 """
     args_schema: type[BaseModel] = ReadContentArgs
+
+    def _run(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("bind a client via .with_client(...)")
+
+    async def _arun(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("bind a client via .with_client(...)")
+
+
+class GetResourceArgs(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    file_name: str = Field(..., description='图片相对路径，来自 read_content Markdown 中的 `![alt](file_name)` 占位。禁止 `\\\\` 与 `..`，不能以 `/` 开头。')
+
+
+class GetResourceTool(BaseTool):
+    name: str = "get_resource"
+    description: str = """按文件名取文献中嵌入的图片字节流（PNG / JPG 等）。
+触发场景：read_content 返回的 Markdown 中含 `![alt](file_name)` 形式的图片占位，
+agent 需要把图给用户看时调本接口。
+入参 file_name 来自 markdown 内的 url 段（相对路径，禁止 `\\` 或 `..`）。
+返回：HTTP 二进制流 + image/* Content-Type。
+SDK / MCP server 包装层会做 base64 + mime 转换以便 agent 多模态使用。
+"""
+    args_schema: type[BaseModel] = GetResourceArgs
 
     def _run(self, **kwargs: Any) -> Any:
         raise NotImplementedError("bind a client via .with_client(...)")

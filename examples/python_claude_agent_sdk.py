@@ -2,7 +2,7 @@
 
 与 `python_anthropic_rag.py` 的区别：
 - 该示例用 `anthropic` SDK 的 `messages.create` 原生 tool calling 回环
-  + `sciverse-agent-tools` Python SDK 内嵌的 ANTHROPIC_TOOLS 常量
+  + `sciverse` Python SDK 内嵌的 ANTHROPIC_TOOLS 常量
 - 本示例用 `claude-agent-sdk`，通过 `mcp_servers` 配置直接挂 sciverse-mcp-server，
   Claude Code 风格的 agent loop 由 SDK 全权处理 —— 这是 coding-agent 风格应用的主流方式
 

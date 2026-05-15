@@ -1,7 +1,7 @@
 """端到端示例：使用 OpenAI function calling + SciVerse 三个 tool。
 
 运行：
-    pip install openai sciverse-agent-tools
+    pip install openai sciverse
     export SCIVERSE_API_TOKEN=...
     export OPENAI_API_KEY=...
     python examples/python_openai_function_call.py
@@ -11,7 +11,7 @@ import json
 import os
 
 from openai import OpenAI
-from sciverse_agent_tools import OPENAI_TOOLS, AgentToolsClient
+from sciverse import OPENAI_TOOLS, AgentToolsClient
 
 BASE_URL = os.environ.get("SCIVERSE_BASE_URL", "https://api.sciverse.space")
 TOKEN = os.environ["SCIVERSE_API_TOKEN"]

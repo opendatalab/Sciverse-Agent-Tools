@@ -2,11 +2,11 @@
  * 端到端示例：TypeScript + OpenAI function calling + SciVerse 三个 tool。
  *
  * 运行：
- *   npm install openai sciverse-agent-tools tsx
+ *   npm install openai sciverse tsx
  *   SCIVERSE_API_TOKEN=... OPENAI_API_KEY=... npx tsx examples/ts_openai.ts
  */
 import OpenAI from "openai";
-import { AgentToolsClient, OPENAI_TOOLS } from "sciverse-agent-tools";
+import { AgentToolsClient, OPENAI_TOOLS } from "sciverse";
 
 const sv = new AgentToolsClient({
   baseUrl: process.env.SCIVERSE_BASE_URL ?? "https://api.sciverse.space",

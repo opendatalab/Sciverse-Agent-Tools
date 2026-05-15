@@ -1,6 +1,6 @@
 {
   "name": "sciverse-academic-retrieval",
-  "version": "0.1.6",
+  "version": "0.4.1",
   "slug": "academic-retrieval",
   "description": "SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.",
   "runtime": "node>=18",
@@ -209,6 +209,23 @@
         },
         "required": [
           "doc_id"
+        ]
+      }
+    },
+    {
+      "name": "get_resource",
+      "description": "Returns the binary bytes of a paper figure / table image referenced\ninside read_content's Markdown via `![alt](file_name)` placeholders.\nUse when the user asks to see / display / describe a figure and\nread_content output contains an image reference.\nInput file_name comes from the Markdown URL part (relative path,\nno `\\\\` or `..`).\nReturns: raw image stream + image/* Content-Type. The SDK / MCP\nserver wraps the bytes as base64 + mimeType so Claude (multimodal)\ncan read the image directly.",
+      "script": "scripts/get_resource.mjs",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "file_name": {
+            "type": "string",
+            "description": "图片相对路径，来自 read_content Markdown 中的 `![alt](file_name)` 占位。禁止 `\\\\` 与 `..`，不能以 `/` 开头。"
+          }
+        },
+        "required": [
+          "file_name"
         ]
       }
     }

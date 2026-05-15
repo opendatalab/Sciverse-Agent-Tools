@@ -2,7 +2,7 @@
 //
 // 与 `ts_openai.ts` 的区别：
 // - 那个示例用 `openai` SDK 的 chat completions + 原生 function calling 回环
-//   + `sciverse-agent-tools` 内嵌的 OPENAI_TOOLS。
+//   + `sciverse` 内嵌的 OPENAI_TOOLS。
 // - 本示例用 `@openai/agents`，通过 mcpServers 配置直接挂 sciverse-mcp-server，
 //   agent loop 由 SDK 处理 —— coding-agent 风格应用主流方式。
 //
