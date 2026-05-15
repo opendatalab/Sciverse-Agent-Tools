@@ -8,7 +8,7 @@
     {
       "name": "sciverse",
       "description": "Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides three SciVerse tools (search_papers, semantic_search, read_content) via the sciverse-mcp-server MCP server.",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "source": "./skill-claude-code",
       "category": "research",
       "homepage": "https://sciverse.space"

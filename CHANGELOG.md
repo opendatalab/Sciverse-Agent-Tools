@@ -1,3 +1,9 @@
+## [0.4.3](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.2...v0.4.3) (2026-05-15)
+
+### Bug Fixes
+
+* 修 ClawHub publish — 去掉 CLI 不支持的 --source-repo / --source-commit ([c2a00a6](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/c2a00a6309068e9271516652e081c08e82f1ca3a))
+
 # Changelog
 
 All notable changes to `sciverse` are documented here.
