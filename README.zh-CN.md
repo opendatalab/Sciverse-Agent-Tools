@@ -12,13 +12,14 @@
 | `read_content` | 取原文字节切片（扩展 RAG 上下文） |
 | `get_resource` | 取 `read_content` Markdown 中引用的图片/表格字节流 |
 
-五个工具共用同一套 Bearer Token 鉴权，并在 Python SDK / TypeScript SDK / MCP server / Claude Code skill / ClawHub skill 中以一致接口暴露。canonical schema 见 [`openapi.yaml`](./openapi.yaml)。
+五个工具共用同一套 Bearer Token 鉴权，并在 Python SDK / TypeScript SDK / MCP server / Claude Code skill / Agent Skill / ClawHub skill 中以一致接口暴露。canonical schema 见 [`openapi.yaml`](./openapi.yaml)。
 
 ## 接入方式选择
 
 | 路径 | 适合谁 | 安装 |
 |---|---|---|
 | **Claude Code skill** | Claude Code / VS Code 用户 | 通过 Plugin Marketplace 一行装（见下） |
+| **Agent Skill** | 支持 `npx skills` 的 agent | `npx skills add https://sciverse.space` 或从 GitHub 安装 |
 | **MCP server** | 任意 MCP-capable coding agent（Cursor / Codex CLI / Windsurf...） | 写到 `.mcp.json` —— [接入指南](./docs/integrations/) |
 | **Python / TypeScript SDK** | 自定义 agent（OpenAI / Anthropic / LangChain / LlamaIndex...） | `pip install sciverse` 或 `npm install sciverse` |
 | **CLI** | shell 脚本 / 快速试用 / 无 agent loop | 随 Python SDK 一起装 —— `sciverse auth login` |
@@ -38,6 +39,30 @@ export SCIVERSE_API_TOKEN=sv-...     # 从 https://sciverse.space 控制台申�
 ```
 
 或在项目 `.mcp.json` 里声明 MCP server —— 详见 [`skill-claude-code/SKILL.md`](./skill-claude-code/SKILL.md)。
+
+## 5 分钟接入 —— Agent Skill (`npx skills`)
+
+适合支持 [skills.sh](https://skills.sh/) / `npx skills` 的 agent。Skill 自带 `scripts/` 与 `references/`，不要求 agent 先配置 MCP。MCP server 方式仍然保留，见下一节。
+
+从官方域名安装：
+
+```bash
+npx skills add https://sciverse.space
+```
+
+或直接从 GitHub 安装：
+
+```bash
+npx skills add https://github.com/opendatalab/Sciverse-Agent-Tools --skill sciverse
+```
+
+如需指定安装范围，可按 `skills` CLI 支持追加 `-a <agent>`、`-g` 或 `--all`。安装后配置 Token：
+
+```bash
+export SCIVERSE_API_TOKEN=sv-...
+```
+
+Skill 源码见 [`skills/sciverse/`](./skills/sciverse/)。
 
 ## 5 分钟接入 —— 其他 MCP-capable agent
 

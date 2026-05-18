@@ -12,13 +12,14 @@ Standardized tool schemas and SDKs that expose [SciVerse Open Platform](https://
 | `read_content` | Fetch a byte-range slice of the source document (extend RAG context) |
 | `get_resource` | Fetch figure / table image bytes referenced inside `read_content` Markdown |
 
-All five tools share the same Bearer-Token authentication and are exposed identically through the Python SDK, the TypeScript SDK, the MCP server, the Claude Code skill, and the ClawHub skill. The canonical schema is [`openapi.yaml`](./openapi.yaml).
+All five tools share the same Bearer-Token authentication and are exposed identically through the Python SDK, the TypeScript SDK, the MCP server, the Claude Code skill, the Agent Skill, and the ClawHub skill. The canonical schema is [`openapi.yaml`](./openapi.yaml).
 
 ## Pick your integration path
 
 | Path | Best for | Setup |
 |---|---|---|
 | **Claude Code skill** | Anyone using Claude Code / VS Code | One-line install via Plugin Marketplace (below) |
+| **Agent Skill** | Agents that support `npx skills` | `npx skills add https://sciverse.space` or install from GitHub |
 | **MCP server** | Any MCP-capable coding agent (Cursor, Codex CLI, Windsurf, …) | Add to `.mcp.json` — [integration guides](./docs/integrations/) |
 | **Python / TypeScript SDK** | Custom agents (OpenAI / Anthropic / LangChain / LlamaIndex / …) | `pip install sciverse` or `npm install sciverse` |
 | **CLI** | Shell scripts, quick exploration, no agent loop | Comes with the Python SDK — `sciverse auth login` |
@@ -38,6 +39,30 @@ export SCIVERSE_API_TOKEN=sv-...     # get one from https://sciverse.space
 ```
 
 Or declare the MCP server per-project — see [`skill-claude-code/SKILL.md`](./skill-claude-code/SKILL.md).
+
+## Quickstart — Agent Skill (`npx skills`)
+
+Use this path for agents that support [skills.sh](https://skills.sh/) / `npx skills`. The skill bundles `scripts/` and `references/`, so the host agent does not need MCP preconfigured. The MCP server path remains available in the next section.
+
+Install from the official domain:
+
+```bash
+npx skills add https://sciverse.space
+```
+
+Or install directly from GitHub:
+
+```bash
+npx skills add https://github.com/opendatalab/Sciverse-Agent-Tools --skill sciverse
+```
+
+If needed, add `-a <agent>`, `-g`, or `--all` using the scopes supported by the `skills` CLI. Then configure your token:
+
+```bash
+export SCIVERSE_API_TOKEN=sv-...
+```
+
+Skill source: [`skills/sciverse/`](./skills/sciverse/).
 
 ## Quickstart — other MCP-capable agents
 

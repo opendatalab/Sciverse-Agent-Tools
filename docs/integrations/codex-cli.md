@@ -10,6 +10,32 @@
 
 ## 配置
 
+### 方式 A：Agent Skill（推荐给支持 `npx skills` 的 Codex 环境）
+
+从官方域名安装：
+
+```bash
+npx skills add https://sciverse.space
+```
+
+或从 GitHub 安装：
+
+```bash
+npx skills add https://github.com/opendatalab/Sciverse-Agent-Tools --skill sciverse
+```
+
+然后设置 Token：
+
+```bash
+export SCIVERSE_API_TOKEN=sv-xxx
+```
+
+这种方式会安装 [`skills/sciverse`](../../skills/sciverse/) 里的 `SKILL.md`、`references/` 与 `scripts/`，不要求 Codex 先配置 MCP server。
+
+如果你希望明确安装到 Codex 或安装为全局 skill，可按需追加 `-a codex`、`-g` 或 `--all`。
+
+### 方式 B：MCP server
+
 编辑 `~/.codex/config.toml`，新增：
 
 ```toml

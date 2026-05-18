@@ -1,6 +1,6 @@
 # Coding agent 接入指南
 
-> SciVerse 通过 MCP server [`sciverse-mcp-server`](../../packages/mcp/) 给主流 coding agent 提供学术文献检索能力。本目录是各 agent 的 5 分钟接入指南。
+> SciVerse 通过 MCP server [`sciverse-mcp-server`](../../packages/mcp/) 或 Agent Skill [`skills/sciverse`](../../skills/sciverse/) 给主流 coding agent 提供学术文献检索能力。本目录是各 agent 的 5 分钟接入指南。
 
 ## 选择你的 agent
 
@@ -11,9 +11,25 @@
 | Codex CLI (OpenAI) | [codex-cli.md](./codex-cli.md) | `~/.codex/config.toml` |
 | Windsurf (Codeium) | [windsurf.md](./windsurf.md) | `~/.codeium/windsurf/mcp_config.json` |
 
-## 底层协议
+## Agent Skill 安装方式
 
-所有 agent 都通过 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接入。`sciverse-mcp-server` 是 stdio 形态的 MCP server，包装 SciVerse 五个 API：
+如果你的 agent 支持 [skills.sh](https://skills.sh/) / `npx skills`，可以不配置 MCP，直接安装 Sciverse Agent Skill：
+
+```bash
+npx skills add https://sciverse.space
+```
+
+也可以从 GitHub 安装：
+
+```bash
+npx skills add https://github.com/opendatalab/Sciverse-Agent-Tools --skill sciverse
+```
+
+如需指定安装范围，可按 `skills` CLI 支持追加 `-a <agent>`、`-g` 或 `--all`；安装后仍需设置 `SCIVERSE_API_TOKEN`。
+
+## MCP 路径
+
+如果选择 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接入，`sciverse-mcp-server` 是 stdio 形态的 MCP server，包装 SciVerse 五个 API：
 
 - `list_catalog` — 字段 introspection（agent 第一次碰到不确定的字段先调此接口）
 - `search_papers` — 结构化元数据检索
