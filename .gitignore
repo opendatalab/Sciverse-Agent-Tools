@@ -9,3 +9,5 @@ packages/typescript/dist/
 packages/typescript/node_modules/
 packages/mcp/dist/
 packages/mcp/src/generated/
+dist/web-skill/
+dist/web-skill.tgz
