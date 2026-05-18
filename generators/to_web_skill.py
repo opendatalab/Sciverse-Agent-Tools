@@ -11,7 +11,7 @@
 - sciverse/SKILL.md（拆章节式，引用 references/*.md）
 - sciverse/references/*.md（直接 copy）
 - sciverse/agents/openai.yaml（host 适配，直接 copy）
-- sciverse/scripts/*.mjs（字节级 copy；source 已是 web brand 成品 — callSciverse / fetchSciverseResource helper）
+- sciverse/scripts/*.mjs（字节级 copy；source 已是 web brand 成品 — callSciverse / fetchSciverseResource helper，CHANNEL="skills"）
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ def _copy_static(out_root: Path) -> None:
     for tmpl in sorted((ASSETS / "agents").glob("*.template")):
         shutil.copy(tmpl, agents_dst / tmpl.name.removesuffix(".template"))
 
-    # scripts/ 字节级 copy（source 已是 web brand 的成品：callSciverse / fetchSciverseResource / CHANNEL=web 等）
+    # scripts/ 字节级 copy（source 已是 web brand 的成品：callSciverse / fetchSciverseResource / CHANNEL="skills" 等）
     scripts_dst = skill_root / "scripts"
     scripts_dst.mkdir(exist_ok=True)
     for mjs in sorted((ASSETS / "scripts").glob("*.mjs")):

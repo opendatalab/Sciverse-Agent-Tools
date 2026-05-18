@@ -126,6 +126,8 @@ def test_get_resource_uses_common_helper(tmp_path):
     generate(FIXTURE, out)
     src = (out / ".well-known" / "agent-skills" / "sciverse" / "scripts" / "get_resource.mjs").read_text(encoding="utf-8")
     assert "fetchSciverseResource" in src
+    # 不应自己 fetch（DRY 后已移到 _common.fetchSciverseResource）
+    assert src.count("fetch(") == 0, f"get_resource.mjs 含 raw fetch() 调用，DRY 已被破坏: {src}"
 
 
 def test_search_papers_uses_callSciverse(tmp_path):
