@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sciverse"
+  short_description: "Retrieve citation-grade academic papers with Sciverse."
+  default_prompt: "Use $sciverse to find relevant academic papers, retrieve supporting excerpts, and cite doc_id plus title."

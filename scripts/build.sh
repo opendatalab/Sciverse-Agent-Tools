@@ -102,4 +102,11 @@ for p in ["dist/openai-tools.json", "dist/anthropic-tools.json"]:
 print("self-check OK")
 PY
 
+# 11. 派生 web skill（站点级 .well-known/agent-skills 形态）
+uv run python -m generators.to_web_skill
+
+# 12. 打包 web-skill.tgz 作为 GitHub Release 资产
+tar czf dist/web-skill.tgz -C dist/web-skill .well-known
+echo "wrote dist/web-skill.tgz ($(du -h dist/web-skill.tgz | cut -f1))"
+
 echo "Build complete."
