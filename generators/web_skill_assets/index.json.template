@@ -1,0 +1,9 @@
+{
+  "skills": [
+    {
+      "name": "sciverse",
+      "description": "{{ skill_description }}",
+      "files": {{ files_list_json }}
+    }
+  ]
+}
