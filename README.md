@@ -22,6 +22,7 @@ All five tools share the same Bearer-Token authentication and are exposed identi
 | **MCP server** | Any MCP-capable coding agent (Cursor, Codex CLI, Windsurf, …) | Add to `.mcp.json` — [integration guides](./docs/integrations/) |
 | **Python / TypeScript SDK** | Custom agents (OpenAI / Anthropic / LangChain / LlamaIndex / …) | `pip install sciverse` or `npm install sciverse` |
 | **CLI** | Shell scripts, quick exploration, no agent loop | Comes with the Python SDK — `sciverse auth login` |
+| **Web well-known URL** | Agent hosts that auto-discover skills via the well-known URI convention | Point your agent host at <https://sciverse.space/.well-known/agent-skills/> |
 
 ## Quickstart — Claude Code
 
@@ -63,6 +64,30 @@ Per-agent step-by-step guides:
 | Cursor | [docs/integrations/cursor.md](./docs/integrations/cursor.md) |
 | Codex CLI | [docs/integrations/codex-cli.md](./docs/integrations/codex-cli.md) |
 | Windsurf | [docs/integrations/windsurf.md](./docs/integrations/windsurf.md) |
+
+## Quickstart — agent host via well-known URL
+
+For agent hosts that auto-discover skills via the
+[well-known URI convention](https://en.wikipedia.org/wiki/Well-known_URI),
+SciVerse serves the skill bundle at:
+
+```
+https://sciverse.space/.well-known/agent-skills/index.json
+```
+
+The endpoint returns a manifest listing the `sciverse` skill and its files
+(`SKILL.md`, references, agent adapter configs, runnable scripts). Hosts that
+follow the convention fetch the manifest, then materialise the skill locally
+for the model to invoke.
+
+Use this channel when:
+
+- Your agent host already supports `.well-known/agent-skills/` discovery
+- You want the latest skill version automatically (no version pinning on the consumer side)
+- You don't want to clone a git repo just to obtain the skill
+
+For host-specific install commands (Claude Code, MCP, OpenClaw, ClawHub), see
+the other Quickstart sections above.
 
 ## Quickstart — SDK
 

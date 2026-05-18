@@ -22,6 +22,7 @@
 | **MCP server** | 任意 MCP-capable coding agent（Cursor / Codex CLI / Windsurf...） | 写到 `.mcp.json` —— [接入指南](./docs/integrations/) |
 | **Python / TypeScript SDK** | 自定义 agent（OpenAI / Anthropic / LangChain / LlamaIndex...） | `pip install sciverse` 或 `npm install sciverse` |
 | **CLI** | shell 脚本 / 快速试用 / 无 agent loop | 随 Python SDK 一起装 —— `sciverse auth login` |
+| **Web well-known URL** | 通过 well-known URI 约定自动发现 skill 的 agent host | 把 agent host 指向 <https://sciverse.space/.well-known/agent-skills/> |
 
 ## 5 分钟接入 —— Claude Code
 
@@ -63,6 +64,29 @@ export SCIVERSE_API_TOKEN=sv-...     # 从 https://sciverse.space 控制台申�
 | Cursor | [docs/integrations/cursor.md](./docs/integrations/cursor.md) |
 | Codex CLI | [docs/integrations/codex-cli.md](./docs/integrations/codex-cli.md) |
 | Windsurf | [docs/integrations/windsurf.md](./docs/integrations/windsurf.md) |
+
+## 5 分钟接入 —— agent host 走 well-known URL
+
+如果你的 agent host 支持
+[well-known URI 约定](https://en.wikipedia.org/wiki/Well-known_URI)
+自动发现 skill，SciVerse 在以下地址提供 skill bundle：
+
+```
+https://sciverse.space/.well-known/agent-skills/index.json
+```
+
+接口返回 manifest，列出 `sciverse` skill 及其文件（`SKILL.md`、references、
+agent 适配配置、可运行脚本）。遵循该约定的 host 会先拉 manifest，再把 skill
+materialise 到本地供模型调用。
+
+适用场景：
+
+- 你的 agent host 已支持 `.well-known/agent-skills/` 自动发现
+- 你想自动跟进最新 skill 版本（消费侧无需锁版本）
+- 你不想为了拿 skill 单独 clone 一个 git repo
+
+需要 host 特定的安装命令（Claude Code / MCP / OpenClaw / ClawHub），见上方
+其他 Quickstart 段。
 
 ## 5 分钟接入 —— SDK
 

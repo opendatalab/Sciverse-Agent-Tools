@@ -59,7 +59,12 @@ plugins:
         - clawhub/SKILL.md
         - skill-claude-code/SKILL.md
         - .claude-plugin/marketplace.json
-        - dist/**
+        # dist/* 只列需要 commit 进 git 的派生产物：
+        # web-skill.tgz / web-skill/ 仅作为 GitHub Release 资产 + build 中间产物，
+        # 不入 git（避免每 release commit 二进制膨胀 history）
+        - dist/anthropic-tools.json
+        - dist/langchain_tools.py
+        - dist/openai-tools.json
         - packages/python/src/sciverse/tools.py
         - packages/python/src/sciverse/types.py
         - packages/typescript/src/tools.ts
