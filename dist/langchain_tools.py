@@ -6,7 +6,7 @@ from typing import Any
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, ConfigDict, Field
 
-TOOLS_VERSION = "0.5.0"
+TOOLS_VERSION = "0.5.1"
 
 
 class SearchPapersArgs(BaseModel):
