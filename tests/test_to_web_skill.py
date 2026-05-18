@@ -100,3 +100,50 @@ def test_generate_is_idempotent_with_stale_files(tmp_path):
     index = json.loads((out / ".well-known" / "agent-skills" / "index.json").read_text(encoding="utf-8"))
     files = index["skills"][0]["files"]
     assert "stale-file.txt" not in files, f"stale 文件不该进 index.json: {files}"
+
+
+def test_scripts_generated_with_web_brand(tmp_path):
+    """web brand：callSciverse（小写 v）、CHANNEL="web"、含 fetchSciverseResource helper。"""
+    out = tmp_path / "web-skill"
+    generate(FIXTURE, out)
+    scripts = out / ".well-known" / "agent-skills" / "sciverse" / "scripts"
+    common = (scripts / "_common.mjs").read_text(encoding="utf-8")
+    # 函数名：callSciverse（小写 v）
+    assert "callSciverse" in common
+    # 不应残留 clawhub brand
+    assert "callSciVerse" not in common
+    # CHANNEL = "web"
+    # ⚠️ 注意：当前 platform-console 的 _common.mjs 里 CHANNEL = "skills"（看 source）。
+    # 真值以 web_skill_assets/scripts/_common.mjs 为准。本测试断言它至少不是 clawhub 的 "openclaw"。
+    assert '"openclaw"' not in common
+    # _common.mjs 应含 fetchSciverseResource helper（DRY 重构）
+    assert "fetchSciverseResource" in common
+
+
+def test_get_resource_uses_common_helper(tmp_path):
+    """get_resource.mjs 不应自己 fetch，应用 _common.mjs 提供的 fetchSciverseResource。"""
+    out = tmp_path / "web-skill"
+    generate(FIXTURE, out)
+    src = (out / ".well-known" / "agent-skills" / "sciverse" / "scripts" / "get_resource.mjs").read_text(encoding="utf-8")
+    assert "fetchSciverseResource" in src
+
+
+def test_search_papers_uses_callSciverse(tmp_path):
+    """search_papers.mjs 用 callSciverse（不是 callSciVerse）。"""
+    out = tmp_path / "web-skill"
+    generate(FIXTURE, out)
+    src = (out / ".well-known" / "agent-skills" / "sciverse" / "scripts" / "search_papers.mjs").read_text(encoding="utf-8")
+    assert "callSciverse" in src
+    assert "callSciVerse" not in src
+
+
+def test_scripts_count_matches_source(tmp_path):
+    """sciverse/scripts/ 应当含 6 个 .mjs 文件（与 source web_skill_assets/scripts/ 一致）。"""
+    out = tmp_path / "web-skill"
+    generate(FIXTURE, out)
+    scripts = out / ".well-known" / "agent-skills" / "sciverse" / "scripts"
+    mjs_files = sorted(p.name for p in scripts.glob("*.mjs"))
+    assert mjs_files == sorted([
+        "_common.mjs", "search_papers.mjs", "semantic_search.mjs",
+        "read_content.mjs", "get_resource.mjs", "list_catalog.mjs",
+    ])
