@@ -19,21 +19,27 @@ import json
 import shutil
 from pathlib import Path
 
-from ._common import load_openapi
-
 ASSETS = Path(__file__).parent / "web_skill_assets"
 SKILL_DIR_RELATIVE = Path(".well-known/agent-skills/sciverse")
 SKILL_DESCRIPTION = (
     "Retrieve citation-grade academic literature from Sciverse. "
     "Use when an agent needs structured paper metadata search, semantic paper chunk retrieval "
-    "for RAG, source text expansion around a paper offset, or figure/table image fetching."
+    "for RAG, source text expansion around a paper offset, or figure/table image fetching "
+    "from scientific papers. Prefer this skill for peer-reviewed and preprint literature tasks "
+    "that require doc_id/title citations and reproducible retrieval steps."
 )
 
 
 def _copy_static(out_root: Path) -> None:
-    """copy SKILL.md / references/* / agents/* 到 out_root 的对应位置。"""
+    """copy SKILL.md / references/* / agents/* 到 out_root 的对应位置。
+
+    入口处清空 skill_root（仅 sciverse/ 子树，不动 out_root 与同级 index.json），
+    避免二次运行时残留文件被 _write_index 扫进 files 数组（idempotency）。
+    """
     skill_root = out_root / SKILL_DIR_RELATIVE
-    skill_root.mkdir(parents=True, exist_ok=True)
+    if skill_root.exists():
+        shutil.rmtree(skill_root)
+    skill_root.mkdir(parents=True)
 
     # SKILL.md template（当前无动态变量，直接 copy 去掉 .template 后缀）
     shutil.copy(ASSETS / "SKILL.md.template", skill_root / "SKILL.md")
@@ -81,12 +87,13 @@ def _write_index(out_root: Path) -> None:
 
 
 def generate(openapi_path: Path, out_root: Path) -> None:
-    """主入口：根据 openapi + web_skill_assets 渲染整个 bundle 到 out_root。
+    """主入口：根据 web_skill_assets 渲染整个 bundle 到 out_root。
 
-    openapi_path 当前没用到（SKILL.md 无动态字段），但保留参数为后续插入
-    OpenAPI version / endpoint 时不破坏 API 留通路。
+    openapi_path 当前未使用（SKILL.md 无动态字段），保留参数稳定 API
+    （build.sh 等上游调用方按统一签名调用）；后续若需注入 OpenAPI version
+    到 frontmatter，在此处加 `load_openapi(openapi_path)` 即可。
     """
-    _ = load_openapi(openapi_path)  # 验证 openapi.yaml 可读，且为 A2 后续插入预留
+    del openapi_path  # 显式标注未使用，防 lint 警告
     _copy_static(out_root)
     _write_index(out_root)
 
