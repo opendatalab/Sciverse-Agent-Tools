@@ -1,3 +1,9 @@
+## [0.5.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.4...v0.5.0) (2026-05-18)
+
+### Features
+
+* **generators:** add web_skill_assets/ static resources ([f20f980](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/f20f980b7cee0ff6165983a8a1b4dcbe8ed782c0))
+
 ## [0.4.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.3...v0.4.4) (2026-05-15)
 
 ### Bug Fixes

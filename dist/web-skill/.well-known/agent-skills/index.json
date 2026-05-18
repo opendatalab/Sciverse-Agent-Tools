@@ -1,0 +1,22 @@
+{
+  "skills": [
+    {
+      "name": "sciverse",
+      "description": "Retrieve citation-grade academic literature from Sciverse. Use when an agent needs structured paper metadata search, semantic paper chunk retrieval for RAG, source text expansion around a paper offset, or figure/table image fetching from scientific papers. Prefer this skill for peer-reviewed and preprint literature tasks that require doc_id/title citations and reproducible retrieval steps.",
+      "files": [
+        "SKILL.md",
+        "agents/openai.yaml",
+        "references/rag-and-content.md",
+        "references/runtime.md",
+        "references/search-tools.md",
+        "references/workflows.md",
+        "scripts/_common.mjs",
+        "scripts/get_resource.mjs",
+        "scripts/list_catalog.mjs",
+        "scripts/read_content.mjs",
+        "scripts/search_papers.mjs",
+        "scripts/semantic_search.mjs"
+      ]
+    }
+  ]
+}
