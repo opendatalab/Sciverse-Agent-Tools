@@ -84,3 +84,25 @@ jobs:
             -p @semantic-release/exec \
             -p conventional-changelog-conventionalcommits \
             semantic-release
+
+      - name: Upload web-skill.tgz to GitHub Release
+        # semantic-release 决定本次 commit 是否触发 release。若不触发（如
+        # docs only 且 release rule 为 false），HEAD 没有新 tag，应跳过 upload；
+        # 用 git describe --exact-match 检查。
+        # dist/web-skill.tgz 由 scripts/build.sh 产出（被 bump-versions.mjs
+        # 在 semantic-release prepare 阶段调用）。
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=$(git describe --exact-match --tags HEAD 2>/dev/null || echo "")
+          if [ -z "$TAG" ]; then
+            echo "HEAD has no tag, skipping web-skill.tgz upload"
+            exit 0
+          fi
+          if [ ! -f dist/web-skill.tgz ]; then
+            echo "ERROR: dist/web-skill.tgz missing after semantic-release run"
+            exit 1
+          fi
+          gh release upload "$TAG" dist/web-skill.tgz --clobber
+          echo "uploaded web-skill.tgz to release $TAG"
