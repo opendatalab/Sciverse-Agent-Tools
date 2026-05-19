@@ -1,4 +1,4 @@
-"""端到端示例：使用 OpenAI function calling + SciVerse 五个 tool。
+"""端到端示例：使用 OpenAI function calling + Sciverse 五个 tool。
 
 `OPENAI_TOOLS` 包含全部 5 个 schema；dispatch 表必须全覆盖，否则模型
 调到没接的 tool 时 KeyError。

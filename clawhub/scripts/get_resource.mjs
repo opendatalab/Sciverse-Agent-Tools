@@ -31,7 +31,7 @@ const res = await fetch(url, {
 });
 if (!res.ok) {
   const body = await res.text();
-  console.error(`[sciverse] SciVerse API ${res.status}: ${body}`);
+  console.error(`[sciverse] Sciverse API ${res.status}: ${body}`);
   process.exit(1);
 }
 const mimeType = (res.headers.get("content-type") || "application/octet-stream").split(";")[0].trim();

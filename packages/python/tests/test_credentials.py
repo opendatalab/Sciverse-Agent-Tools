@@ -119,5 +119,5 @@ def test_client_fallback_to_credentials(tmp_home):
 def test_client_raises_when_no_token_anywhere(tmp_home):
     from sciverse import AgentToolsClient
 
-    with pytest.raises(ValueError, match="未找到 SciVerse API Token"):
+    with pytest.raises(ValueError, match="未找到 Sciverse API Token"):
         AgentToolsClient()

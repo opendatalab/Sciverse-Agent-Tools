@@ -73,7 +73,7 @@ describe("loadConfig with fallback", () => {
   });
 
   it("throws ConfigError with helpful message when no token anywhere", () => {
-    expect(() => loadConfig(process.env)).toThrow(/未找到 SciVerse API Token/);
+    expect(() => loadConfig(process.env)).toThrow(/未找到 Sciverse API Token/);
   });
 
   it("env-passed token wins over file", () => {

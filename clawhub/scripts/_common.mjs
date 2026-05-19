@@ -1,5 +1,5 @@
 // Standalone fetch wrapper for ClawHub skill scripts. Zero external dependencies.
-// 通过 ClawHub skill scripts 调用 SciVerse API 的共享工具。
+// 通过 ClawHub skill scripts 调用 Sciverse API 的共享工具。
 
 import { randomUUID } from "node:crypto";
 
@@ -28,7 +28,7 @@ try {
   process.exit(2);
 }
 
-export async function callSciVerse(method, path, options = {}) {
+export async function callSciverse(method, path, options = {}) {
   const headers = {
     authorization: `Bearer ${TOKEN}`,
     "content-type": "application/json",
@@ -52,7 +52,7 @@ export async function callSciVerse(method, path, options = {}) {
   const res = await fetch(url, init);
   if (!res.ok) {
     const body = await res.text();
-    console.error(`[sciverse] SciVerse API ${res.status}: ${body}`);
+    console.error(`[sciverse] Sciverse API ${res.status}: ${body}`);
     process.exit(1);
   }
   return await res.json();

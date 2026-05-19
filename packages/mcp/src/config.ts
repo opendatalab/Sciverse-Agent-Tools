@@ -19,7 +19,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const token = resolveToken(undefined, env);
   if (!token) {
     throw new ConfigError(
-      "未找到 SciVerse API Token。请设 SCIVERSE_API_TOKEN 环境变量，或运行 " +
+      "未找到 Sciverse API Token。请设 SCIVERSE_API_TOKEN 环境变量，或运行 " +
         "`pip install sciverse && sciverse auth login` 保存凭据到 ~/.sciverse/credentials.json。",
     );
   }

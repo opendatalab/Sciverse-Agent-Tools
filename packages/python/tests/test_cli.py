@@ -177,4 +177,4 @@ def test_search_without_login_returns_2(tmp_home, capsys):
     code = main(["search", "x"])
     assert code == 2
     err = capsys.readouterr().err
-    assert "未找到 SciVerse API Token" in err
+    assert "未找到 Sciverse API Token" in err

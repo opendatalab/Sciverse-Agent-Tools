@@ -21,7 +21,7 @@ from ._common import get_request_schema, iter_operations, load_openapi
 SKILL_NAME = "sciverse-academic-retrieval"
 SKILL_SLUG = "academic-retrieval"
 SKILL_DESCRIPTION_EN = (
-    "SciVerse academic paper retrieval: structured metadata search, semantic "
+    "Sciverse academic paper retrieval: structured metadata search, semantic "
     "chunk retrieval for RAG, and byte-range content reading. For agent "
     "workflows that need citation-grade scientific literature."
 )
@@ -75,7 +75,7 @@ def generate_manifest(openapi_path: Path, *, existing_version: str | None = None
             {
                 "name": "SCIVERSE_API_TOKEN",
                 "required": True,
-                "description": "SciVerse API Token (obtain from https://sciverse.space).",
+                "description": "Sciverse API Token (obtain from https://sciverse.space).",
             },
             {
                 "name": "SCIVERSE_BASE_URL",

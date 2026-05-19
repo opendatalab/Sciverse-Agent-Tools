@@ -28,13 +28,13 @@ SKILL_DESCRIPTION = (
     "Use when the user needs academic paper retrieval — searching scientific "
     "literature by author/year/journal, finding paper chunks for RAG-style "
     "citations, or expanding original text around a known paper offset. "
-    "Provides three SciVerse tools (search_papers, semantic_search, read_content) "
+    "Provides three Sciverse tools (search_papers, semantic_search, read_content) "
     "via the sciverse-mcp-server MCP server."
 )
 
 PLUGIN_CATEGORY = "research"
 PLUGIN_HOMEPAGE = "https://sciverse.space"
-PLUGIN_OWNER_NAME = "SciVerse Platform Team"
+PLUGIN_OWNER_NAME = "Sciverse Platform Team"
 
 
 def _en_description(node: dict) -> str:
@@ -57,9 +57,9 @@ def generate_skill_md(openapi_path: Path) -> str:
         f"description: {SKILL_DESCRIPTION}",
         "---",
         "",
-        "# SciVerse — Academic Paper Retrieval",
+        "# Sciverse — Academic Paper Retrieval",
         "",
-        "Retrieval skill for the SciVerse open platform. Exposes five tools",
+        "Retrieval skill for the Sciverse open platform. Exposes five tools",
         "for working with scientific literature: field introspection,",
         "structured metadata search, semantic chunk retrieval for RAG,",
         "byte-range content reading, and figure / table image fetching.",

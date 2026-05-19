@@ -157,7 +157,7 @@
       "type": "function",
       "function": {
         "name": "list_catalog",
-        "description": "返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、\n是否默认返回、字段说明、FilterOperator 清单等。\n适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」\n「`metadata_type` 的合法取值是？」\n不适用：实际查询文献，那是 search_papers / semantic_search 的事。\n典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，\n把 schema 装进 working memory，后续精确构造 search_papers 的 filters。\ninclude_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。",
+        "description": "返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、\n是否默认返回、字段说明、FilterOperator 清单等。\n适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」\n「`metadata_type` 的合法取值是？」\n不适用：实际查询文献，那是 search_papers / semantic_search 的事。\n典型用法：Agent 第一次接触 Sciverse 或碰到模糊字段需求时先调一次本接口，\n把 schema 装进 working memory，后续精确构造 search_papers 的 filters。\ninclude_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。",
         "parameters": {
           "type": "object",
           "properties": {

@@ -60,7 +60,7 @@ def _run_with_client(coro_factory) -> int:
 
 
 def _cmd_login(args: argparse.Namespace) -> int:
-    print("SciVerse 登录")
+    print("Sciverse 登录")
     print("-" * 40)
     print(f"1. 浏览器将打开控制台 token 页：{CONSOLE_TOKEN_URL}")
     print("2. 登录后创建 / 复制一个 API Token（形如 sv-xxx）")
@@ -89,7 +89,7 @@ def _cmd_login(args: argparse.Namespace) -> int:
         return 1
     if not token.startswith("sv-"):
         print(
-            "[warn] token 看起来不像 SciVerse 格式（应以 sv- 开头），"
+            "[warn] token 看起来不像 Sciverse 格式（应以 sv- 开头），"
             "但仍按用户输入保存。",
             file=sys.stderr,
         )
@@ -197,7 +197,7 @@ def _cmd_resource(args: argparse.Namespace) -> int:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sciverse",
-        description="SciVerse 开发者工具 CLI。",
+        description="Sciverse 开发者工具 CLI。",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

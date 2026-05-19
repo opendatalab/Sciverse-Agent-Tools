@@ -88,7 +88,7 @@ export class AgentToolsClient {
     const token = resolveToken(opts.token);
     if (!token) {
       throw new Error(
-        "未找到 SciVerse API Token。请显式传 token、或设 SCIVERSE_API_TOKEN 环境变量、" +
+        "未找到 Sciverse API Token。请显式传 token、或设 SCIVERSE_API_TOKEN 环境变量、" +
           "或运行 `pip install sciverse && sciverse auth login` 保存凭据到 ~/.sciverse/credentials.json。",
       );
     }
@@ -108,7 +108,7 @@ export class AgentToolsClient {
     });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`SciVerse API ${res.status}: ${body}`);
+      throw new Error(`Sciverse API ${res.status}: ${body}`);
     }
     return (await res.json()) as T;
   }
@@ -140,7 +140,7 @@ export class AgentToolsClient {
     });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`SciVerse API ${res.status}: ${body}`);
+      throw new Error(`Sciverse API ${res.status}: ${body}`);
     }
     const mimeType = (res.headers.get("content-type") || "application/octet-stream").split(";")[0]!.trim();
     const buf = new Uint8Array(await res.arrayBuffer());

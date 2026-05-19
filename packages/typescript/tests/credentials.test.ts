@@ -93,7 +93,7 @@ describe("AgentToolsClient fallback", () => {
   });
 
   it("throws when no token anywhere", () => {
-    expect(() => new AgentToolsClient()).toThrow(/未找到 SciVerse API Token/);
+    expect(() => new AgentToolsClient()).toThrow(/未找到 Sciverse API Token/);
   });
 
   it("explicit token still works after fallback added", () => {

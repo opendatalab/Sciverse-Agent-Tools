@@ -2,7 +2,7 @@
   "name": "sciverse-academic-retrieval",
   "version": "0.5.1",
   "slug": "academic-retrieval",
-  "description": "SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.",
+  "description": "Sciverse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.",
   "runtime": "node>=18",
   "license": "Apache-2.0",
   "homepage": "https://sciverse.space",
@@ -10,7 +10,7 @@
     {
       "name": "SCIVERSE_API_TOKEN",
       "required": true,
-      "description": "SciVerse API Token (obtain from https://sciverse.space)."
+      "description": "Sciverse API Token (obtain from https://sciverse.space)."
     },
     {
       "name": "SCIVERSE_BASE_URL",
@@ -170,7 +170,7 @@
     },
     {
       "name": "list_catalog",
-      "description": "Returns the schema catalog for search_papers: every field name, type,\nwhether it's filterable / sortable, default-return status, human\ndescription, and applicable FilterOperators.\nUse when: \"Which field do I filter by DOI?\", \"What values can\naccess_oa_status take?\", \"What's the right enum for metadata_type?\".\nNot for: actually searching papers (use search_papers / semantic_search).\nTypical pattern: call once when first encountering SciVerse or facing\nan ambiguous field need, then construct precise search_papers filters\nfrom the returned schema.\nPass include_sample_values=true to also fetch top-20 values for\nenum-like fields (OpenSearch terms aggregation, 24h cached).",
+      "description": "Returns the schema catalog for search_papers: every field name, type,\nwhether it's filterable / sortable, default-return status, human\ndescription, and applicable FilterOperators.\nUse when: \"Which field do I filter by DOI?\", \"What values can\naccess_oa_status take?\", \"What's the right enum for metadata_type?\".\nNot for: actually searching papers (use search_papers / semantic_search).\nTypical pattern: call once when first encountering Sciverse or facing\nan ambiguous field need, then construct precise search_papers filters\nfrom the returned schema.\nPass include_sample_values=true to also fetch top-20 values for\nenum-like fields (OpenSearch terms aggregation, 24h cached).",
       "script": "scripts/list_catalog.mjs",
       "input_schema": {
         "type": "object",
