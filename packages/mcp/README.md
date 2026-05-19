@@ -4,7 +4,7 @@
 
 [English](#english) | [中文](#中文)
 
-Official MCP (Model Context Protocol) server for the SciVerse open platform.
+Official MCP (Model Context Protocol) server for the Sciverse open platform.
 Exposes five academic-paper retrieval tools to any MCP-compatible coding agent
 — Claude Code, Cursor, Codex CLI, Windsurf, Continue, and more.
 
@@ -110,7 +110,7 @@ Find 3 papers on Transformer attention mechanism with quoted excerpts.
 Or let the agent learn the schema first:
 
 ```
-List the SciVerse fields and the values access_oa_status can take, then find
+List the Sciverse fields and the values access_oa_status can take, then find
 2024+ gold-OA Nature papers.
 ```
 
@@ -140,7 +140,7 @@ npm install --registry https://registry.npmmirror.com
 
 ## 中文
 
-SciVerse 开放平台官方 MCP (Model Context Protocol) server。把 5 个学术文献检索
+Sciverse 开放平台官方 MCP (Model Context Protocol) server。把 5 个学术文献检索
 工具暴露给任何 MCP 兼容的 coding agent —— Claude Code、Cursor、Codex CLI、
 Windsurf、Continue 等。
 
@@ -235,7 +235,7 @@ Python/TS SDK、ClawHub skill、OpenAI / Anthropic tool 保持一致。
 或让 agent 先学 schema 再发查询：
 
 ```
-列出 SciVerse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA
+列出 Sciverse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA
 状态的 Nature 期刊论文。
 ```
 

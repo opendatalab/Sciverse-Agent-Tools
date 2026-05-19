@@ -2,7 +2,7 @@
 
 [English](#english) | [中文](#中文)
 
-SciVerse open-platform TypeScript SDK for academic paper retrieval. Wraps five
+Sciverse open-platform TypeScript SDK for academic paper retrieval. Wraps five
 retrieval tools (`searchPapers`, `semanticSearch`, `readContent`, `listCatalog`,
 `getResource`) behind one fetch-based client + ready-to-use `OPENAI_TOOLS` /
 `ANTHROPIC_TOOLS` constants for direct tool-calling.
@@ -120,13 +120,13 @@ see [`sciverse-mcp-server`](https://www.npmjs.com/package/sciverse-mcp-server).
 
 ### Error handling
 
-Non-2xx responses throw `new Error("SciVerse API <status>: <body>")`:
+Non-2xx responses throw `new Error("Sciverse API <status>: <body>")`:
 
 ```ts
 try {
   await c.searchPapers({ query: "x" });
 } catch (e) {
-  console.error(e);  // "SciVerse API 401: {...}"
+  console.error(e);  // "Sciverse API 401: {...}"
 }
 ```
 
@@ -149,7 +149,7 @@ try {
 
 ## 中文
 
-SciVerse 开放平台 TypeScript SDK，5 个学术文献检索 tool（结构化元数据、
+Sciverse 开放平台 TypeScript SDK，5 个学术文献检索 tool（结构化元数据、
 语义检索、原文切片、字段 introspection、论文图片）。
 
 ### 安装
@@ -256,13 +256,13 @@ Claude Agent SDK / OpenAI Agents SDK 写法更简洁（agent loop 由框架处�
 
 ### 错误处理
 
-非 2xx 响应抛 `new Error("SciVerse API <status>: <body>")`：
+非 2xx 响应抛 `new Error("Sciverse API <status>: <body>")`：
 
 ```ts
 try {
   await c.searchPapers({ query: "x" });
 } catch (e) {
-  console.error(e);  // "SciVerse API 401: {...}"
+  console.error(e);  // "Sciverse API 401: {...}"
 }
 ```
 
