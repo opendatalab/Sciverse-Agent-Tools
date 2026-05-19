@@ -1,3 +1,9 @@
+## [0.5.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.1...v0.5.2) (2026-05-19)
+
+### Bug Fixes
+
+* update readme and fix typo ([#4](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/4)) ([621123e](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/621123e739c2e78731510613c4412cae72fd4757))
+
 ## [0.5.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.0...v0.5.1) (2026-05-18)
 
 ## [0.5.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.4...v0.5.0) (2026-05-18)
