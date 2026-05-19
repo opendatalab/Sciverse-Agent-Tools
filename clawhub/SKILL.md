@@ -2,14 +2,14 @@
 name: sciverse-academic-retrieval
 slug: academic-retrieval
 version: 0.5.1
-description: SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.
+description: Sciverse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.
 license: Apache-2.0
 homepage: https://sciverse.space
 ---
 
 # academic-retrieval
 
-SciVerse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.
+Sciverse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.
 
 ## When to use
 
@@ -63,7 +63,7 @@ description, and applicable FilterOperators.
 Use when: "Which field do I filter by DOI?", "What values can
 access_oa_status take?", "What's the right enum for metadata_type?".
 Not for: actually searching papers (use search_papers / semantic_search).
-Typical pattern: call once when first encountering SciVerse or facing
+Typical pattern: call once when first encountering Sciverse or facing
 an ambiguous field need, then construct precise search_papers filters
 from the returned schema.
 Pass include_sample_values=true to also fetch top-20 values for

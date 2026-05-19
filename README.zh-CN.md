@@ -1,8 +1,10 @@
-# SciVerse Agent Tools
+# Sciverse Agent Tools
 
 [English](./README.md) | **简体中文**
 
-为 LLM Agent 提供 [SciVerse 开放平台](https://sciverse.space)学术检索能力的标准化 tool schema 与 SDK。
+**Sciverse Agent Tools** 旨在为大语言模型 (LLM) Agent 提供 [Sciverse 开放平台](https://sciverse.space)强大的学术检索能力，并包含标准化的工具 Schema 与开箱即用的 SDK。
+
+通过接入这些工具，你可以轻松赋予你的 AI Agent 搜索学术论文、执行自然语言语义检索 (RAG)、以及获取原始文献片段和多模态资源（如图表）的能力。
 
 | 工具 | 适用场景 |
 |---|---|
@@ -18,11 +20,22 @@
 
 | 路径 | 适合谁 | 安装 |
 |---|---|---|
+| **Skills CLI** | 使用通用 Skills CLI 的项目 | `npx skills add https://sciverse.space` |
 | **Claude Code skill** | Claude Code / VS Code 用户 | 通过 Plugin Marketplace 一行装（见下） |
 | **MCP server** | 任意 MCP-capable coding agent（Cursor / Codex CLI / Windsurf...） | 写到 `.mcp.json` —— [接入指南](./docs/integrations/) |
 | **Python / TypeScript SDK** | 自定义 agent（OpenAI / Anthropic / LangChain / LlamaIndex...） | `pip install sciverse` 或 `npm install sciverse` |
 | **CLI** | shell 脚本 / 快速试用 / 无 agent loop | 随 Python SDK 一起装 —— `sciverse auth login` |
 | **Web well-known URL** | 通过 well-known URI 约定自动发现 skill 的 agent host | 把 agent host 指向 <https://sciverse.space/.well-known/agent-skills/> |
+
+## 5 分钟接入 —— Skills CLI
+
+对于支持 Skills CLI 的环境或项目，你可以通过一行命令快速添加 Sciverse 能力：
+
+```bash
+npx skills add https://sciverse.space
+```
+
+该命令会自动拉取 skill 的 manifest 并为你的项目配置好工具。请记得通过 `SCIVERSE_API_TOKEN` 环境变量配置你的 API Token（可前往 https://sciverse.space 申请）。
 
 ## 5 分钟接入 —— Claude Code
 
@@ -69,7 +82,7 @@ export SCIVERSE_API_TOKEN=sv-...     # 从 https://sciverse.space 控制台申�
 
 如果你的 agent host 支持
 [well-known URI 约定](https://en.wikipedia.org/wiki/Well-known_URI)
-自动发现 skill，SciVerse 在以下地址提供 skill bundle：
+自动发现 skill，Sciverse 在以下地址提供 skill bundle：
 
 ```
 https://sciverse.space/.well-known/agent-skills/index.json
@@ -92,9 +105,11 @@ materialise 到本地供模型调用。
 
 ### 1. 获取 Bearer Token
 
-登录 [SciVerse 开发者控制台](https://sciverse.space) 申请 API Token。
+登录 [Sciverse 开发者控制台](https://sciverse.space) 申请 API Token。
 
 ### 2. 安装 SDK
+
+请认准正确的 pip 和 npm 包名，统一为 **`sciverse`**。
 
 ```bash
 # Python
@@ -273,13 +288,13 @@ except httpx.HTTPStatusError as e:
     print(e.response.status_code, e.response.text)
 ```
 
-**TypeScript：** 非 2xx 响应抛 `Error("SciVerse API <status>: <body>")`：
+**TypeScript：** 非 2xx 响应抛 `Error("Sciverse API <status>: <body>")`：
 
 ```ts
 try {
   await c.searchPapers({ query: "x" });
 } catch (e) {
-  console.error(e);  // "SciVerse API 401: {...}"
+  console.error(e);  // "Sciverse API 401: {...}"
 }
 ```
 

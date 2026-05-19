@@ -2,7 +2,7 @@
 
 [English](#english) | [中文](#中文)
 
-SciVerse open-platform Python SDK + CLI for academic paper retrieval. Wraps
+Sciverse open-platform Python SDK + CLI for academic paper retrieval. Wraps
 five retrieval tools (`search_papers`, `semantic_search`, `read_content`,
 `list_catalog`, `get_resource`) behind one async client + ready-to-use
 `OPENAI_TOOLS` / `ANTHROPIC_TOOLS` constants for direct tool-calling.
@@ -207,7 +207,7 @@ from sciverse.types import SearchPapersRequest, SemanticSearchRequest
 
 ## 中文
 
-SciVerse 开放平台 Python SDK + CLI，提供 5 个学术文献检索 tool（结构化元数据、
+Sciverse 开放平台 Python SDK + CLI，提供 5 个学术文献检索 tool（结构化元数据、
 语义检索、原文切片、字段 introspection、论文图片）。
 
 ### 安装

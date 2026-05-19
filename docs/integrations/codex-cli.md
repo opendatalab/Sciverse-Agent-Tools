@@ -1,10 +1,10 @@
-# Codex CLI 接入 SciVerse
+# Codex CLI 接入 Sciverse
 
 > 给 OpenAI Codex CLI 用户的 5 分钟接入指南。
 
 ## 前置条件
 
-- SciVerse API Token：从 https://sciverse.space 控制台申请
+- Sciverse API Token：从 https://sciverse.space 控制台申请
 - Node.js 18+
 - Codex CLI 已安装并配置了 OpenAI key（参见 https://github.com/openai/codex）
 
@@ -55,7 +55,7 @@ Codex 应当调用 `search_papers` 完成结构化检索。
 或测试 schema-aware 精确查询：
 
 ```
-列出 SciVerse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA 的 Nature 期刊论文。
+列出 Sciverse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA 的 Nature 期刊论文。
 ```
 
 会先调 `list_catalog` 学 schema，再构造 `search_papers` filter。
