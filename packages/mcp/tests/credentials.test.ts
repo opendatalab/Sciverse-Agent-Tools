@@ -53,8 +53,8 @@ describe("MCP credentials fallback", () => {
   });
 
   it("resolveEndpoint: file used when no env", () => {
-    writeCreds("sv-x", "https://api-dev.sciverse.space");
-    expect(resolveEndpoint()).toBe("https://api-dev.sciverse.space");
+    writeCreds("sv-x", "https://api-custom.sciverse.space");
+    expect(resolveEndpoint()).toBe("https://api-custom.sciverse.space");
   });
 
   it("credentialsPath: under HOME/.sciverse/", () => {

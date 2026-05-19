@@ -66,13 +66,13 @@ describe("resolveEndpoint", () => {
 
   it("env beats file", () => {
     vi.stubEnv("SCIVERSE_BASE_URL", "https://api.sciverse.space");
-    writeCreds("sv-x", "https://api-dev.sciverse.space");
+    writeCreds("sv-x", "https://api-custom.sciverse.space");
     expect(resolveEndpoint()).toBe("https://api.sciverse.space");
   });
 
   it("falls back to file when no env", () => {
-    writeCreds("sv-x", "https://api-dev.sciverse.space");
-    expect(resolveEndpoint()).toBe("https://api-dev.sciverse.space");
+    writeCreds("sv-x", "https://api-custom.sciverse.space");
+    expect(resolveEndpoint()).toBe("https://api-custom.sciverse.space");
   });
 });
 
