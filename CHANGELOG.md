@@ -1,3 +1,9 @@
+## [0.5.3](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.2...v0.5.3) (2026-05-19)
+
+### Bug Fixes
+
+* SciVerse -> Sciverse ([cbf3206](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/cbf320631e4400a91000e02cb214981a38156a55))
+
 ## [0.5.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.1...v0.5.2) (2026-05-19)
 
 ### Bug Fixes
