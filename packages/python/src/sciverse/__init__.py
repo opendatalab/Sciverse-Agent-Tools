@@ -1,4 +1,4 @@
-"""SciVerse Agent Tools - Python SDK."""
+"""Sciverse Agent Tools - Python SDK."""
 from importlib.metadata import PackageNotFoundError, version as _pkg_version
 
 from sciverse.client import AgentToolsClient

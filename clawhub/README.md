@@ -66,7 +66,7 @@ openclaw skills install academic-retrieval
 
 ```bash
 export SCIVERSE_API_TOKEN=sv-xxx   # 从 https://sciverse.space 控制台申请
-# 可选：export SCIVERSE_BASE_URL=https://api-dev.sciverse.space
+# 可选：export SCIVERSE_BASE_URL=https://api-custom.sciverse.space
 ```
 
 ### 工具速览

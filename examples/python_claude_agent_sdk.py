@@ -1,4 +1,4 @@
-"""端到端示例：Claude Agent SDK + SciVerse MCP server 跑一次 RAG。
+"""端到端示例：Claude Agent SDK + Sciverse MCP server 跑一次 RAG。
 
 与 `python_anthropic_rag.py` 的区别：
 - 该示例用 `anthropic` SDK 的 `messages.create` 原生 tool calling 回环

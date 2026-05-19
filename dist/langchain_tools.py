@@ -78,7 +78,7 @@ class ListCatalogTool(BaseTool):
 适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」
 「`metadata_type` 的合法取值是？」
 不适用：实际查询文献，那是 search_papers / semantic_search 的事。
-典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，
+典型用法：Agent 第一次接触 Sciverse 或碰到模糊字段需求时先调一次本接口，
 把 schema 装进 working memory，后续精确构造 search_papers 的 filters。
 include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
 """

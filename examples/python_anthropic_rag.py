@@ -1,4 +1,4 @@
-"""端到端示例：使用 Anthropic + SciVerse 五个 tool 跑一次 RAG。
+"""端到端示例：使用 Anthropic + Sciverse 五个 tool 跑一次 RAG。
 
 `ANTHROPIC_TOOLS` 包含全部 5 个 schema（list_catalog / search_papers /
 semantic_search / read_content / get_resource），dispatch 表必须覆盖

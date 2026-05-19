@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
-  title: SciVerse Agent Tools
+  title: Sciverse Agent Tools
   description: |
-    SciVerse 开放平台面向 AI Agent 的检索能力 API。
+    Sciverse 开放平台面向 AI Agent 的检索能力 API。
     所有接口均需 Bearer Token 鉴权（来自 platform-console 控制台）。
   x-en-description: |
-    SciVerse open platform retrieval API for AI agents.
+    Sciverse open platform retrieval API for AI agents.
     All endpoints require Bearer Token authentication (obtain one from
     https://sciverse.space). The platform indexes academic papers (titles,
     authors, abstracts, full-text chunks) for citation-grade RAG.
@@ -25,8 +25,6 @@ tags:
 servers:
   - url: https://api.sciverse.space
     description: 生产环境
-  - url: https://api-dev.sciverse.space
-    description: 开发环境
 
 paths:
   /meta-search:
@@ -118,7 +116,7 @@ paths:
         适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」
         「`metadata_type` 的合法取值是？」
         不适用：实际查询文献，那是 search_papers / semantic_search 的事。
-        典型用法：Agent 第一次接触 SciVerse 或碰到模糊字段需求时先调一次本接口，
+        典型用法：Agent 第一次接触 Sciverse 或碰到模糊字段需求时先调一次本接口，
         把 schema 装进 working memory，后续精确构造 search_papers 的 filters。
         include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
       x-en-summary: List available fields, filterability, and sample values
@@ -129,7 +127,7 @@ paths:
         Use when: "Which field do I filter by DOI?", "What values can
         access_oa_status take?", "What's the right enum for metadata_type?".
         Not for: actually searching papers (use search_papers / semantic_search).
-        Typical pattern: call once when first encountering SciVerse or facing
+        Typical pattern: call once when first encountering Sciverse or facing
         an ambiguous field need, then construct precise search_papers filters
         from the returned schema.
         Pass include_sample_values=true to also fetch top-20 values for
