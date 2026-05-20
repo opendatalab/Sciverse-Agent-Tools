@@ -4,44 +4,51 @@
 #   - builder: 装全量依赖 + 跑 tsc 产 dist/
 #   - runtime: 只 COPY dist/ + package.json，按 --omit=dev 装运行时依赖，减体积
 #
-# 构建上下文应该为 packages/mcp 目录（COPY 相对路径以此为根）。
-# 例如：
-#   docker build -f packages/mcp/Dockerfile -t docker.shlab.tech/public/sciverse-mcp-server:0.5.x packages/mcp
+# **构建上下文必须是仓库根目录**（因为 packages/mcp/scripts/gen-tools.mjs 通过
+# 相对路径 ../../openapi.yaml 读单源 OpenAPI spec）。
+# 在仓库根目录执行：
+#   docker build -f packages/mcp/Dockerfile \
+#     -t docker.shlab.tech/public/sciverse-mcp-server:0.5.0 .
+#
+# 同目录 .dockerignore（仓库根）已排除 node_modules / .venv / dist / .git 等大目录。
 
 # ---- builder ----
-FROM node:22-alpine AS builder
+FROM docker.shlab.tech/public/node:21.7.3-alpine AS builder
 
 WORKDIR /app
 
-# 先 COPY 锁文件以最大化 layer cache：源码变更不会触发 npm ci 重跑
-COPY package.json package-lock.json ./
+# 子项目锁文件先拷以最大化 layer cache（源码变更时不会触发 npm ci 重跑）
+COPY packages/mcp/package.json packages/mcp/package-lock.json ./
 RUN npm ci
 
-# 再 COPY 源码 + 构建脚本
-COPY tsconfig.json ./
-COPY scripts ./scripts
-COPY src ./src
+# tsconfig + 源码 + 构建脚本
+COPY packages/mcp/tsconfig.json ./
+COPY packages/mcp/scripts ./scripts
+COPY packages/mcp/src ./src
 
-# 跑 gen + tsc，产出 dist/
+# gen-tools.mjs 解析的目标路径是 ROOT/../../openapi.yaml；容器内 ROOT=/app，
+# 所以 OpenAPI 文件必须落在 /openapi.yaml。
+COPY openapi.yaml /openapi.yaml
+
+# 跑 gen + tsc 产 dist/
 RUN npm run build
 
 # ---- runtime ----
-FROM node:22-alpine AS runtime
+FROM docker.shlab.tech/public/node:21.7.3-alpine AS runtime
 
-# 用非 root 用户跑，最小权限
 WORKDIR /app
 
 # 只装 prod 依赖
-COPY package.json package-lock.json ./
+COPY packages/mcp/package.json packages/mcp/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# 把 builder 阶段产出的 dist/ 拷过来
+# builder 产 dist/
 COPY --from=builder /app/dist ./dist
 
-# node:22-alpine 自带 node 用户（uid 1000），切到它
+# node:21-alpine 自带 node 用户（uid 1000），切到它
 USER node
 
-# 默认配置：监听 8080，由 cli-http 入口读 PORT env
+# 默认监听 8080，由 cli-http 入口读 PORT env
 ENV PORT=8080
 EXPOSE 8080
 
