@@ -110,59 +110,59 @@ API_KEY = "<YOUR_SCP_HUB_API_KEY>"
 
 async def main():
     client = SciverseClient(SERVER_URL, API_KEY)
-    await client.connect()
-
-    # 1. Structured search: Hinton's papers 2020-2023 in Nature
-    result = await client.session.call_tool(
-        "search_papers",
-        arguments={
-            "authors": ["Geoffrey Hinton"],
-            "journals": ["Nature"],
-            "year_from": 2020,
-            "year_to": 2023,
-            "page_size": 5,
-        },
-    )
-    papers = json.loads(client.parse_text_result(result))
-    print(f"search_papers hits: {len(papers.get('hits', []))}")
-
-    # 2. Semantic search: RAG-style chunk retrieval
-    result = await client.session.call_tool(
-        "semantic_search",
-        arguments={"query": "How does transformer attention work?", "top_k": 3},
-    )
-    chunks = json.loads(client.parse_text_result(result))
-    for hit in chunks.get("hits", []):
-        print(f"  - {hit['title']} (score={hit['score']:.3f}, doc_id={hit['doc_id']})")
-
-    # 3. Read content: expand context around a known offset
-    if chunks.get("hits"):
-        first = chunks["hits"][0]
+    if not await client.connect():
+        print("connect failed")
+        return
+    try:
+        # 1. Structured search: recent transformer papers
         result = await client.session.call_tool(
-            "read_content",
-            arguments={"doc_id": first["doc_id"], "offset": first["offset"], "limit": 4096},
+            "search_papers",
+            arguments={
+                "query": "transformer attention",   # BM25 over title/abstract/journal
+                "year_from": 2023,
+                "page_size": 5,
+            },
         )
-        text_window = json.loads(client.parse_text_result(result))
-        print(f"read_content next_offset={text_window.get('next_offset')} more={text_window.get('more')}")
+        papers = json.loads(client.parse_text_result(result))
+        print(f"search_papers hits: {len(papers.get('hits', []))}")
 
-    # 4. List catalog: discover available filter fields and operators
-    result = await client.session.call_tool(
-        "list_catalog", arguments={"include_sample_values": False},
-    )
-    catalog = json.loads(client.parse_text_result(result))
-    print(f"available filter fields: {len(catalog.get('fields', []))}")
+        # 2. Semantic search: RAG-style chunk retrieval
+        result = await client.session.call_tool(
+            "semantic_search",
+            arguments={"query": "How does transformer attention work?", "top_k": 3},
+        )
+        chunks = json.loads(client.parse_text_result(result))
+        for hit in chunks.get("hits", []):
+            print(f"  - {hit['title']} (score={hit['score']:.3f}, doc_id={hit['doc_id']})")
 
-    # 5. Get resource: fetch a figure referenced inside read_content's Markdown
-    # (Only call after read_content returned a Markdown snippet with ![alt](file_name).)
-    # result = await client.session.call_tool(
-    #     "get_resource", arguments={"file_name": "figures/fig-3.png"},
-    # )
-    # image = client.parse_image_result(result)
-    # if image:
-    #     with open("fig-3.png", "wb") as f:
-    #         f.write(image["bytes"])
+        # 3. Read content: expand context around a known offset
+        if chunks.get("hits"):
+            first = chunks["hits"][0]
+            result = await client.session.call_tool(
+                "read_content",
+                arguments={"doc_id": first["doc_id"], "offset": first["offset"], "limit": 4096},
+            )
+            text_window = json.loads(client.parse_text_result(result))
+            print(f"read_content next_offset={text_window.get('next_offset')} more={text_window.get('more')}")
 
-    await client.disconnect()
+        # 4. List catalog: discover available filter fields and operators
+        result = await client.session.call_tool(
+            "list_catalog", arguments={"include_sample_values": False},
+        )
+        catalog = json.loads(client.parse_text_result(result))
+        print(f"available filter fields: {len(catalog.get('fields', []))}")
+
+        # 5. Get resource: fetch a figure referenced inside read_content's Markdown
+        # (Only call after read_content returned a Markdown snippet with ![alt](file_name).)
+        # result = await client.session.call_tool(
+        #     "get_resource", arguments={"file_name": "figures/fig-3.png"},
+        # )
+        # image = client.parse_image_result(result)
+        # if image:
+        #     from pathlib import Path
+        #     Path("fig-3.png").write_bytes(image["bytes"])
+    finally:
+        await client.disconnect()
 
 
 asyncio.run(main())
