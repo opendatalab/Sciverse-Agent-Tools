@@ -5,6 +5,7 @@ import type { Config } from "../src/config.js";
 const CONFIG: Config = {
   token: "sv-test",
   baseUrl: "https://api.sciverse.space",
+  channel: "mcp",
 };
 
 interface Captured {
@@ -60,6 +61,19 @@ describe("executeTool", () => {
     expect(body.sort).toEqual([
       { field: "publication_published_year", order: "SORT_ORDER_DESC" },
     ]);
+  });
+
+  it("x-request-id 携带 channel 标记，便于下游按来源归因", async () => {
+    const captured = mockFetch(200, { hits: [] });
+    await executeTool(CONFIG, "semantic_search", { query: "x" });
+    const requestId = (captured[0]!.init.headers as Record<string, string>)["x-request-id"];
+    expect(requestId).toMatch(/^sciverse-[a-z0-9]+-mcp-/);
+
+    // 模拟 HTTP 入口的 config：channel = "scp"
+    const captured2 = mockFetch(200, { hits: [] });
+    await executeTool({ ...CONFIG, channel: "scp" }, "semantic_search", { query: "x" });
+    const requestId2 = (captured2[0]!.init.headers as Record<string, string>)["x-request-id"];
+    expect(requestId2).toMatch(/^sciverse-[a-z0-9]+-scp-/);
   });
 
   it("semantic_search: 透传 body 到 /agentic-search", async () => {

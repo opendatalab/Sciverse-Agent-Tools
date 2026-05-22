@@ -1,0 +1,38 @@
+# Docker build context 优化：排除 monorepo 中 build artifact 与 VCS 内容。
+# 不影响仓库本身的 .gitignore；只对 `docker build .` 的扫描范围生效。
+
+# VCS
+.git/
+.github/
+
+# Node / TypeScript
+**/node_modules/
+**/dist/
+**/*.tsbuildinfo
+**/.eslintcache
+
+# Python
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+
+# IDE / OS
+.idea/
+.vscode/
+**/.DS_Store
+
+# Logs / temp
+**/*.log
+**/.npm/
+
+# 仓库内文档/产物目录，对 MCP 镜像 build 无关
+docs/
+examples/
+clawhub/
+skill-claude-code/
+skills/
+.agents/
+.claude/
+.claude-plugin/

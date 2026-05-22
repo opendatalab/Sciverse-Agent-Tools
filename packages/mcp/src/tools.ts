@@ -73,7 +73,6 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
 }
 
 const SKILL_NAME = "sciverse";
-const CHANNEL = "mcp";
 const PLATFORM = process.platform;
 
 async function call(
@@ -93,7 +92,7 @@ async function call(
     headers: {
       authorization: `Bearer ${config.token}`,
       "content-type": "application/json",
-      "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
+      "x-request-id": `${SKILL_NAME}-${PLATFORM}-${config.channel}-${randomUUID()}`,
     },
   };
   if (options.body !== undefined) {
@@ -142,7 +141,7 @@ async function callBinary(
     headers: {
       authorization: `Bearer ${config.token}`,
       accept: "image/*",
-      "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
+      "x-request-id": `${SKILL_NAME}-${PLATFORM}-${config.channel}-${randomUUID()}`,
     },
   });
   if (!res.ok) {

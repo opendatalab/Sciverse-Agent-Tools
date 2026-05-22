@@ -52,4 +52,25 @@ describe("loadConfig", () => {
     } as NodeJS.ProcessEnv);
     expect(cfg.baseUrl).toBe("https://api.sciverse.space");
   });
+
+  it("defaults channel to 'mcp' when SCIVERSE_MCP_CHANNEL unset", () => {
+    const cfg = loadConfig({ SCIVERSE_API_TOKEN: "sv-x" } as NodeJS.ProcessEnv);
+    expect(cfg.channel).toBe("mcp");
+  });
+
+  it("reads channel from SCIVERSE_MCP_CHANNEL env", () => {
+    const cfg = loadConfig({
+      SCIVERSE_API_TOKEN: "sv-x",
+      SCIVERSE_MCP_CHANNEL: "scp",
+    } as NodeJS.ProcessEnv);
+    expect(cfg.channel).toBe("scp");
+  });
+
+  it("falls back to default when channel env is whitespace only", () => {
+    const cfg = loadConfig({
+      SCIVERSE_API_TOKEN: "sv-x",
+      SCIVERSE_MCP_CHANNEL: "   ",
+    } as NodeJS.ProcessEnv);
+    expect(cfg.channel).toBe("mcp");
+  });
 });
