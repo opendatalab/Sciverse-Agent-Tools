@@ -41,7 +41,7 @@ def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
     if (v := kwargs.get("year_to")) is not None:
         _filter("publication_published_year", "FILTER_OP_LTE", v)
     if (v := kwargs.get("journals")) is not None and len(v) > 0:
-        _filter("publication_venue_name", "FILTER_OP_IN", list(v))
+        _filter("publication_venue_name_unified", "FILTER_OP_IN", list(v))
     if (v := kwargs.get("subjects")) is not None and len(v) > 0:
         _filter("subjects", "FILTER_OP_IN", list(v))
     if (v := kwargs.get("filters_advanced")) is not None:
@@ -122,7 +122,7 @@ class AgentToolsClient:
         - title_contains, abstract_contains  → filter CONTAINS
         - authors  → filter author IN
         - year_from, year_to  → filter publication_published_year GTE/LTE
-        - journals  → filter publication_venue_name IN
+        - journals  → filter publication_venue_name_unified IN
         - subjects  → filter subjects IN
         - filters_advanced  → 直接拼到 filters 列表
         - sort_by_year  → sort publication_published_year DESC/ASC

@@ -52,7 +52,7 @@ class SearchPapersRequest(BaseModel):
     year_to: int | None = Field(None, description="结束发表年（含）。")
     journals: list[str] | None = Field(
         None,
-        description="期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。",
+        description="期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name_unified` 字段（FILTER_OP_IN，规范化后的载体名）。",
     )
     subjects: list[str] | None = Field(
         None, description='学科分类，如 "computer science"、"biology"。'
@@ -68,12 +68,24 @@ class SearchPapersRequest(BaseModel):
 class PaperMetadata(BaseModel):
     """
     文献元数据。字段名与 metadata-service 后端 `fields.py` 的真实字段一致，
-    SDK 不做响应转换。`doc_id` 由 metadata-service 注入（OpenSearch `_id`）。
+    SDK 不做响应转换。
+    ---
+    系统标识符两个分层（按需选用）:
+      - `unique_id`: 元数据记录的全局唯一 ID。任何记录都有，与是否存在
+        全文无关；适合做引用、去重、跨服务关联、引用图谱节点。
+      - `doc_id`:    全文 artifact 的内容哈希（sha256）。仅在文档存在
+        全文时返回；元数据-only 记录无此字段。要拉全文走 `read_content`
+        接口必须用 doc_id。
+    前端展示稳定 ID 用 unique_id；跨接口取全文用 doc_id。
 
     """
 
-    doc_id: str = Field(
-        ..., description="文献唯一 ID（OpenSearch _id，通常为内容 sha256）。"
+    unique_id: str = Field(
+        ..., description="元数据记录的全局唯一 ID（任何记录都有，与是否有全文无关）。"
+    )
+    doc_id: str | None = Field(
+        None,
+        description="全文 artifact 的内容哈希（sha256）。仅当文档存在全文时返回；元数据-only 记录无此字段，且无法用 doc_id 过滤命中。",
     )
     title: str
     author: list[str] | None = Field(
@@ -81,8 +93,9 @@ class PaperMetadata(BaseModel):
         description="作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。",
     )
     abstract: str | None = None
-    publication_venue_name: str | None = Field(
-        None, description="期刊/会议名（fields.py 中是 String 类型）。"
+    publication_venue_name_unified: str | None = Field(
+        None,
+        description="发表载体名称（期刊/会议；规范化形式——消除缩写/大小写/标点噪声，适合精确匹配/分组聚合）。",
     )
     publication_published_year: int | None = None
     subjects: list[str] | None = None
