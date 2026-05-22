@@ -1,3 +1,9 @@
+## [0.6.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.4...v0.6.0) (2026-05-22)
+
+### Features
+
+* **mcp:** 新增 Streamable-HTTP transport 与 channel 归因 ([#8](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/8)) ([547901f](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/547901f80aba71302b976917e00e31d02cacfe69))
+
 ## [0.5.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.3...v0.5.4) (2026-05-22)
 
 ## [0.5.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.3...v0.5.4) (2026-05-22)
