@@ -1,3 +1,5 @@
+## [0.5.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.3...v0.5.4) (2026-05-22)
+
 ## [0.5.3](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.2...v0.5.3) (2026-05-19)
 
 ### Bug Fixes
