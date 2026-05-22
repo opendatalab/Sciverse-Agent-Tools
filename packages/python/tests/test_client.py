@@ -126,7 +126,7 @@ async def test_search_papers_maps_journals_and_subjects():
     import json as _json
     parsed = _json.loads(route.calls.last.request.read())
     fields = {f["field"] for f in parsed["filters"]}
-    assert fields == {"publication_venue_name", "subjects"}
+    assert fields == {"publication_venue_name_unified", "subjects"}
 
 
 @pytest.mark.asyncio

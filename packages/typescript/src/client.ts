@@ -56,7 +56,7 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
     addFilter("publication_published_year", "FILTER_OP_LTE", args.year_to);
   }
   if (Array.isArray(args.journals) && args.journals.length > 0) {
-    addFilter("publication_venue_name", "FILTER_OP_IN", args.journals);
+    addFilter("publication_venue_name_unified", "FILTER_OP_IN", args.journals);
   }
   if (Array.isArray(args.subjects) && args.subjects.length > 0) {
     addFilter("subjects", "FILTER_OP_IN", args.subjects);

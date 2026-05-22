@@ -35,8 +35,9 @@ Use when: "find Hinton's papers from 2020-2023", "Nature papers on
 CRISPR".
 Not for: natural-language Q&A retrieval (use semantic_search) or
 full-text snippets (use read_content).
-Returns: list of papers; each entry has doc_id, title, author, abstract,
-publication_venue_name, publication_published_year.
+Returns: list of papers; each entry has unique_id (always present),
+doc_id (only when full text exists), title, author, abstract,
+publication_venue_name_unified, publication_published_year.
 
 **Invoke**: `node scripts/search_papers.mjs '<JSON args>'`
 

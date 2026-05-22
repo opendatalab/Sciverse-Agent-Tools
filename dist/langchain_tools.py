@@ -17,7 +17,7 @@ class SearchPapersArgs(BaseModel):
     authors: list[str] | None = Field(None, description='作者名（任一命中即可）。SDK 内部映射到后端 `author` 字段（FILTER_OP_IN）。')
     year_from: int | None = Field(None, description='起始发表年（含）。')
     year_to: int | None = Field(None, description='结束发表年（含）。')
-    journals: list[str] | None = Field(None, description='期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。')
+    journals: list[str] | None = Field(None, description='期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name_unified` 字段（FILTER_OP_IN，规范化后的载体名）。')
     subjects: list[str] | None = Field(None, description='学科分类，如 "computer science"、"biology"。')
     filters_advanced: list[dict[str, Any]] | None = Field(None, description='高级过滤逃生舱（仅当上述字段不够用时使用）。')
     sort_by_year: str = Field('desc', description='')
@@ -30,7 +30,7 @@ class SearchPapersTool(BaseTool):
     description: str = """按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。
 适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。
 不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。
-返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。
+返回：论文元数据列表，每条含 unique_id（始终存在）、doc_id（仅当有全文）、title、author、abstract、publication_venue_name_unified、publication_published_year 等。
 """
     args_schema: type[BaseModel] = SearchPapersArgs
 

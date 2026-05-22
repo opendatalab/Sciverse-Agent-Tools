@@ -11,7 +11,7 @@ export interface paths {
      * @description 按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。
      * 适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。
      * 不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。
-     * 返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。
+     * 返回：论文元数据列表，每条含 unique_id（始终存在）、doc_id（仅当有全文）、title、author、abstract、publication_venue_name_unified、publication_published_year 等。
      */
     post: operations["search_papers"];
   };
@@ -80,7 +80,7 @@ export interface components {
       year_from?: number;
       /** @description 结束发表年（含）。 */
       year_to?: number;
-      /** @description 期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。 */
+      /** @description 期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name_unified` 字段（FILTER_OP_IN，规范化后的载体名）。 */
       journals?: string[];
       /** @description 学科分类，如 "computer science"、"biology"。 */
       subjects?: string[];
@@ -112,17 +112,27 @@ export interface components {
     };
     /**
      * @description 文献元数据。字段名与 metadata-service 后端 `fields.py` 的真实字段一致，
-     * SDK 不做响应转换。`doc_id` 由 metadata-service 注入（OpenSearch `_id`）。
+     * SDK 不做响应转换。
+     * ---
+     * 系统标识符两个分层（按需选用）:
+     *   - `unique_id`: 元数据记录的全局唯一 ID。任何记录都有，与是否存在
+     *     全文无关；适合做引用、去重、跨服务关联、引用图谱节点。
+     *   - `doc_id`:    全文 artifact 的内容哈希（sha256）。仅在文档存在
+     *     全文时返回；元数据-only 记录无此字段。要拉全文走 `read_content`
+     *     接口必须用 doc_id。
+     * 前端展示稳定 ID 用 unique_id；跨接口取全文用 doc_id。
      */
     PaperMetadata: {
-      /** @description 文献唯一 ID（OpenSearch _id，通常为内容 sha256）。 */
-      doc_id: string;
+      /** @description 元数据记录的全局唯一 ID（任何记录都有，与是否有全文无关）。 */
+      unique_id: string;
+      /** @description 全文 artifact 的内容哈希（sha256）。仅当文档存在全文时返回；元数据-only 记录无此字段，且无法用 doc_id 过滤命中。 */
+      doc_id?: string;
       title: string;
       /** @description 作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。 */
       author?: string[];
       abstract?: string;
-      /** @description 期刊/会议名（fields.py 中是 String 类型）。 */
-      publication_venue_name?: string;
+      /** @description 发表载体名称（期刊/会议；规范化形式——消除缩写/大小写/标点噪声，适合精确匹配/分组聚合）。 */
+      publication_venue_name_unified?: string;
       publication_published_year?: number;
       subjects?: string[];
       keywords?: string[];
@@ -237,7 +247,7 @@ export interface operations {
    * @description 按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。
    * 适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。
    * 不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。
-   * 返回：论文元数据列表，每条含 doc_id、title、author、abstract、publication_venue_name、publication_published_year 等。
+   * 返回：论文元数据列表，每条含 unique_id（始终存在）、doc_id（仅当有全文）、title、author、abstract、publication_venue_name_unified、publication_published_year 等。
    */
   search_papers: {
     requestBody: {

@@ -22,7 +22,7 @@
   "tools": [
     {
       "name": "search_papers",
-      "description": "Search academic papers by structured filters (title, authors, journal,\nyear, subjects, etc.).\nUse when: \"find Hinton's papers from 2020-2023\", \"Nature papers on\nCRISPR\".\nNot for: natural-language Q&A retrieval (use semantic_search) or\nfull-text snippets (use read_content).\nReturns: list of papers; each entry has doc_id, title, author, abstract,\npublication_venue_name, publication_published_year.",
+      "description": "Search academic papers by structured filters (title, authors, journal,\nyear, subjects, etc.).\nUse when: \"find Hinton's papers from 2020-2023\", \"Nature papers on\nCRISPR\".\nNot for: natural-language Q&A retrieval (use semantic_search) or\nfull-text snippets (use read_content).\nReturns: list of papers; each entry has unique_id (always present),\ndoc_id (only when full text exists), title, author, abstract,\npublication_venue_name_unified, publication_published_year.",
       "script": "scripts/search_papers.mjs",
       "input_schema": {
         "type": "object",
@@ -59,7 +59,7 @@
             "items": {
               "type": "string"
             },
-            "description": "期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name` 字段（FILTER_OP_IN）。"
+            "description": "期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name_unified` 字段（FILTER_OP_IN，规范化后的载体名）。"
           },
           "subjects": {
             "type": "array",

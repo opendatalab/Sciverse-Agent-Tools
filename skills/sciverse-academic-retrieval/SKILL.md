@@ -188,7 +188,7 @@ the user knows specific filter values ("Hinton's papers from 2020-2023",
   - `filters_advanced` (list, optional) — Escape hatch with full operator set
     (`FILTER_OP_EQ`, `IN`, `CONTAINS`, `GTE`, `LTE`, …) for fields not surfaced above
 - **Returns**: JSON `{hits: [...], total: int}` where each hit has
-  `doc_id`, `title`, `author`, `abstract`, `publication_venue_name`,
+  `doc_id`, `title`, `author`, `abstract`, `publication_venue_name_unified`,
   `publication_published_year`.
 
 ### Tool: `semantic_search`

@@ -106,7 +106,7 @@ describe("AgentToolsClient", () => {
       order: "SORT_ORDER_DESC",
     }]);
     expect(captured.filters[0]).toEqual({
-      field: "publication_venue_name",
+      field: "publication_venue_name_unified",
       operator: "FILTER_OP_IN",
       value: ["Nature"],
     });
