@@ -1,7 +1,7 @@
 /**
- * 端到端示例：TypeScript + LangChain + SciVerse。
+ * 端到端示例：TypeScript + LangChain + Sciverse。
  *
- * 把 SciVerse client 包装成 DynamicStructuredTool 给 LangGraph / Agent 使用。
+ * 把 Sciverse client 包装成 DynamicStructuredTool 给 LangGraph / Agent 使用。
  *
  * 运行：
  *   npm install @langchain/openai @langchain/core zod sciverse tsx
@@ -20,7 +20,7 @@ const sv = new AgentToolsClient({
 const tools = [
   new DynamicStructuredTool({
     name: "semantic_search",
-    description: "自然语言语义检索 SciVerse 文献片段。",
+    description: "自然语言语义检索 Sciverse 文献片段。",
     schema: z.object({
       query: z.string(),
       top_k: z.number().int().min(1).max(30).optional(),

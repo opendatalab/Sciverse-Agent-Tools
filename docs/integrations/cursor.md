@@ -1,10 +1,10 @@
-# Cursor 接入 SciVerse
+# Cursor 接入 Sciverse
 
 > 给 Cursor 用户的 5 分钟接入指南。
 
 ## 前置条件
 
-- SciVerse API Token：从 https://sciverse.space 控制台申请
+- Sciverse API Token：从 https://sciverse.space 控制台申请
 - Node.js 18+
 - Cursor ≥ 0.40（支持 MCP）
 
@@ -52,7 +52,7 @@ Hello-world prompt（Composer agent mode）：
 也可以先让 agent 学习 schema 再做精确查询：
 
 ```
-先列出 SciVerse 有哪些字段、access_oa_status 有哪些可能值，然后帮我找 2024 年以来 gold OA 状态的 Nature 期刊论文。
+先列出 Sciverse 有哪些字段、access_oa_status 有哪些可能值，然后帮我找 2024 年以来 gold OA 状态的 Nature 期刊论文。
 ```
 
 agent 会先调 `list_catalog(include_sample_values=true)` 拿到字段表 + 枚举值样本，再用 `search_papers` 精确构造 filter。

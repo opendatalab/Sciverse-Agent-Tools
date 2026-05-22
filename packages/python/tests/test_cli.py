@@ -46,11 +46,11 @@ def test_login_custom_endpoint(tmp_home, capsys):
     main([
         "auth", "login",
         "--token", "sv-x",
-        "--endpoint", "https://api-dev.sciverse.space",
+        "--endpoint", "https://api-custom.sciverse.space",
         "--no-browser",
     ])
     out = capsys.readouterr().out
-    assert "api-dev.sciverse.space" in out
+    assert "api-custom.sciverse.space" in out
 
 
 def test_login_empty_token_fails(tmp_home, capsys):
@@ -177,4 +177,4 @@ def test_search_without_login_returns_2(tmp_home, capsys):
     code = main(["search", "x"])
     assert code == 2
     err = capsys.readouterr().err
-    assert "未找到 SciVerse API Token" in err
+    assert "未找到 Sciverse API Token" in err

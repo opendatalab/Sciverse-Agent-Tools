@@ -1,4 +1,4 @@
-// 端到端示例：OpenAI Agents SDK + SciVerse MCP server 跑一次 RAG。
+// 端到端示例：OpenAI Agents SDK + Sciverse MCP server 跑一次 RAG。
 //
 // 与 `ts_openai.ts` 的区别：
 // - 那个示例用 `openai` SDK 的 chat completions + 原生 function calling 回环
@@ -29,7 +29,7 @@ async function main() {
 
   try {
     const agent = new Agent({
-      name: "SciVerse Agent",
+      name: "Sciverse Agent",
       instructions:
         "你是学术文献检索助手。优先用 semantic_search 找相关 chunk，" +
         "需要扩展上下文时用 read_content。每个引用都附 doc_id 与 title。",

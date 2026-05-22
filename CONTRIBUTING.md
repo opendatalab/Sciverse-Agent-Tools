@@ -1,7 +1,7 @@
 # Contributing
 
 `opendatalab/Sciverse-Agent-Tools` is the primary development repository for
-the SciVerse Agent Tools project. Issues, PRs, and discussions all happen
+the Sciverse Agent Tools project. Issues, PRs, and discussions all happen
 here.
 
 ## Reporting issues

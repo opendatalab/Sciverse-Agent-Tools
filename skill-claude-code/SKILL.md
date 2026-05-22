@@ -1,11 +1,11 @@
 ---
 name: sciverse
-description: Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides three SciVerse tools (search_papers, semantic_search, read_content) via the sciverse-mcp-server MCP server.
+description: Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides three Sciverse tools (search_papers, semantic_search, read_content) via the sciverse-mcp-server MCP server.
 ---
 
-# SciVerse — Academic Paper Retrieval
+# Sciverse — Academic Paper Retrieval
 
-Retrieval skill for the SciVerse open platform. Exposes five tools
+Retrieval skill for the Sciverse open platform. Exposes five tools
 for working with scientific literature: field introspection,
 structured metadata search, semantic chunk retrieval for RAG,
 byte-range content reading, and figure / table image fetching.
@@ -92,7 +92,7 @@ description, and applicable FilterOperators.
 Use when: "Which field do I filter by DOI?", "What values can
 access_oa_status take?", "What's the right enum for metadata_type?".
 Not for: actually searching papers (use search_papers / semantic_search).
-Typical pattern: call once when first encountering SciVerse or facing
+Typical pattern: call once when first encountering Sciverse or facing
 an ambiguous field need, then construct precise search_papers filters
 from the returned schema.
 Pass include_sample_values=true to also fetch top-20 values for

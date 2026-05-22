@@ -66,13 +66,13 @@ describe("resolveEndpoint", () => {
 
   it("env beats file", () => {
     vi.stubEnv("SCIVERSE_BASE_URL", "https://api.sciverse.space");
-    writeCreds("sv-x", "https://api-dev.sciverse.space");
+    writeCreds("sv-x", "https://api-custom.sciverse.space");
     expect(resolveEndpoint()).toBe("https://api.sciverse.space");
   });
 
   it("falls back to file when no env", () => {
-    writeCreds("sv-x", "https://api-dev.sciverse.space");
-    expect(resolveEndpoint()).toBe("https://api-dev.sciverse.space");
+    writeCreds("sv-x", "https://api-custom.sciverse.space");
+    expect(resolveEndpoint()).toBe("https://api-custom.sciverse.space");
   });
 });
 
@@ -93,7 +93,7 @@ describe("AgentToolsClient fallback", () => {
   });
 
   it("throws when no token anywhere", () => {
-    expect(() => new AgentToolsClient()).toThrow(/未找到 SciVerse API Token/);
+    expect(() => new AgentToolsClient()).toThrow(/未找到 Sciverse API Token/);
   });
 
   it("explicit token still works after fallback added", () => {

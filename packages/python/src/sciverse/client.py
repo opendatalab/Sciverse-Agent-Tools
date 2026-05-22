@@ -1,4 +1,4 @@
-"""SciVerse Agent Tools 异步 HTTP client。"""
+"""Sciverse Agent Tools 异步 HTTP client。"""
 from __future__ import annotations
 
 import platform
@@ -65,7 +65,7 @@ def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
 
 
 class AgentToolsClient:
-    """封装 SciVerse 三个对外检索接口的 Bearer-authenticated 异步 client。
+    """封装 Sciverse 三个对外检索接口的 Bearer-authenticated 异步 client。
 
     用法：
         async with AgentToolsClient(base_url=..., token=...) as c:
@@ -89,7 +89,7 @@ class AgentToolsClient:
         resolved_token = resolve_token(token)
         if not resolved_token:
             raise ValueError(
-                "未找到 SciVerse API Token。请显式传 token、或设 SCIVERSE_API_TOKEN 环境变量、"
+                "未找到 Sciverse API Token。请显式传 token、或设 SCIVERSE_API_TOKEN 环境变量、"
                 "或运行 `sciverse auth login` 保存凭据到 ~/.sciverse/credentials.json。"
             )
         self._base_url = resolve_endpoint(base_url).rstrip("/")
@@ -144,7 +144,7 @@ class AgentToolsClient:
 
         返回字段 catalog：每个字段的名称 / 类型 / filterable / sortable / default_returned /
         描述 / 适用 FilterOperator，外加 enum-like 字段的样本值（include_sample_values=True 时）。
-        Agent 第一次接触 SciVerse 或碰到字段不确定时建议先调一次再构造 search_papers。
+        Agent 第一次接触 Sciverse 或碰到字段不确定时建议先调一次再构造 search_papers。
         """
         params = {"include_sample_values": str(include_sample_values).lower()}
         resp = await self._client.get("/meta-catalog", params=params)

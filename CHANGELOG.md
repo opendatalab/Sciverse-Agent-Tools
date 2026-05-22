@@ -1,3 +1,21 @@
+## [0.5.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.3...v0.5.4) (2026-05-22)
+
+## [0.5.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.3...v0.5.4) (2026-05-22)
+
+## [0.5.3](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.2...v0.5.3) (2026-05-19)
+
+### Bug Fixes
+
+* SciVerse -> Sciverse ([cbf3206](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/cbf320631e4400a91000e02cb214981a38156a55))
+
+## [0.5.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.1...v0.5.2) (2026-05-19)
+
+### Bug Fixes
+
+* update readme and fix typo ([#4](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/4)) ([621123e](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/621123e739c2e78731510613c4412cae72fd4757))
+
+## [0.5.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.0...v0.5.1) (2026-05-18)
+
 ## [0.5.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.4.4...v0.5.0) (2026-05-18)
 
 ### Features
@@ -43,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - MCP server 包 `sciverse-mcp-server`、ClawHub skill `sciverse-academic-retrieval`、Claude Code skill `sciverse` 均不动（各有独立命名空间）
 - **目录重命名**：`skill/` → `clawhub/`，避免与 Claude Code 官方 skill（`skill-claude-code/`）混淆，直接对应 ClawHub 平台。
 - **架构重构**：agent-tools 从 sciverse-console monorepo 抽出，独立维护在 GitHub `opendatalab/Sciverse-Agent-Tools`。PyPI / npm / ClawHub 发布 + 版本号管理交给独立 repo 上的 semantic-release。原因：monorepo 整体 semantic-release 显式排除 agent-tools，导致 SDK 版本号靠手动 bump 容易忘；又不能直接接入 monorepo 主 release（不然 `fix(metadata-service)` 会污染 PyPI 包版本）；最干净的方案是独立 repo + 独立 release flow。
-- 仓库 URL 从 `SciVerse-agent-tools` 修正为 `Sciverse-Agent-Tools`（与 GitHub 实际仓库名一致），所有 packages metadata + README + Plugin Marketplace 链接同步更新。
+- 仓库 URL 从 `Sciverse-agent-tools` 修正为 `Sciverse-Agent-Tools`（与 GitHub 实际仓库名一致），所有 packages metadata + README + Plugin Marketplace 链接同步更新。
 - `GetCatalogResponse` 移除 `index_name` 字段（后端 OpenSearch 实现细节不该暴露给外部）。诊断由 metadata-service 端 SLS app_logs 承担。
 - ClawHub skill version 由 0.1.5 → 0.1.6（含 list_catalog；skill 与 SDK 版本仍独立维护，name 仍为 `sciverse-academic-retrieval` 不跟 SDK 包改名）。
 

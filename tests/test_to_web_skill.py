@@ -108,10 +108,9 @@ def test_scripts_generated_with_web_brand(tmp_path):
     generate(FIXTURE, out)
     scripts = out / ".well-known" / "agent-skills" / "sciverse" / "scripts"
     common = (scripts / "_common.mjs").read_text(encoding="utf-8")
-    # 函数名：callSciverse（小写 v）
+    # 函数名：callSciverse
     assert "callSciverse" in common
     # 不应残留 clawhub brand
-    assert "callSciVerse" not in common
     # CHANNEL = "web"
     # ⚠️ 注意：当前 platform-console 的 _common.mjs 里 CHANNEL = "skills"（看 source）。
     # 真值以 web_skill_assets/scripts/_common.mjs 为准。本测试断言它至少不是 clawhub 的 "openclaw"。
@@ -131,12 +130,11 @@ def test_get_resource_uses_common_helper(tmp_path):
 
 
 def test_search_papers_uses_callSciverse(tmp_path):
-    """search_papers.mjs 用 callSciverse（不是 callSciVerse）。"""
+    """search_papers.mjs 用 callSciverse。"""
     out = tmp_path / "web-skill"
     generate(FIXTURE, out)
     src = (out / ".well-known" / "agent-skills" / "sciverse" / "scripts" / "search_papers.mjs").read_text(encoding="utf-8")
     assert "callSciverse" in src
-    assert "callSciVerse" not in src
 
 
 def test_scripts_count_matches_source(tmp_path):

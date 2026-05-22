@@ -1,6 +1,6 @@
 # Coding agent 接入指南
 
-> SciVerse 通过 MCP server [`sciverse-mcp-server`](../../packages/mcp/) 给主流 coding agent 提供学术文献检索能力。本目录是各 agent 的 5 分钟接入指南。
+> Sciverse 通过 MCP server [`sciverse-mcp-server`](../../packages/mcp/) 给主流 coding agent 提供学术文献检索能力。本目录是各 agent 的 5 分钟接入指南。
 
 ## 选择你的 agent
 
@@ -13,7 +13,7 @@
 
 ## 底层协议
 
-所有 agent 都通过 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接入。`sciverse-mcp-server` 是 stdio 形态的 MCP server，包装 SciVerse 五个 API：
+所有 agent 都通过 [MCP (Model Context Protocol)](https://modelcontextprotocol.io) 接入。`sciverse-mcp-server` 是 stdio 形态的 MCP server，包装 Sciverse 五个 API：
 
 - `list_catalog` — 字段 introspection（agent 第一次碰到不确定的字段先调此接口）
 - `search_papers` — 结构化元数据检索
@@ -23,7 +23,7 @@
 
 ## 通用前置条件
 
-1. SciVerse API Token：从 https://sciverse.space 控制台申请，形如 `sv-xxx`
+1. Sciverse API Token：从 https://sciverse.space 控制台申请，形如 `sv-xxx`
 2. Node.js 18+（`sciverse-mcp-server` 用 `npx` 运行）
 
 ## 不在列表里的 agent？

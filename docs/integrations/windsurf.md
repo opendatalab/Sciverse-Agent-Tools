@@ -1,10 +1,10 @@
-# Windsurf 接入 SciVerse
+# Windsurf 接入 Sciverse
 
 > 给 Codeium Windsurf 用户的 5 分钟接入指南。
 
 ## 前置条件
 
-- SciVerse API Token：从 https://sciverse.space 控制台申请
+- Sciverse API Token：从 https://sciverse.space 控制台申请
 - Node.js 18+
 - Windsurf 已登录（Cascade 可用）
 
@@ -45,7 +45,7 @@ Cascade 会调用 `semantic_search` → `read_content` 完成 RAG 回答。
 或测试 schema-aware 精确查询：
 
 ```
-列出 SciVerse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA 的 Nature 期刊论文。
+列出 Sciverse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA 的 Nature 期刊论文。
 ```
 
 agent 会先调 `list_catalog` 学 schema 再构造 `search_papers` filter。

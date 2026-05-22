@@ -32,14 +32,14 @@ def tmp_home(tmp_path, monkeypatch):
 
 
 def test_save_and_load_roundtrip(tmp_home):
-    path = save_credentials("sv-abc123", "https://api-dev.sciverse.space")
+    path = save_credentials("sv-abc123", "https://api-custom.sciverse.space")
     assert path.exists()
     assert path == tmp_home / ".sciverse" / "credentials.json"
 
     loaded = load_credentials()
     assert loaded is not None
     assert loaded["token"] == "sv-abc123"
-    assert loaded["endpoint"] == "https://api-dev.sciverse.space"
+    assert loaded["endpoint"] == "https://api-custom.sciverse.space"
     assert "saved_at" in loaded
 
 
@@ -96,12 +96,12 @@ def test_resolve_endpoint_default(tmp_home):
 
 
 def test_resolve_endpoint_from_file(tmp_home):
-    save_credentials("sv-x", "https://api-dev.sciverse.space")
-    assert resolve_endpoint() == "https://api-dev.sciverse.space"
+    save_credentials("sv-x", "https://api-custom.sciverse.space")
+    assert resolve_endpoint() == "https://api-custom.sciverse.space"
 
 
 def test_resolve_endpoint_env_beats_file(tmp_home, monkeypatch):
-    save_credentials("sv-x", "https://api-dev.sciverse.space")
+    save_credentials("sv-x", "https://api-custom.sciverse.space")
     monkeypatch.setenv("SCIVERSE_BASE_URL", "https://api.sciverse.space")
     assert resolve_endpoint() == "https://api.sciverse.space"
 
@@ -119,5 +119,5 @@ def test_client_fallback_to_credentials(tmp_home):
 def test_client_raises_when_no_token_anywhere(tmp_home):
     from sciverse import AgentToolsClient
 
-    with pytest.raises(ValueError, match="未找到 SciVerse API Token"):
+    with pytest.raises(ValueError, match="未找到 Sciverse API Token"):
         AgentToolsClient()

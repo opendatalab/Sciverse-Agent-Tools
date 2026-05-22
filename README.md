@@ -1,8 +1,10 @@
-# SciVerse Agent Tools
+# Sciverse Agent Tools
 
 **English** | [简体中文](./README.zh-CN.md)
 
-Standardized tool schemas and SDKs that expose [SciVerse Open Platform](https://sciverse.space) academic retrieval capabilities to LLM agents.
+**Sciverse Agent Tools** provides standardized tool schemas and SDKs that expose the [Sciverse Open Platform](https://sciverse.space) academic retrieval capabilities to LLM agents. 
+
+With these tools, you can easily empower your AI agents to search for academic papers, perform natural language semantic retrieval (RAG), and fetch original literature contents and multimodal resources (like figures and tables).
 
 | Tool | Use case |
 |---|---|
@@ -18,10 +20,22 @@ All five tools share the same Bearer-Token authentication and are exposed identi
 
 | Path | Best for | Setup |
 |---|---|---|
+| **Skills CLI** | Projects using the generic Skills CLI | `npx skills add https://sciverse.space` |
 | **Claude Code skill** | Anyone using Claude Code / VS Code | One-line install via Plugin Marketplace (below) |
 | **MCP server** | Any MCP-capable coding agent (Cursor, Codex CLI, Windsurf, …) | Add to `.mcp.json` — [integration guides](./docs/integrations/) |
 | **Python / TypeScript SDK** | Custom agents (OpenAI / Anthropic / LangChain / LlamaIndex / …) | `pip install sciverse` or `npm install sciverse` |
 | **CLI** | Shell scripts, quick exploration, no agent loop | Comes with the Python SDK — `sciverse auth login` |
+| **Web well-known URL** | Agent hosts that auto-discover skills via the well-known URI convention | Point your agent host at <https://sciverse.space/.well-known/agent-skills/> |
+
+## Quickstart — Skills CLI
+
+The easiest way to install the skill for projects supporting the Skills CLI is via the `npx skills` command:
+
+```bash
+npx skills add https://sciverse.space
+```
+
+This command automatically fetches the skill manifest and registers the tool for your project. Don't forget to configure your API token via the `SCIVERSE_API_TOKEN` environment variable.
 
 ## Quickstart — Claude Code
 
@@ -64,13 +78,39 @@ Per-agent step-by-step guides:
 | Codex CLI | [docs/integrations/codex-cli.md](./docs/integrations/codex-cli.md) |
 | Windsurf | [docs/integrations/windsurf.md](./docs/integrations/windsurf.md) |
 
+## Quickstart — agent host via well-known URL
+
+For agent hosts that auto-discover skills via the
+[well-known URI convention](https://en.wikipedia.org/wiki/Well-known_URI),
+Sciverse serves the skill bundle at:
+
+```
+https://sciverse.space/.well-known/agent-skills/index.json
+```
+
+The endpoint returns a manifest listing the `sciverse` skill and its files
+(`SKILL.md`, references, agent adapter configs, runnable scripts). Hosts that
+follow the convention fetch the manifest, then materialise the skill locally
+for the model to invoke.
+
+Use this channel when:
+
+- Your agent host already supports `.well-known/agent-skills/` discovery
+- You want the latest skill version automatically (no version pinning on the consumer side)
+- You don't want to clone a git repo just to obtain the skill
+
+For host-specific install commands (Claude Code, MCP, OpenClaw, ClawHub), see
+the other Quickstart sections above.
+
 ## Quickstart — SDK
 
 ### 1. Get a Bearer token
 
-Sign in to the [SciVerse Developer Console](https://sciverse.space) and create an API token.
+Sign in to the [Sciverse Developer Console](https://sciverse.space) and create an API token.
 
 ### 2. Install the SDK
+
+The official and correct package name for both pip and npm is **`sciverse`**.
 
 ```bash
 # Python
@@ -249,13 +289,13 @@ except httpx.HTTPStatusError as e:
     print(e.response.status_code, e.response.text)
 ```
 
-**TypeScript:** non-2xx responses raise `Error("SciVerse API <status>: <body>")`:
+**TypeScript:** non-2xx responses raise `Error("Sciverse API <status>: <body>")`:
 
 ```ts
 try {
   await c.searchPapers({ query: "x" });
 } catch (e) {
-  console.error(e);  // "SciVerse API 401: {...}"
+  console.error(e);  // "Sciverse API 401: {...}"
 }
 ```
 
