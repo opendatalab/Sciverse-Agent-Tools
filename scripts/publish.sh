@@ -36,6 +36,19 @@ npm_version_exists() {
     | grep -q "^${ver}$"
 }
 
+# 工具：写完 .npmrc 后立即用 whoami 验证 NPM_TOKEN 当前身份。失败比
+# `npm publish` 报的"404 Not Found"清楚得多（npm 对无权限的 PUT 会
+# 伪装成 404 避免泄露包存在性，肉眼无法区分 token 失效 vs 名字被占）。
+npm_assert_auth() {
+  local who
+  who=$(npm whoami --registry=https://registry.npmjs.org 2>&1) || {
+    echo "  ✗ NPM auth check failed: ${who}" >&2
+    echo "    NPM_TOKEN 可能过期/被吊销/类型不对（2FA 账号需 Automation 或 Granular Access token）。" >&2
+    exit 1
+  }
+  echo "  ✓ NPM authed as: ${who}"
+}
+
 # ---- 1. PyPI ----
 echo "[1/4] PyPI: sciverse"
 cd packages/python
@@ -55,6 +68,7 @@ if npm_version_exists "sciverse" "${VERSION}"; then
   echo "  sciverse@${VERSION} already on npm, skipping"
 else
   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+  npm_assert_auth
   npm publish --access public --registry=https://registry.npmjs.org
   rm .npmrc
 fi
@@ -68,6 +82,7 @@ if npm_version_exists "sciverse-mcp-server" "${VERSION}"; then
   echo "  sciverse-mcp-server@${VERSION} already on npm, skipping"
 else
   echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+  npm_assert_auth
   npm publish --access public --registry=https://registry.npmjs.org
   rm .npmrc
 fi
