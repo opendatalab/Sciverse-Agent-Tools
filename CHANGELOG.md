@@ -1,3 +1,9 @@
+## [0.6.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.6.1...v0.6.2) (2026-05-22)
+
+### Bug Fixes
+
+* **release:** npm publish 前增加 whoami 鉴权预检 ([ffa97f6](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/ffa97f6ad8133b42034b71bbe4c63ed6836df176))
+
 ## [0.6.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.6.0...v0.6.1) (2026-05-22)
 
 ## [0.6.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.5.4...v0.6.0) (2026-05-22)
