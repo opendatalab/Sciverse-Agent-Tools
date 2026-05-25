@@ -198,7 +198,7 @@ export async function startHttpServer(
 }
 
 async function main(): Promise<void> {
-  // HTTP 入口默认 channel = "scp"（区分 stdio 入口的 "mcp"），用于下游 X-Request-ID 归因。
+  // HTTP 入口默认 channel = "scp"（区分 stdio 入口的 "mcp"），用于下游 X-Sciverse-Source 归因。
   // 显式设了 SCIVERSE_MCP_CHANNEL 则不覆盖（允许部署侧自定义）。
   if (!process.env.SCIVERSE_MCP_CHANNEL?.trim()) {
     process.env.SCIVERSE_MCP_CHANNEL = "scp";
