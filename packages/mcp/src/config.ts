@@ -7,9 +7,9 @@ export interface Config {
   token: string;
   baseUrl: string;
   /**
-   * 调用方标识，注入下游 X-Request-ID 中段（`sciverse-{platform}-{channel}-{uuid}`），
-   * 用于 SLS 日志归因。默认 "mcp"（stdio 入口）；cli-http.ts 启动时覆盖为 "scp"，
-   * 也可由环境变量 SCIVERSE_MCP_CHANNEL 显式指定。
+   * 调用方标识，拼入下游 X-Sciverse-Source 头部（`{platform}-{channel}`），
+   * 用于 SLS 日志归因；X-Request-Id 仅承载 uuid。默认 "mcp"（stdio 入口）；
+   * cli-http.ts 启动时覆盖为 "scp"，也可由环境变量 SCIVERSE_MCP_CHANNEL 显式指定。
    */
   channel: string;
 }

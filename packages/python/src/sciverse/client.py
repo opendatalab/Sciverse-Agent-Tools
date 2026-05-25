@@ -8,9 +8,9 @@ from typing import Any
 
 import httpx
 
-_SKILL_NAME = "sciverse"
 _CHANNEL = "python-sdk"
 _PLATFORM = platform.system().lower()  # "linux" | "darwin" | "windows"
+_SOURCE = f"{_PLATFORM}-{_CHANNEL}"
 
 
 _PASSTHROUGH = ("query", "page", "page_size", "fields")
@@ -103,7 +103,8 @@ class AgentToolsClient:
 
     @staticmethod
     async def _inject_request_id(request: httpx.Request) -> None:
-        request.headers["X-Request-Id"] = f"{_SKILL_NAME}-{_PLATFORM}-{_CHANNEL}-{uuid.uuid4()}"
+        request.headers["X-Request-Id"] = str(uuid.uuid4())
+        request.headers["X-Sciverse-Source"] = _SOURCE
 
     async def __aenter__(self) -> "AgentToolsClient":
         return self

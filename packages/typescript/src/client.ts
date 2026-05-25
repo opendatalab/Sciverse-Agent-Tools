@@ -15,9 +15,9 @@ export interface AgentToolsClientOptions {
   token?: string;
 }
 
-const SKILL_NAME = "sciverse";
 const CHANNEL = "typescript-sdk";
 const PLATFORM = process.platform;
+const SOURCE = `${PLATFORM}-${CHANNEL}`;
 
 const PASSTHROUGH = ["query", "page", "page_size", "fields"] as const;
 
@@ -103,7 +103,8 @@ export class AgentToolsClient {
         ...(init.headers ?? {}),
         authorization: `Bearer ${this.token}`,
         "content-type": "application/json",
-        "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
+        "x-request-id": randomUUID(),
+        "x-sciverse-source": SOURCE,
       },
     });
     if (!res.ok) {
