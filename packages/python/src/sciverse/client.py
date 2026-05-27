@@ -13,7 +13,8 @@ _PLATFORM = platform.system().lower()  # "linux" | "darwin" | "windows"
 _SOURCE = f"{_PLATFORM}-{_CHANNEL}"
 
 
-_PASSTHROUGH = ("query", "page", "page_size", "fields")
+_PASSTHROUGH = ("query", "page", "page_size", "fields", "freshness_boost")
+_FRESHNESS_BOOST_VALUES = frozenset({"NONE", "MILD", "STRONG"})
 
 
 def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -26,6 +27,13 @@ def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
     for k in _PASSTHROUGH:
         if k in kwargs and kwargs[k] is not None:
             out[k] = kwargs[k]
+
+    # freshness_boost 校验：枚举值不合法直接报错（在打到后端前）。
+    if (boost := out.get("freshness_boost")) is not None:
+        if not isinstance(boost, str) or boost not in _FRESHNESS_BOOST_VALUES:
+            raise ValueError(
+                f"freshness_boost must be one of {sorted(_FRESHNESS_BOOST_VALUES)}, got {boost!r}"
+            )
 
     def _filter(field: str, op: str, value: Any) -> None:
         filters.append({"field": field, "operator": op, "value": value})
@@ -127,6 +135,9 @@ class AgentToolsClient:
         - subjects  → filter subjects IN
         - filters_advanced  → 直接拼到 filters 列表
         - sort_by_year  → sort publication_published_year DESC/ASC
+        - freshness_boost  → 模糊搜索新鲜度加权（NONE/MILD/STRONG，默认 NONE）。
+          仅 query 非空时生效；与 sort_by_year 互斥（boost 已在影响排序）。
+          MILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年，适合跟踪研究方向。
         """
         body = _to_backend_payload(kwargs)
         resp = await self._client.post("/meta-search", json=body)

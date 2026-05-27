@@ -33,6 +33,20 @@ class SortByYear(Enum):
     none = "none"
 
 
+class FreshnessBoost(Enum):
+    """
+    模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。
+    MILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪
+    研究方向 / 追最新进展。底层为 function_score + gauss decay over
+    publication_published_date。
+
+    """
+
+    NONE = "NONE"
+    MILD = "MILD"
+    STRONG = "STRONG"
+
+
 class SearchPapersRequest(BaseModel):
     query: str | None = Field(
         None,
@@ -61,6 +75,10 @@ class SearchPapersRequest(BaseModel):
         None, description="高级过滤逃生舱（仅当上述字段不够用时使用）。"
     )
     sort_by_year: SortByYear | None = "desc"
+    freshness_boost: FreshnessBoost | None = Field(
+        "NONE",
+        description="模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。底层为 function_score + gauss decay over\npublication_published_date。\n",
+    )
     page: int | None = Field(1, ge=1)
     page_size: int | None = Field(10, ge=1, le=50)
 

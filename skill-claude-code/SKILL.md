@@ -187,7 +187,20 @@ semantic_search(query="attention", top_k=20)
     └─▶ filter hits to those whose doc_id appears in step-1 list
 ```
 
-**6. Show a figure / image from the paper:**
+**6. Bias fuzzy search toward recent work (freshness boost):**
+
+Set `freshness_boost` to weight results by publication date with gauss
+decay over `publication_published_date`. Only effective when `query`
+is non-empty; mutually exclusive with `sort_by_year`.
+
+```
+search_papers(query="large language model", freshness_boost="STRONG")
+    # STRONG: 3-year decay, for tracking research directions
+search_papers(query="protein folding", freshness_boost="MILD")
+    # MILD:   10-year decay, for everyday literature search
+```
+
+**7. Show a figure / image from the paper:**
 
 When `read_content` Markdown contains `![alt](file_name)` placeholders
 and the user wants to see the figure (e.g. "show me Figure 3"),

@@ -99,6 +99,16 @@ export interface components {
        * @enum {string}
        */
       sort_by_year?: "desc" | "asc" | "none";
+      /**
+       * @description 模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。
+       * MILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪
+       * 研究方向 / 追最新进展。底层为 function_score + gauss decay over
+       * publication_published_date。
+       *
+       * @default NONE
+       * @enum {string}
+       */
+      freshness_boost?: "NONE" | "MILD" | "STRONG";
       /** @default 1 */
       page?: number;
       /** @default 10 */

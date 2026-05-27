@@ -139,6 +139,19 @@ search_papers(authors=[...], year_from=2020) → doc_ids
 semantic_search(query=...) → filter hits client-side by doc_ids
 ```
 
+**Bias fuzzy search toward recent work (freshness boost):**
+
+Set `freshness_boost` to weight results by publication date with
+gauss decay. Only effective when `query` is non-empty; mutually
+exclusive with `sort_by_year`.
+
+```
+search_papers(query="large language model", freshness_boost="STRONG")
+    # STRONG: 3-year decay, for tracking research directions
+search_papers(query="protein folding", freshness_boost="MILD")
+    # MILD:   10-year decay, for everyday literature search
+```
+
 **Fetch a paper figure / image:**
 
 When read_content Markdown contains `![alt](file_name)`, call
