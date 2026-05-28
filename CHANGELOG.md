@@ -1,3 +1,9 @@
+## [0.7.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.6.3...v0.7.0) (2026-05-28)
+
+### Features
+
+* **api:** search_papers 增加 freshness_boost 参数支持新鲜度加权 ([#12](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/12)) ([7544713](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/7544713bb76740d62ab29d5a9195fa439829f05e))
+
 ## [0.6.3](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.6.2...v0.6.3) (2026-05-25)
 
 ## [0.6.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.6.1...v0.6.2) (2026-05-22)

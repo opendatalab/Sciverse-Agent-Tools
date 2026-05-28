@@ -1,6 +1,6 @@
 {
   "name": "sciverse",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "description": "Sciverse Agent Tools — OpenAI/Anthropic/LangChain compatible tool schema and async client for Sciverse retrieval APIs",
   "license": "Apache-2.0",
   "homepage": "https://github.com/opendatalab/Sciverse-Agent-Tools/tree/main/packages/typescript",
