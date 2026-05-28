@@ -1,3 +1,9 @@
+## [0.7.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.7.0...v0.7.1) (2026-05-28)
+
+### Bug Fixes
+
+* **mcp:** 增加与包名同名的 bin，修复 npx sciverse-mcp-server 启动失败 ([#13](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/13)) ([8d149d1](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/8d149d125cf0f67b9de097737d165f28699a6f1e))
+
 ## [0.7.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.6.3...v0.7.0) (2026-05-28)
 
 ### Features
