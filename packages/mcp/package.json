@@ -17,6 +17,7 @@
   "main": "./dist/server.js",
   "types": "./dist/server.d.ts",
   "bin": {
+    "sciverse-mcp-server": "./dist/cli.js",
     "sciverse-mcp": "./dist/cli.js",
     "sciverse-mcp-http": "./dist/cli-http.js"
   },
