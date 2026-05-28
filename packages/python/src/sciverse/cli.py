@@ -142,6 +142,7 @@ def _cmd_search(args: argparse.Namespace) -> int:
         if args.title_contains: kwargs["title_contains"] = args.title_contains
         if args.abstract_contains: kwargs["abstract_contains"] = args.abstract_contains
         if args.sort_by_year != "none": kwargs["sort_by_year"] = args.sort_by_year
+        if args.freshness_boost != "NONE": kwargs["freshness_boost"] = args.freshness_boost
         kwargs["page"] = args.page
         kwargs["page_size"] = args.page_size
         r = await client.search_papers(**kwargs)
@@ -252,6 +253,9 @@ def _build_parser() -> argparse.ArgumentParser:
     search.add_argument("--abstract-contains", dest="abstract_contains", help="摘要包含关键词")
     search.add_argument("--sort-by-year", choices=["desc", "asc", "none"], default="desc",
                         dest="sort_by_year", help="按年份排序，默认 desc；与 query 同传会冲突")
+    search.add_argument("--freshness-boost", choices=["NONE", "MILD", "STRONG"], default="NONE",
+                        dest="freshness_boost",
+                        help="模糊搜索新鲜度加权：MILD=近10年加权 / STRONG=近3年加权。仅 query 非空时生效；与 sort-by-year 互斥")
     search.add_argument("--page", type=int, default=1, help="页码，从 1 开始")
     search.add_argument("--page-size", type=int, default=10, dest="page_size",
                         help="每页数量，默认 10，上限 50")

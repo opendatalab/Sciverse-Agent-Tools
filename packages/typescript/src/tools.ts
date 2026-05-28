@@ -91,6 +91,16 @@ export const OPENAI_TOOLS = [
             ],
             "default": "desc"
           },
+          "freshness_boost": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "MILD",
+              "STRONG"
+            ],
+            "default": "NONE",
+            "description": "模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。底层为 function_score + gauss decay over\npublication_published_date。\n"
+          },
           "page": {
             "type": "integer",
             "default": 1,
@@ -309,6 +319,16 @@ export const ANTHROPIC_TOOLS = [
             "none"
           ],
           "default": "desc"
+        },
+        "freshness_boost": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "MILD",
+            "STRONG"
+          ],
+          "default": "NONE",
+          "description": "模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。底层为 function_score + gauss decay over\npublication_published_date。\n"
         },
         "page": {
           "type": "integer",

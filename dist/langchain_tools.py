@@ -21,6 +21,7 @@ class SearchPapersArgs(BaseModel):
     subjects: list[str] | None = Field(None, description='学科分类，如 "computer science"、"biology"。')
     filters_advanced: list[dict[str, Any]] | None = Field(None, description='高级过滤逃生舱（仅当上述字段不够用时使用）。')
     sort_by_year: str = Field('desc', description='')
+    freshness_boost: str = Field('NONE', description='模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。底层为 function_score + gauss decay over\npublication_published_date。\n')
     page: int = Field(1, description='')
     page_size: int = Field(10, description='')
 

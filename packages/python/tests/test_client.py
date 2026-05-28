@@ -159,3 +159,25 @@ async def test_search_papers_passthrough_keeps_only_canonical_fields():
     import json as _json
     parsed = _json.loads(route.calls.last.request.read())
     assert set(parsed.keys()) == {"query", "page", "page_size", "fields"}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_search_papers_freshness_boost_passthrough():
+    """freshness_boost 直接透传到 /meta-search payload。"""
+    route = respx.post("https://api.example/meta-search").mock(
+        return_value=Response(200, json={"hits": [], "total": 0, "page": 1, "page_size": 10})
+    )
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        await c.search_papers(query="transformer", freshness_boost="STRONG")
+    import json as _json
+    parsed = _json.loads(route.calls.last.request.read())
+    assert parsed["freshness_boost"] == "STRONG"
+
+
+@pytest.mark.asyncio
+async def test_search_papers_freshness_boost_invalid_value_rejected():
+    """非法 freshness_boost 值在 SDK 层校验阶段就被拒（不打到后端）。"""
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        with pytest.raises(ValueError, match="freshness_boost"):
+            await c.search_papers(query="x", freshness_boost="EXTREME")
