@@ -88,10 +88,11 @@ export interface components {
       filters_advanced?: ({
           field: string;
           /**
+           * @description 过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified（"Nature Comm" 命中 "Nature Communications"）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
            * @default FILTER_OP_EQ
            * @enum {string}
            */
-          operator?: "FILTER_OP_EQ" | "FILTER_OP_NE" | "FILTER_OP_GT" | "FILTER_OP_GTE" | "FILTER_OP_LT" | "FILTER_OP_LTE" | "FILTER_OP_IN" | "FILTER_OP_NIN" | "FILTER_OP_CONTAINS";
+          operator?: "FILTER_OP_EQ" | "FILTER_OP_NE" | "FILTER_OP_GT" | "FILTER_OP_GTE" | "FILTER_OP_LT" | "FILTER_OP_LTE" | "FILTER_OP_IN" | "FILTER_OP_NIN" | "FILTER_OP_CONTAINS" | "FILTER_OP_MATCH" | "FILTER_OP_MATCH_PHRASE";
           value: unknown;
         })[];
       /**

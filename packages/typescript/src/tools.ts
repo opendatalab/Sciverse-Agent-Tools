@@ -65,6 +65,7 @@ export const OPENAI_TOOLS = [
                 },
                 "operator": {
                   "type": "string",
+                  "description": "过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 \"Hinton\" 命中 \"Geoffrey Hinton\"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified（\"Nature Comm\" 命中 \"Nature Communications\"）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。",
                   "enum": [
                     "FILTER_OP_EQ",
                     "FILTER_OP_NE",
@@ -74,7 +75,9 @@ export const OPENAI_TOOLS = [
                     "FILTER_OP_LTE",
                     "FILTER_OP_IN",
                     "FILTER_OP_NIN",
-                    "FILTER_OP_CONTAINS"
+                    "FILTER_OP_CONTAINS",
+                    "FILTER_OP_MATCH",
+                    "FILTER_OP_MATCH_PHRASE"
                   ],
                   "default": "FILTER_OP_EQ"
                 },
@@ -294,6 +297,7 @@ export const ANTHROPIC_TOOLS = [
               },
               "operator": {
                 "type": "string",
+                "description": "过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 \"Hinton\" 命中 \"Geoffrey Hinton\"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified（\"Nature Comm\" 命中 \"Nature Communications\"）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。",
                 "enum": [
                   "FILTER_OP_EQ",
                   "FILTER_OP_NE",
@@ -303,7 +307,9 @@ export const ANTHROPIC_TOOLS = [
                   "FILTER_OP_LTE",
                   "FILTER_OP_IN",
                   "FILTER_OP_NIN",
-                  "FILTER_OP_CONTAINS"
+                  "FILTER_OP_CONTAINS",
+                  "FILTER_OP_MATCH",
+                  "FILTER_OP_MATCH_PHRASE"
                 ],
                 "default": "FILTER_OP_EQ"
               },
