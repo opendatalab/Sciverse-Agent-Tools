@@ -339,8 +339,12 @@ components:
         title: { type: string }
         author:
           type: array
-          items: { type: string }
-          description: 作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              orcid: { type: string }
+          description: 作者列表（OS object 数组，子字段 name/orcid）。按作者名检索：精确走 author.name.keyword、模糊 MATCH 走 author.name；对外过滤仍传 field "author"。
         abstract: { type: string }
         publication_venue_name_unified:
           type: string

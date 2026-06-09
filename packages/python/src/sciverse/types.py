@@ -92,6 +92,11 @@ class SearchPapersRequest(BaseModel):
     page_size: int | None = Field(10, ge=1, le=50)
 
 
+class AuthorItem(BaseModel):
+    name: str | None = None
+    orcid: str | None = None
+
+
 class PaperMetadata(BaseModel):
     """
     文献元数据。字段名与 metadata-service 后端 `fields.py` 的真实字段一致，
@@ -115,9 +120,9 @@ class PaperMetadata(BaseModel):
         description="全文 artifact 的内容哈希（sha256）。仅当文档存在全文时返回；元数据-only 记录无此字段，且无法用 doc_id 过滤命中。",
     )
     title: str
-    author: list[str] | None = Field(
+    author: list[AuthorItem] | None = Field(
         None,
-        description="作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。",
+        description='作者列表（OS object 数组，子字段 name/orcid）。按作者名检索：精确走 author.name.keyword、模糊 MATCH 走 author.name；对外过滤仍传 field "author"。',
     )
     abstract: str | None = None
     publication_venue_name_unified: str | None = Field(

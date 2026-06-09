@@ -139,8 +139,11 @@ export interface components {
       /** @description 全文 artifact 的内容哈希（sha256）。仅当文档存在全文时返回；元数据-only 记录无此字段，且无法用 doc_id 过滤命中。 */
       doc_id?: string;
       title: string;
-      /** @description 作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。 */
-      author?: string[];
+      /** @description 作者列表（OS object 数组，子字段 name/orcid）。按作者名检索：精确走 author.name.keyword、模糊 MATCH 走 author.name；对外过滤仍传 field "author"。 */
+      author?: {
+          name?: string;
+          orcid?: string;
+        }[];
       abstract?: string;
       /** @description 发表载体名称（期刊/会议；规范化形式——消除缩写/大小写/标点噪声，适合精确匹配/分组聚合）。 */
       publication_venue_name_unified?: string;
