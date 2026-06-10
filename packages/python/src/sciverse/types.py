@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 class Operator(Enum):
     """
-    过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified（"Nature Comm" 命中 "Nature Communications"）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
+    过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
     """
 
     FILTER_OP_EQ = "FILTER_OP_EQ"
@@ -31,7 +31,7 @@ class FiltersAdvancedItem(BaseModel):
     field: str
     operator: Operator | None = Field(
         "FILTER_OP_EQ",
-        description='过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified（"Nature Comm" 命中 "Nature Communications"）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。',
+        description='过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。',
     )
     value: Any
 
