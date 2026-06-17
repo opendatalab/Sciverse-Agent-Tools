@@ -215,10 +215,25 @@ class ApiError(BaseModel):
 
 
 class SearchPapersResponse(BaseModel):
-    hits: list[PaperMetadata]
-    total: int
+    results: list[PaperMetadata] = Field(
+        ..., description="命中论文列表（后端字段名为 results，非 hits）。"
+    )
+    total_count: int = Field(
+        ...,
+        description="命中总数；超过 10000 会被截断为 10000，需精确值时改用深翻页/计数。",
+    )
     page: int
     page_size: int
+    total_pages: int | None = Field(None, description="总页数。")
+    next_cursor: str | None = Field(
+        None,
+        description="深翻页游标，为空表示无更多。page*page_size>10000 时必须改用 cursor（把此值回填到请求的 cursor）。",
+    )
+    search_time_ms: float | None = Field(None, description="检索耗时（毫秒）。")
+    request_tokens: int | None = Field(None, description="输入 query 的 token 数。")
+    response_tokens: int | None = Field(
+        None, description="输出结果文本字段的 token 数。"
+    )
 
 
 class SemanticSearchResponse(BaseModel):

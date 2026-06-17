@@ -176,6 +176,43 @@
       }
     },
     {
+      "name": "list_paper_relations",
+      "description": "分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组\n（高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。\n适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」\n（relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。\n注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。\n典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "unique_id",
+          "relation"
+        ],
+        "properties": {
+          "unique_id": {
+            "type": "string",
+            "description": "目标论文 unique_id（如 paper:10.1038/xxx），来自 search_papers / semantic_search；勿传 doc_id。"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "CITATIONS",
+              "REFERENCES",
+              "RELATED_WORKS"
+            ],
+            "description": "关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。"
+          },
+          "page": {
+            "type": "integer",
+            "default": 1,
+            "minimum": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "default": 25,
+            "minimum": 1,
+            "maximum": 200
+          }
+        }
+      }
+    },
+    {
       "name": "read_content",
       "description": "按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，\n用于扩展上下文（往前/往后读更多字节）。\n返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。",
       "input_schema": {

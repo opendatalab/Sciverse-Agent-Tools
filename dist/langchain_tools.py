@@ -92,6 +92,32 @@ include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓
         raise NotImplementedError("bind a client via .with_client(...)")
 
 
+class ListPaperRelationsArgs(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    unique_id: str = Field(..., description='目标论文 unique_id（如 paper:10.1038/xxx），来自 search_papers / semantic_search；勿传 doc_id。')
+    relation: str = Field(..., description='关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。')
+    page: int = Field(1, description='')
+    page_size: int = Field(25, description='')
+
+
+class ListPaperRelationsTool(BaseTool):
+    name: str = "list_paper_relations"
+    description: str = """分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
+（高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
+（relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
+注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
+典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+"""
+    args_schema: type[BaseModel] = ListPaperRelationsArgs
+
+    def _run(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("bind a client via .with_client(...)")
+
+    async def _arun(self, **kwargs: Any) -> Any:
+        raise NotImplementedError("bind a client via .with_client(...)")
+
+
 class ReadContentArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
     doc_id: str = Field(..., description='文献 ID（来自 search_papers / semantic_search）。')
