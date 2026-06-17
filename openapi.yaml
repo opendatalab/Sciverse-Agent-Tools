@@ -148,6 +148,82 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '502': { $ref: '#/components/responses/BadGateway' }
 
+  /meta-paper-relations:
+    post:
+      tags: [search]
+      summary: 分页查一篇论文的引用/被引/相关工作列表
+      operationId: list_paper_relations
+      description: |
+        分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
+        （高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+        适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
+        （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
+        注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
+        典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+      x-en-summary: Paginate a paper's citations / references / related works
+      x-en-description: |
+        Paginate the full relation list of a paper. citations/references/related_works
+        are unbounded arrays (a highly-cited paper can have thousands); search_papers
+        only inlines a truncated few, so use this endpoint for the full list.
+        Use when: "What does paper X cite?" (relation=REFERENCES), "Which papers cite
+        paper X?" (relation=CITATIONS), "Works related to paper X" (relation=RELATED_WORKS).
+        Note: CITATIONS (incoming: who cites me) and REFERENCES (outgoing: who I cite)
+        are opposite directions.
+        Typical chain: get unique_id from search_papers / semantic_search, then paginate
+        here by relation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [unique_id, relation]
+              properties:
+                unique_id:
+                  type: string
+                  description: 目标论文 unique_id（如 paper:10.1038/xxx），来自 search_papers / semantic_search；勿传 doc_id。
+                relation:
+                  type: string
+                  enum: [CITATIONS, REFERENCES, RELATED_WORKS]
+                  description: 关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。
+                page:
+                  type: integer
+                  default: 1
+                  minimum: 1
+                page_size:
+                  type: integer
+                  default: 25
+                  minimum: 1
+                  maximum: 200
+      responses:
+        '200':
+          description: 关系列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        id_type: { type: string }
+                        title: { type: string }
+                  total_count: { type: integer }
+                  page: { type: integer }
+                  page_size: { type: integer }
+                  total_pages: { type: integer }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: unique_id 对应文档不存在
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiError' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+
   /content:
     get:
       tags: [content]

@@ -40,6 +40,18 @@ export interface paths {
      */
     get: operations["list_catalog"];
   };
+  "/meta-paper-relations": {
+    /**
+     * 分页查一篇论文的引用/被引/相关工作列表
+     * @description 分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
+     * （高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+     * 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
+     * （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
+     * 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
+     * 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+     */
+    post: operations["list_paper_relations"];
+  };
   "/content": {
     /**
      * 按字节区间读取文献原文片段
@@ -335,6 +347,61 @@ export interface operations {
         };
       };
       401: components["responses"]["Unauthorized"];
+      502: components["responses"]["BadGateway"];
+    };
+  };
+  /**
+   * 分页查一篇论文的引用/被引/相关工作列表
+   * @description 分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
+   * （高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+   * 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
+   * （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
+   * 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
+   * 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+   */
+  list_paper_relations: {
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description 目标论文 unique_id（如 paper:10.1038/xxx），来自 search_papers / semantic_search；勿传 doc_id。 */
+          unique_id: string;
+          /**
+           * @description 关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。
+           * @enum {string}
+           */
+          relation: "CITATIONS" | "REFERENCES" | "RELATED_WORKS";
+          /** @default 1 */
+          page?: number;
+          /** @default 25 */
+          page_size?: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 关系列表 */
+      200: {
+        content: {
+          "application/json": {
+            items?: {
+                id?: string;
+                id_type?: string;
+                title?: string;
+              }[];
+            total_count?: number;
+            page?: number;
+            page_size?: number;
+            total_pages?: number;
+          };
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      /** @description unique_id 对应文档不存在 */
+      404: {
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
       502: components["responses"]["BadGateway"];
     };
   };

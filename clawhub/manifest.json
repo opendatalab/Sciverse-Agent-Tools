@@ -195,6 +195,44 @@
       }
     },
     {
+      "name": "list_paper_relations",
+      "description": "Paginate the full relation list of a paper. citations/references/related_works\nare unbounded arrays (a highly-cited paper can have thousands); search_papers\nonly inlines a truncated few, so use this endpoint for the full list.\nUse when: \"What does paper X cite?\" (relation=REFERENCES), \"Which papers cite\npaper X?\" (relation=CITATIONS), \"Works related to paper X\" (relation=RELATED_WORKS).\nNote: CITATIONS (incoming: who cites me) and REFERENCES (outgoing: who I cite)\nare opposite directions.\nTypical chain: get unique_id from search_papers / semantic_search, then paginate\nhere by relation.",
+      "script": "scripts/list_paper_relations.mjs",
+      "input_schema": {
+        "type": "object",
+        "required": [
+          "unique_id",
+          "relation"
+        ],
+        "properties": {
+          "unique_id": {
+            "type": "string",
+            "description": "目标论文 unique_id（如 paper:10.1038/xxx），来自 search_papers / semantic_search；勿传 doc_id。"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "CITATIONS",
+              "REFERENCES",
+              "RELATED_WORKS"
+            ],
+            "description": "关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。"
+          },
+          "page": {
+            "type": "integer",
+            "default": 1,
+            "minimum": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "default": 25,
+            "minimum": 1,
+            "maximum": 200
+          }
+        }
+      }
+    },
+    {
       "name": "read_content",
       "description": "Read a UTF-8 byte range of a paper's original text. Typically used with\na doc_id/offset returned by semantic_search to expand context (read\nmore bytes before or after a chunk).\nReturns: text fragment, bytes_returned, next_offset, more (boolean).",
       "script": "scripts/read_content.mjs",

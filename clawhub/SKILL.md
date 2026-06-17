@@ -72,6 +72,20 @@ enum-like fields (OpenSearch terms aggregation, 24h cached).
 
 **Invoke**: `node scripts/list_catalog.mjs '<JSON args>'`
 
+### list_paper_relations
+
+Paginate the full relation list of a paper. citations/references/related_works
+are unbounded arrays (a highly-cited paper can have thousands); search_papers
+only inlines a truncated few, so use this endpoint for the full list.
+Use when: "What does paper X cite?" (relation=REFERENCES), "Which papers cite
+paper X?" (relation=CITATIONS), "Works related to paper X" (relation=RELATED_WORKS).
+Note: CITATIONS (incoming: who cites me) and REFERENCES (outgoing: who I cite)
+are opposite directions.
+Typical chain: get unique_id from search_papers / semantic_search, then paginate
+here by relation.
+
+**Invoke**: `node scripts/list_paper_relations.mjs '<JSON args>'`
+
 ### read_content
 
 Read a UTF-8 byte range of a paper's original text. Typically used with
