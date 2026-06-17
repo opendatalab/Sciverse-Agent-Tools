@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 const SKILL_NAME = "sciverse";
 const CHANNEL = "skills";
 const PLATFORM = process.platform; // "linux" | "darwin" | "win32" ...
+// 下游 SLS 日志按 X-Sciverse-Source 归因调用来源；与 SDK / MCP 一致用 `${platform}-${channel}`。
+const SOURCE = `${PLATFORM}-${CHANNEL}`;
 
 export const TOKEN = process.env.SCIVERSE_API_TOKEN;
 export const BASE_URL = (process.env.SCIVERSE_BASE_URL ?? "https://api.sciverse.space").replace(/\/$/, "");
@@ -32,6 +34,7 @@ export async function callSciverse(method, path, options = {}) {
     authorization: `Bearer ${TOKEN}`,
     "content-type": "application/json",
     "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
+    "x-sciverse-source": SOURCE,
   };
   const init = { method, headers };
   let url = `${BASE_URL}${path}`;
@@ -66,6 +69,7 @@ export async function fetchSciverseResource(fileName) {
       authorization: `Bearer ${TOKEN}`,
       accept: "image/*",
       "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
+      "x-sciverse-source": SOURCE,
     },
   });
   if (!res.ok) {

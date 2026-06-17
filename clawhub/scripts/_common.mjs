@@ -6,6 +6,8 @@ import { randomUUID } from "node:crypto";
 const SKILL_NAME = "sciverse";
 const CHANNEL = "openclaw";
 const PLATFORM = process.platform; // "linux" | "darwin" | "win32" ...
+// 下游 SLS 日志按 X-Sciverse-Source 归因调用来源；与 SDK / MCP 一致用 `${platform}-${channel}`。
+export const SOURCE = `${PLATFORM}-${CHANNEL}`;
 
 const TOKEN = process.env.SCIVERSE_API_TOKEN;
 const BASE_URL = (process.env.SCIVERSE_BASE_URL ?? "https://api.sciverse.space").replace(/\/$/, "");
@@ -33,6 +35,7 @@ export async function callSciverse(method, path, options = {}) {
     authorization: `Bearer ${TOKEN}`,
     "content-type": "application/json",
     "x-request-id": `${SKILL_NAME}-${PLATFORM}-${CHANNEL}-${randomUUID()}`,
+    "x-sciverse-source": SOURCE,
   };
   const init = { method, headers };
   let url = `${BASE_URL}${path}`;

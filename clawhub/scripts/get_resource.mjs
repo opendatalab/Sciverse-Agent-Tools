@@ -4,7 +4,7 @@
 //   { mime_type: "image/png", base64: "..." }
 // agent 可以从 base64 还原图片。
 import { Buffer } from "node:buffer";
-import { readJsonArg } from "./_common.mjs";
+import { readJsonArg, SOURCE } from "./_common.mjs";
 
 const args = readJsonArg();
 if (!args.file_name) {
@@ -27,6 +27,7 @@ const res = await fetch(url, {
   headers: {
     authorization: `Bearer ${TOKEN}`,
     accept: "image/*",
+    "x-sciverse-source": SOURCE,
   },
 });
 if (!res.ok) {
