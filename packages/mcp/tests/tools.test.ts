@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { executeTool } from "../src/tools.js";
+import { ENDPOINTS } from "../src/generated/tools.js";
 import type { Config } from "../src/config.js";
 
 const CONFIG: Config = {
@@ -177,5 +178,31 @@ describe("executeTool", () => {
   it("未知 tool 返回 isError", async () => {
     const result = await executeTool(CONFIG, "no_such_tool", {});
     expect(result.isError).toBe(true);
+  });
+});
+
+describe("tool implementation coverage (guard)", () => {
+  beforeEach(() => vi.restoreAllMocks());
+  afterEach(() => vi.unstubAllGlobals());
+
+  // 守卫：openapi 里每个工具（→ ENDPOINTS）都必须在 executeTool 有专门分支，
+  // 否则落到 default 返回 "unhandled tool"。防止"openapi 加了工具但漏 dispatch"。
+  it("every advertised tool is handled by executeTool (no 'unhandled tool')", async () => {
+    const allArgs = {
+      unique_id: "paper:1", relation: "CITATIONS", doc_id: "d1",
+      file_name: "a.png", query: "x", page: 1, page_size: 1,
+    };
+    for (const name of Object.keys(ENDPOINTS)) {
+      mockFetch(200, { hits: [], items: [], fields: [] });
+      let text = "";
+      try {
+        const result = await executeTool(CONFIG, name, allArgs);
+        text = (result.content ?? []).map((c) => ("text" in c ? c.text : "")).join("");
+      } catch {
+        // 抛异常说明确有分支在执行（default 是 return 不是 throw）→ 视为已处理
+        continue;
+      }
+      expect(text, `tool '${name}' must have an executeTool branch`).not.toContain("unhandled tool");
+    }
   });
 });
