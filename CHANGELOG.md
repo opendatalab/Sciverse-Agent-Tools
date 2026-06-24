@@ -1,3 +1,9 @@
+## [0.8.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.8.0...v0.8.1) (2026-06-24)
+
+### Bug Fixes
+
+* **skill:** list_paper_relations 在各 skill bundle 补全（脚本/文档/计数） ([cc60011](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/cc6001136c4a5a0da5fa27f88708cee4a1884687))
+
 ## [0.8.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.7.2...v0.8.0) (2026-06-24)
 
 ### Features

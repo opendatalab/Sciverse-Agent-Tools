@@ -1,6 +1,6 @@
 {
   "name": "sciverse-academic-retrieval",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "slug": "academic-retrieval",
   "description": "Sciverse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and byte-range content reading. For agent workflows that need citation-grade scientific literature.",
   "runtime": "node>=18",
