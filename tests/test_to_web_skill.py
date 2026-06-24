@@ -138,7 +138,7 @@ def test_search_papers_uses_callSciverse(tmp_path):
 
 
 def test_scripts_count_matches_source(tmp_path):
-    """sciverse/scripts/ 应当含 6 个 .mjs 文件（与 source web_skill_assets/scripts/ 一致）。"""
+    """sciverse/scripts/ 应当含 7 个 .mjs 文件（与 source web_skill_assets/scripts/ 一致）。"""
     out = tmp_path / "web-skill"
     generate(FIXTURE, out)
     scripts = out / ".well-known" / "agent-skills" / "sciverse" / "scripts"
@@ -146,4 +146,5 @@ def test_scripts_count_matches_source(tmp_path):
     assert mjs_files == sorted([
         "_common.mjs", "search_papers.mjs", "semantic_search.mjs",
         "read_content.mjs", "get_resource.mjs", "list_catalog.mjs",
+        "list_paper_relations.mjs",
     ])

@@ -51,6 +51,25 @@ Common arguments:
   `cited_by_count`, sources by `works_count`). `order` is `SORT_ORDER_DESC` / `SORT_ORDER_ASC`.
 - `page`, `page_size`: pagination; `page_size` is capped at 50.
 
+## list_paper_relations
+
+Paginate a paper's full citations / references / related works. `search_papers` only
+inlines a truncated few of these unbounded arrays, so use this for the complete list.
+
+```bash
+node scripts/list_paper_relations.mjs '{
+  "unique_id": "paper:10.1038/...",
+  "relation": "CITATIONS",
+  "page": 1,
+  "page_size": 25
+}'
+```
+
+- `unique_id` (required): from a `search_papers` / `semantic_search` result (not `doc_id`).
+- `relation` (required): `CITATIONS` (who cites this paper) / `REFERENCES` (what this paper
+  cites — opposite direction) / `RELATED_WORKS`.
+- `page`, `page_size`: pagination.
+
 ## Advanced Filter Example
 
 ```bash
