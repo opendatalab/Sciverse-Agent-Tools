@@ -125,6 +125,12 @@ export class AgentToolsClient {
     return this.request("/meta-search", { method: "POST", body: JSON.stringify(body) });
   }
 
+  async listPaperRelations(
+    args: { unique_id: string; relation: string; page?: number; page_size?: number },
+  ): Promise<unknown> {
+    return this.request("/meta-paper-relations", { method: "POST", body: JSON.stringify(args) });
+  }
+
   async semanticSearch(body: { query: string } & Record<string, unknown>): Promise<unknown> {
     const cleaned = Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined));
     return this.request("/agentic-search", { method: "POST", body: JSON.stringify(cleaned) });

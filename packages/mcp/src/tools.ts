@@ -228,6 +228,16 @@ export async function executeTool(
       }
       return callBinary(config, endpoint.path, { file_name });
     }
+    case "list_paper_relations": {
+      const { unique_id, relation } = args as { unique_id?: string; relation?: string };
+      if (!unique_id || !relation) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: JSON.stringify({ error: "unique_id and relation are required" }) }],
+        };
+      }
+      return call(config, "POST", endpoint.path, { body: args });
+    }
     default:
       return {
         isError: true,

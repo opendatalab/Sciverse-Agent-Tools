@@ -162,6 +162,17 @@ def _cmd_semantic_search(args: argparse.Namespace) -> int:
     return _run_with_client(_do)
 
 
+def _cmd_paper_relations(args: argparse.Namespace) -> int:
+    async def _do(client):
+        r = await client.list_paper_relations(
+            unique_id=args.unique_id, relation=args.relation,
+            page=args.page, page_size=args.page_size,
+        )
+        _print_json(r)
+
+    return _run_with_client(_do)
+
+
 def _cmd_content(args: argparse.Namespace) -> int:
     async def _do(client):
         r = await client.read_content(
@@ -278,6 +289,18 @@ def _build_parser() -> argparse.ArgumentParser:
     sem.add_argument("--mode", choices=["fast", "balanced", "quality"], default="balanced",
                      help="fast=纯关键词 (~200ms) / balanced=混合 (~600ms，默认) / quality=LLM 改写 (~2-4s)")
     sem.set_defaults(func=_cmd_semantic_search)
+
+    rel = sub.add_parser(
+        "paper-relations",
+        help="分页查某论文的引用/被引/相关工作（POST /meta-paper-relations）",
+    )
+    rel.add_argument("unique_id", help="目标论文 unique_id（来自 search / semantic-search；勿传 doc_id）")
+    rel.add_argument("--relation", choices=["CITATIONS", "REFERENCES", "RELATED_WORKS"], required=True,
+                     help="CITATIONS=被引（谁引用了我）/ REFERENCES=参考文献（我引用了谁）/ RELATED_WORKS=相关工作")
+    rel.add_argument("--page", type=int, default=1, help="页码，从 1 开始")
+    rel.add_argument("--page-size", type=int, default=25, dest="page_size",
+                     help="每页数量，默认 25，上限 200")
+    rel.set_defaults(func=_cmd_paper_relations)
 
     content = sub.add_parser("content", help="读文献原文字节区间（GET /content）")
     content.add_argument("doc_id", help="文献 ID（来自 search / semantic-search hits）")
