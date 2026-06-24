@@ -13,7 +13,7 @@ Connects to the **SciVerse** SCP Server via the SCP Hub MCP gateway to perform
 peer-reviewed papers (Nature, Cell, …), preprints (arXiv, bioRxiv, …) and other
 academic sources.
 
-The server exposes 5 tools designed for **RAG by autonomous research agents**:
+The server exposes 6 tools designed for **RAG by autonomous research agents**:
 structured metadata search, natural-language semantic chunk retrieval,
 byte-range source-text reading, and figure/table image fetching — all returning
 stable `doc_id` / `chunk_id` for reproducible citation.
@@ -197,6 +197,20 @@ the user knows specific filter values ("Hinton's papers from 2020-2023",
 - **Returns**: JSON `{hits: [...], total: int}` where each hit has
   `doc_id`, `title`, `author`, `abstract`, `publication_venue_name_unified`,
   `publication_published_year`.
+
+### Tool: `list_paper_relations`
+
+Paginate a paper's full citations / references / related works. `search_papers` inlines
+only a truncated few of these unbounded arrays, so use this for the complete list.
+
+- **Args**:
+  - `unique_id` (str, required) — Target paper's `unique_id` from `search_papers` /
+    `semantic_search` (not `doc_id`).
+  - `relation` (str, required) — `CITATIONS` (who cites this paper) / `REFERENCES`
+    (what this paper cites — opposite direction) / `RELATED_WORKS`.
+  - `page` (int, default 1), `page_size` (int, default 25, max 200)
+- **Returns**: JSON `{items: [...], total_count, page, page_size, total_pages}` where
+  each item is `{id, id_type, title}`.
 
 ### Tool: `semantic_search`
 

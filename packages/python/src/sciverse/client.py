@@ -149,6 +149,25 @@ class AgentToolsClient:
         resp.raise_for_status()
         return resp.json()
 
+    async def list_paper_relations(
+        self,
+        *,
+        unique_id: str,
+        relation: str,
+        page: int = 1,
+        page_size: int = 25,
+    ) -> dict[str, Any]:
+        """对应 POST /meta-paper-relations。分页查某论文的引用关系列表。
+
+        relation：CITATIONS（被引：谁引用了我）/ REFERENCES（参考文献：我引用了谁）/
+        RELATED_WORKS（相关工作）。CITATIONS 与 REFERENCES 方向相反。
+        unique_id 来自 search_papers / semantic_search（勿传 doc_id）。
+        """
+        body = {"unique_id": unique_id, "relation": relation, "page": page, "page_size": page_size}
+        resp = await self._client.post("/meta-paper-relations", json=body)
+        resp.raise_for_status()
+        return resp.json()
+
     async def semantic_search(self, *, query: str, **kwargs: Any) -> dict[str, Any]:
         """对应 POST /agentic-search。"""
         body = {"query": query, **{k: v for k, v in kwargs.items() if v is not None}}

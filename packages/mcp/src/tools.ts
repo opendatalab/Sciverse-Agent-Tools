@@ -192,10 +192,17 @@ export async function executeTool(
     case "semantic_search":
       return call(config, "POST", endpoint.path, { body: args });
     case "list_catalog": {
-      const { include_sample_values } = args as { include_sample_values?: boolean };
-      return call(config, "GET", endpoint.path, {
-        query: { include_sample_values: String(Boolean(include_sample_values)) },
-      });
+      const { include_sample_values, include_field_stats, collection } = args as {
+        include_sample_values?: boolean;
+        include_field_stats?: boolean;
+        collection?: string;
+      };
+      const query: Record<string, unknown> = {
+        include_sample_values: String(Boolean(include_sample_values)),
+      };
+      if (include_field_stats) query.include_field_stats = "true";
+      if (collection) query.collection = collection;
+      return call(config, "GET", endpoint.path, { query });
     }
     case "read_content": {
       const { doc_id, offset, limit } = args as {
@@ -220,6 +227,16 @@ export async function executeTool(
         };
       }
       return callBinary(config, endpoint.path, { file_name });
+    }
+    case "list_paper_relations": {
+      const { unique_id, relation } = args as { unique_id?: string; relation?: string };
+      if (!unique_id || !relation) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: JSON.stringify({ error: "unique_id and relation are required" }) }],
+        };
+      }
+      return call(config, "POST", endpoint.path, { body: args });
     }
     default:
       return {

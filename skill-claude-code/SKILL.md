@@ -1,14 +1,15 @@
 ---
 name: sciverse
-description: Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides three Sciverse tools (search_papers, semantic_search, read_content) via the sciverse-mcp-server MCP server.
+description: Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides six Sciverse tools (search_papers, semantic_search, list_catalog, list_paper_relations, read_content, get_resource) via the sciverse-mcp-server MCP server.
 ---
 
 # Sciverse — Academic Paper Retrieval
 
-Retrieval skill for the Sciverse open platform. Exposes five tools
+Retrieval skill for the Sciverse open platform. Exposes six tools
 for working with scientific literature: field introspection,
 structured metadata search, semantic chunk retrieval for RAG,
-byte-range content reading, and figure / table image fetching.
+citation / reference pagination, byte-range content reading, and
+figure / table image fetching.
 
 ## When to use
 
@@ -57,7 +58,7 @@ Optional: set `SCIVERSE_BASE_URL` to override the default API base URL
 
 ## Tools
 
-All five tools are exposed by the MCP server. Claude Code will surface
+All six tools are exposed by the MCP server. Claude Code will surface
 them automatically when this skill is active.
 
 ### search_papers
