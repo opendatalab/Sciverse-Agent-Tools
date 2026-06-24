@@ -19,7 +19,7 @@ const CHANNEL = "typescript-sdk";
 const PLATFORM = process.platform;
 const SOURCE = `${PLATFORM}-${CHANNEL}`;
 
-const PASSTHROUGH = ["query", "page", "page_size", "fields"] as const;
+const PASSTHROUGH = ["query", "page", "page_size", "fields", "collection"] as const;
 
 interface FilterEntry {
   field: string;
@@ -75,6 +75,12 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
     });
   }
 
+  if (Array.isArray(args.sort_advanced)) {
+    for (const item of args.sort_advanced as { field: string; order?: string }[]) {
+      if (item && item.field) sort.push({ field: item.field, order: item.order ?? "SORT_ORDER_DESC" });
+    }
+  }
+
   if (filters.length > 0) out.filters = filters;
   if (sort.length > 0) out.sort = sort;
   return out;
@@ -124,9 +130,13 @@ export class AgentToolsClient {
     return this.request("/agentic-search", { method: "POST", body: JSON.stringify(cleaned) });
   }
 
-  async listCatalog(params: { include_sample_values?: boolean } = {}): Promise<unknown> {
+  async listCatalog(
+    params: { include_sample_values?: boolean; include_field_stats?: boolean; collection?: string } = {},
+  ): Promise<unknown> {
     const qs = new URLSearchParams();
     qs.set("include_sample_values", String(Boolean(params.include_sample_values)));
+    if (params.include_field_stats) qs.set("include_field_stats", "true");
+    if (params.collection) qs.set("collection", params.collection);
     return this.request(`/meta-catalog?${qs.toString()}`, { method: "GET" });
   }
 

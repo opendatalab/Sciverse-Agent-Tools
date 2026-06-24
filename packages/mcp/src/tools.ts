@@ -25,7 +25,7 @@ interface FilterEntry {
   value: unknown;
 }
 
-const PASSTHROUGH = ["query", "page", "page_size", "fields"] as const;
+const PASSTHROUGH = ["query", "page", "page_size", "fields", "collection"] as const;
 
 function toBackendPayload(args: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -65,6 +65,12 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
       field: "publication_published_year",
       order: sortByYear === "desc" ? "SORT_ORDER_DESC" : "SORT_ORDER_ASC",
     });
+  }
+
+  if (Array.isArray(args.sort_advanced)) {
+    for (const item of args.sort_advanced as { field: string; order?: string }[]) {
+      if (item && item.field) sort.push({ field: item.field, order: item.order ?? "SORT_ORDER_DESC" });
+    }
   }
 
   if (filters.length > 0) out.filters = filters;

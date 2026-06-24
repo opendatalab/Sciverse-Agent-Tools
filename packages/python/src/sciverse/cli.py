@@ -142,6 +142,7 @@ def _cmd_search(args: argparse.Namespace) -> int:
         if args.title_contains: kwargs["title_contains"] = args.title_contains
         if args.abstract_contains: kwargs["abstract_contains"] = args.abstract_contains
         if args.sort_by_year != "none": kwargs["sort_by_year"] = args.sort_by_year
+        if getattr(args, "collection", "papers") != "papers": kwargs["collection"] = args.collection
         if args.freshness_boost != "NONE": kwargs["freshness_boost"] = args.freshness_boost
         kwargs["page"] = args.page
         kwargs["page_size"] = args.page_size
@@ -173,7 +174,10 @@ def _cmd_content(args: argparse.Namespace) -> int:
 
 def _cmd_catalog(args: argparse.Namespace) -> int:
     async def _do(client):
-        r = await client.list_catalog(include_sample_values=args.samples)
+        r = await client.list_catalog(
+            include_sample_values=args.samples,
+            collection=getattr(args, "collection", None),
+        )
         _print_json(r)
 
     return _run_with_client(_do)
@@ -241,6 +245,9 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     search.add_argument("query", nargs="?", default="", help="全文 BM25 关键词（可选）")
+    search.add_argument("--collection", choices=["papers", "authors", "sources"], default="papers",
+                        help="实体集合（默认 papers）。authors/sources 的高级字段过滤请用 SDK 的 "
+                             "filters_advanced / sort_advanced；CLI 主要支持 query 与 catalog 自省")
     search.add_argument("--author", "--authors", action="append", default=[], dest="authors",
                         help="作者名（可多次传，任一命中即可）")
     search.add_argument("--year-from", type=int, dest="year_from", help="起始年（含）")
@@ -283,6 +290,8 @@ def _build_parser() -> argparse.ArgumentParser:
         "catalog",
         help="字段 introspection（GET /meta-catalog），第一次接入时建议先调",
     )
+    cat.add_argument("--collection", choices=["papers", "authors", "sources"], default="papers",
+                     help="字段目录所属实体集合（默认 papers）")
     cat.add_argument("--samples", action="store_true",
                      help="拉枚举字段的取值样本（首次 OpenSearch terms agg，~几百 ms；之后 24h 缓存）")
     cat.set_defaults(func=_cmd_catalog)
