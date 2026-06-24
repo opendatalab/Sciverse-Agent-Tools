@@ -13,7 +13,9 @@ Run scripts from the skill directory:
 
 ```bash
 node scripts/list_catalog.mjs '{"include_sample_values":true}'
+node scripts/list_catalog.mjs '{"collection":"authors"}'
 node scripts/search_papers.mjs '{"authors":["Hinton"],"year_from":2020}'
+node scripts/search_papers.mjs '{"collection":"authors","filters_advanced":[{"field":"summary_stats.h_index","operator":"FILTER_OP_GTE","value":50}]}'
 node scripts/semantic_search.mjs '{"query":"Transformer attention","top_k":5}'
 node scripts/read_content.mjs '{"doc_id":"...","offset":0,"limit":4096}'
 node scripts/get_resource.mjs '{"file_name":"dt=xxx/paper/figure.png"}'

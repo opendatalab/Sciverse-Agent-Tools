@@ -9,7 +9,21 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+class Collection(Enum):
+    """
+    检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
+    """
+
+    papers = "papers"
+    authors = "authors"
+    sources = "sources"
+
+
 class Operator(Enum):
+    """
+    过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
+    """
+
     FILTER_OP_EQ = "FILTER_OP_EQ"
     FILTER_OP_NE = "FILTER_OP_NE"
     FILTER_OP_GT = "FILTER_OP_GT"
@@ -19,12 +33,27 @@ class Operator(Enum):
     FILTER_OP_IN = "FILTER_OP_IN"
     FILTER_OP_NIN = "FILTER_OP_NIN"
     FILTER_OP_CONTAINS = "FILTER_OP_CONTAINS"
+    FILTER_OP_MATCH = "FILTER_OP_MATCH"
+    FILTER_OP_MATCH_PHRASE = "FILTER_OP_MATCH_PHRASE"
 
 
 class FiltersAdvancedItem(BaseModel):
     field: str
-    operator: Operator | None = "FILTER_OP_EQ"
+    operator: Operator | None = Field(
+        "FILTER_OP_EQ",
+        description='过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。',
+    )
     value: Any
+
+
+class Order(Enum):
+    SORT_ORDER_DESC = "SORT_ORDER_DESC"
+    SORT_ORDER_ASC = "SORT_ORDER_ASC"
+
+
+class SortAdvancedItem(BaseModel):
+    field: str
+    order: Order
 
 
 class SortByYear(Enum):
@@ -48,6 +77,10 @@ class FreshnessBoost(Enum):
 
 
 class SearchPapersRequest(BaseModel):
+    collection: Collection | None = Field(
+        "papers",
+        description="检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。",
+    )
     query: str | None = Field(
         None,
         description="BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。",
@@ -74,6 +107,10 @@ class SearchPapersRequest(BaseModel):
     filters_advanced: list[FiltersAdvancedItem] | None = Field(
         None, description="高级过滤逃生舱（仅当上述字段不够用时使用）。"
     )
+    sort_advanced: list[SortAdvancedItem] | None = Field(
+        None,
+        description="高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。",
+    )
     sort_by_year: SortByYear | None = "desc"
     freshness_boost: FreshnessBoost | None = Field(
         "NONE",
@@ -81,6 +118,11 @@ class SearchPapersRequest(BaseModel):
     )
     page: int | None = Field(1, ge=1)
     page_size: int | None = Field(10, ge=1, le=50)
+
+
+class AuthorItem(BaseModel):
+    name: str | None = None
+    orcid: str | None = None
 
 
 class PaperMetadata(BaseModel):
@@ -106,9 +148,9 @@ class PaperMetadata(BaseModel):
         description="全文 artifact 的内容哈希（sha256）。仅当文档存在全文时返回；元数据-only 记录无此字段，且无法用 doc_id 过滤命中。",
     )
     title: str
-    author: list[str] | None = Field(
+    author: list[AuthorItem] | None = Field(
         None,
-        description="作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。",
+        description='作者列表（OS object 数组，子字段 name/orcid）。按作者名检索：精确走 author.name.keyword、模糊 MATCH 走 author.name；对外过滤仍传 field "author"。',
     )
     abstract: str | None = None
     publication_venue_name_unified: str | None = Field(
@@ -201,10 +243,25 @@ class ApiError(BaseModel):
 
 
 class SearchPapersResponse(BaseModel):
-    hits: list[PaperMetadata]
-    total: int
+    results: list[PaperMetadata] = Field(
+        ..., description="命中论文列表（后端字段名为 results，非 hits）。"
+    )
+    total_count: int = Field(
+        ...,
+        description="命中总数；超过 10000 会被截断为 10000，需精确值时改用深翻页/计数。",
+    )
     page: int
     page_size: int
+    total_pages: int | None = Field(None, description="总页数。")
+    next_cursor: str | None = Field(
+        None,
+        description="深翻页游标，为空表示无更多。page*page_size>10000 时必须改用 cursor（把此值回填到请求的 cursor）。",
+    )
+    search_time_ms: float | None = Field(None, description="检索耗时（毫秒）。")
+    request_tokens: int | None = Field(None, description="输入 query 的 token 数。")
+    response_tokens: int | None = Field(
+        None, description="输出结果文本字段的 token 数。"
+    )
 
 
 class SemanticSearchResponse(BaseModel):

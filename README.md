@@ -8,8 +8,8 @@ With these tools, you can easily empower your AI agents to search for academic p
 
 | Tool | Use case |
 |---|---|
-| `list_catalog` | Discover available fields, filter operators, and enum sample values |
-| `search_papers` | Structured metadata search (author / year / journal / discipline) |
+| `list_catalog` | Discover available fields, filter operators, and enum sample values (per `collection`) |
+| `search_papers` | Structured metadata search over papers / authors / sources (set `collection`) |
 | `semantic_search` | Natural-language semantic search over passages (RAG) |
 | `read_content` | Fetch a byte-range slice of the source document (extend RAG context) |
 | `get_resource` | Fetch figure / table image bytes referenced inside `read_content` Markdown |

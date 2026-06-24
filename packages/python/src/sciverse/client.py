@@ -13,7 +13,7 @@ _PLATFORM = platform.system().lower()  # "linux" | "darwin" | "windows"
 _SOURCE = f"{_PLATFORM}-{_CHANNEL}"
 
 
-_PASSTHROUGH = ("query", "page", "page_size", "fields", "freshness_boost")
+_PASSTHROUGH = ("query", "page", "page_size", "fields", "freshness_boost", "collection")
 _FRESHNESS_BOOST_VALUES = frozenset({"NONE", "MILD", "STRONG"})
 
 
@@ -64,6 +64,11 @@ def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
             "field": "publication_published_year",
             "order": "SORT_ORDER_DESC" if sort_by_year == "desc" else "SORT_ORDER_ASC",
         })
+
+    if (sa := kwargs.get("sort_advanced")) is not None:
+        for item in sa:
+            if item and item.get("field"):
+                sort.append({"field": item["field"], "order": item.get("order", "SORT_ORDER_DESC")})
 
     if filters:
         out["filters"] = filters
@@ -151,14 +156,25 @@ class AgentToolsClient:
         resp.raise_for_status()
         return resp.json()
 
-    async def list_catalog(self, *, include_sample_values: bool = False) -> dict[str, Any]:
+    async def list_catalog(
+        self,
+        *,
+        include_sample_values: bool = False,
+        include_field_stats: bool = False,
+        collection: str | None = None,
+    ) -> dict[str, Any]:
         """对应 GET /meta-catalog。
 
         返回字段 catalog：每个字段的名称 / 类型 / filterable / sortable / default_returned /
         描述 / 适用 FilterOperator，外加 enum-like 字段的样本值（include_sample_values=True 时）。
+        collection 指定实体集合（papers 默认 / authors / sources），各 collection 字段集不同。
         Agent 第一次接触 Sciverse 或碰到字段不确定时建议先调一次再构造 search_papers。
         """
-        params = {"include_sample_values": str(include_sample_values).lower()}
+        params: dict[str, str] = {"include_sample_values": str(include_sample_values).lower()}
+        if include_field_stats:
+            params["include_field_stats"] = "true"
+        if collection:
+            params["collection"] = collection
         resp = await self._client.get("/meta-catalog", params=params)
         resp.raise_for_status()
         return resp.json()

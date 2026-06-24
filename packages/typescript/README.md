@@ -72,6 +72,14 @@ await c.searchPapers({
   page_size: 10,
 });
 
+// 1b. Entity collections — search authors / journals (set collection)
+await c.searchPapers({
+  collection: "authors",         // papers (default) / authors / sources
+  filters_advanced: [{ field: "summary_stats.h_index", operator: "FILTER_OP_GTE", value: 50 }],
+  sort_advanced: [{ field: "cited_by_count", order: "SORT_ORDER_DESC" }],
+});
+// Call listCatalog({ collection: "authors" }) to discover each collection's fields.
+
 // 2. Natural-language semantic search (vector + BM25 hybrid, returns chunks)
 await c.semanticSearch({ query: "How does attention work?", top_k: 10, mode: "balanced" });
 

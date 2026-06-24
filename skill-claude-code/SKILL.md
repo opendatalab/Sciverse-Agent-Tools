@@ -99,6 +99,18 @@ from the returned schema.
 Pass include_sample_values=true to also fetch top-20 values for
 enum-like fields (OpenSearch terms aggregation, 24h cached).
 
+### list_paper_relations
+
+Paginate the full relation list of a paper. citations/references/related_works
+are unbounded arrays (a highly-cited paper can have thousands); search_papers
+only inlines a truncated few, so use this endpoint for the full list.
+Use when: "What does paper X cite?" (relation=REFERENCES), "Which papers cite
+paper X?" (relation=CITATIONS), "Works related to paper X" (relation=RELATED_WORKS).
+Note: CITATIONS (incoming: who cites me) and REFERENCES (outgoing: who I cite)
+are opposite directions.
+Typical chain: get unique_id from search_papers / semantic_search, then paginate
+here by relation.
+
 ### read_content
 
 Read a UTF-8 byte range of a paper's original text. Typically used with
@@ -211,6 +223,25 @@ as a base64 image content block so Claude can read it directly.
 read_content(doc_id, offset) → markdown with ![Figure 3](dt=xxx/p_yyy/f3.png)
     └─▶ get_resource(file_name="dt=xxx/p_yyy/f3.png")
     └─▶ Claude sees the image inline
+```
+
+**8. Search authors or journals (collection):**
+
+Set `collection` to `authors` or `sources` (default `papers`) to search
+those entities instead of papers. Each collection has its own fields —
+call `list_catalog(collection="authors")` first. Use `filters_advanced` +
+`sort_advanced`; the papers convenience fields (`authors`/`year_from`/...) 
+apply to papers only.
+
+```
+# Top authors by h-index, sorted by citations
+search_papers(
+    collection="authors",
+    filters_advanced=[{field: "summary_stats.h_index", operator: "FILTER_OP_GTE", value: 50}],
+    sort_advanced=[{field: "cited_by_count", order: "SORT_ORDER_DESC"}]
+)
+# Enrich a paper result: take an author orcid / venue issn, then look up the entity
+search_papers(collection="authors", filters_advanced=[{field: "orcid", value: "https://orcid.org/..."}])
 ```
 
 ## Notes for Claude

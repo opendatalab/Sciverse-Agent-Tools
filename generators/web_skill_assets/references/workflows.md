@@ -32,6 +32,26 @@ specific author, journal, or year range.
 3. Filter semantic hits by candidate `doc_id` when possible.
 4. Use `read_content` for final evidence.
 
+## Author / Journal Entity Profiles
+
+`search_papers` and `list_catalog` accept `collection`: `papers` (default), `authors`,
+`sources` (journals). Use this to discover or profile entities, and to enrich paper results.
+
+Discovery (find entities directly):
+
+1. `list_catalog '{"collection":"authors"}'` (or `sources`) to learn the fields.
+2. `search_papers` with `collection` + `filters_advanced` + `sort_advanced`, e.g. top
+   authors by `summary_stats.h_index` sorted by `cited_by_count`, or open-access core
+   journals by `is_oa` / `is_core` / `topics.field.display_name`.
+
+Enrichment (paper result → entity profile), two steps:
+
+1. From a `search_papers` / `semantic_search` result, take an author's `orcid` or the
+   venue's `publication_venue_issn`.
+2. `search_papers '{"collection":"authors","filters_advanced":[{"field":"orcid", ...}]}'`
+   (or `collection":"sources"` filtered by `issn`) to fetch the full entity profile
+   (h-index, affiliations, topics / OA status, impact).
+
 ## Figures And Tables
 
 1. Use `semantic_search` or `search_papers` to find the paper.

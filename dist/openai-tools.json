@@ -9,6 +9,17 @@
         "parameters": {
           "type": "object",
           "properties": {
+            "collection": {
+              "type": "string",
+              "enum": [
+                "papers",
+                "authors",
+                "sources"
+              ],
+              "default": "papers",
+              "description": "检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。",
+              "x-en-description": "Entity collection to search. papers (default) / authors / sources. Each collection has its own field schema — call list_catalog(collection=<name>). The convenience fields (authors/journals/year_from/subjects) apply to papers only; for authors/sources use filters_advanced with that collection's field names."
+            },
             "query": {
               "type": "string",
               "description": "BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。"
@@ -65,6 +76,7 @@
                   },
                   "operator": {
                     "type": "string",
+                    "description": "过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 \"Hinton\" 命中 \"Geoffrey Hinton\"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（\"Nature\" 命中 \"Nature Communications\"；非前缀匹配，\"Nature Comm\" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。",
                     "enum": [
                       "FILTER_OP_EQ",
                       "FILTER_OP_NE",
@@ -74,11 +86,37 @@
                       "FILTER_OP_LTE",
                       "FILTER_OP_IN",
                       "FILTER_OP_NIN",
-                      "FILTER_OP_CONTAINS"
+                      "FILTER_OP_CONTAINS",
+                      "FILTER_OP_MATCH",
+                      "FILTER_OP_MATCH_PHRASE"
                     ],
                     "default": "FILTER_OP_EQ"
                   },
                   "value": {}
+                }
+              }
+            },
+            "sort_advanced": {
+              "type": "array",
+              "description": "高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。",
+              "items": {
+                "type": "object",
+                "required": [
+                  "field",
+                  "order"
+                ],
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "order": {
+                    "type": "string",
+                    "enum": [
+                      "SORT_ORDER_DESC",
+                      "SORT_ORDER_ASC"
+                    ],
+                    "default": "SORT_ORDER_DESC"
+                  }
                 }
               }
             },
@@ -171,13 +209,68 @@
         "parameters": {
           "type": "object",
           "properties": {
+            "collection": {
+              "type": "string",
+              "enum": [
+                "papers",
+                "authors",
+                "sources"
+              ],
+              "default": "papers",
+              "description": "字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。"
+            },
             "include_sample_values": {
               "type": "boolean",
               "default": false,
               "description": "是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。"
+            },
+            "include_field_stats": {
+              "type": "boolean",
+              "default": false,
+              "description": "是否返回字段统计（keyword 字段基数 + 数值字段 min/max/avg/p50/p95）。触发 OpenSearch 聚合，缓存 24h。"
             }
           },
           "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_paper_relations",
+        "description": "分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组\n（高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。\n适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」\n（relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。\n注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。\n典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。",
+        "parameters": {
+          "type": "object",
+          "required": [
+            "unique_id",
+            "relation"
+          ],
+          "properties": {
+            "unique_id": {
+              "type": "string",
+              "description": "目标论文 unique_id（如 paper:10.1038/xxx），来自 search_papers / semantic_search；勿传 doc_id。"
+            },
+            "relation": {
+              "type": "string",
+              "enum": [
+                "CITATIONS",
+                "REFERENCES",
+                "RELATED_WORKS"
+              ],
+              "description": "关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。"
+            },
+            "page": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "page_size": {
+              "type": "integer",
+              "default": 25,
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
         }
       }
     },

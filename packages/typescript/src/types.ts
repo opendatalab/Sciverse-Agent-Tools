@@ -40,6 +40,18 @@ export interface paths {
      */
     get: operations["list_catalog"];
   };
+  "/meta-paper-relations": {
+    /**
+     * 分页查一篇论文的引用/被引/相关工作列表
+     * @description 分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
+     * （高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+     * 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
+     * （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
+     * 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
+     * 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+     */
+    post: operations["list_paper_relations"];
+  };
   "/content": {
     /**
      * 按字节区间读取文献原文片段
@@ -68,6 +80,12 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     SearchPapersRequest: {
+      /**
+       * @description 检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
+       * @default papers
+       * @enum {string}
+       */
+      collection?: "papers" | "authors" | "sources";
       /** @description BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。 */
       query?: string;
       /** @description 标题中必须包含的词（仅匹配 title 字段）。 */
@@ -88,11 +106,21 @@ export interface components {
       filters_advanced?: ({
           field: string;
           /**
+           * @description 过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
            * @default FILTER_OP_EQ
            * @enum {string}
            */
-          operator?: "FILTER_OP_EQ" | "FILTER_OP_NE" | "FILTER_OP_GT" | "FILTER_OP_GTE" | "FILTER_OP_LT" | "FILTER_OP_LTE" | "FILTER_OP_IN" | "FILTER_OP_NIN" | "FILTER_OP_CONTAINS";
+          operator?: "FILTER_OP_EQ" | "FILTER_OP_NE" | "FILTER_OP_GT" | "FILTER_OP_GTE" | "FILTER_OP_LT" | "FILTER_OP_LTE" | "FILTER_OP_IN" | "FILTER_OP_NIN" | "FILTER_OP_CONTAINS" | "FILTER_OP_MATCH" | "FILTER_OP_MATCH_PHRASE";
           value: unknown;
+        })[];
+      /** @description 高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。 */
+      sort_advanced?: ({
+          field: string;
+          /**
+           * @default SORT_ORDER_DESC
+           * @enum {string}
+           */
+          order: "SORT_ORDER_DESC" | "SORT_ORDER_ASC";
         })[];
       /**
        * @default desc
@@ -115,10 +143,25 @@ export interface components {
       page_size?: number;
     };
     SearchPapersResponse: {
-      hits: components["schemas"]["PaperMetadata"][];
-      total: number;
+      /** @description 命中论文列表（后端字段名为 results，非 hits）。 */
+      results: components["schemas"]["PaperMetadata"][];
+      /** @description 命中总数；超过 10000 会被截断为 10000，需精确值时改用深翻页/计数。 */
+      total_count: number;
       page: number;
       page_size: number;
+      /** @description 总页数。 */
+      total_pages?: number;
+      /** @description 深翻页游标，为空表示无更多。page*page_size>10000 时必须改用 cursor（把此值回填到请求的 cursor）。 */
+      next_cursor?: string;
+      /**
+       * Format: float
+       * @description 检索耗时（毫秒）。
+       */
+      search_time_ms?: number;
+      /** @description 输入 query 的 token 数。 */
+      request_tokens?: number;
+      /** @description 输出结果文本字段的 token 数。 */
+      response_tokens?: number;
     };
     /**
      * @description 文献元数据。字段名与 metadata-service 后端 `fields.py` 的真实字段一致，
@@ -138,8 +181,11 @@ export interface components {
       /** @description 全文 artifact 的内容哈希（sha256）。仅当文档存在全文时返回；元数据-only 记录无此字段，且无法用 doc_id 过滤命中。 */
       doc_id?: string;
       title: string;
-      /** @description 作者列表（fields.py 中字段名是 author 单数，但类型是 List[string]）。 */
-      author?: string[];
+      /** @description 作者列表（OS object 数组，子字段 name/orcid）。按作者名检索：精确走 author.name.keyword、模糊 MATCH 走 author.name；对外过滤仍传 field "author"。 */
+      author?: {
+          name?: string;
+          orcid?: string;
+        }[];
       abstract?: string;
       /** @description 发表载体名称（期刊/会议；规范化形式——消除缩写/大小写/标点噪声，适合精确匹配/分组聚合）。 */
       publication_venue_name_unified?: string;
@@ -323,8 +369,12 @@ export interface operations {
   list_catalog: {
     parameters: {
       query?: {
+        /** @description 字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。 */
+        collection?: "papers" | "authors" | "sources";
         /** @description 是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。 */
         include_sample_values?: boolean;
+        /** @description 是否返回字段统计（keyword 字段基数 + 数值字段 min/max/avg/p50/p95）。触发 OpenSearch 聚合，缓存 24h。 */
+        include_field_stats?: boolean;
       };
     };
     responses: {
@@ -335,6 +385,61 @@ export interface operations {
         };
       };
       401: components["responses"]["Unauthorized"];
+      502: components["responses"]["BadGateway"];
+    };
+  };
+  /**
+   * 分页查一篇论文的引用/被引/相关工作列表
+   * @description 分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
+   * （高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+   * 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
+   * （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
+   * 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
+   * 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+   */
+  list_paper_relations: {
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description 目标论文 unique_id（如 paper:10.1038/xxx），来自 search_papers / semantic_search；勿传 doc_id。 */
+          unique_id: string;
+          /**
+           * @description 关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。
+           * @enum {string}
+           */
+          relation: "CITATIONS" | "REFERENCES" | "RELATED_WORKS";
+          /** @default 1 */
+          page?: number;
+          /** @default 25 */
+          page_size?: number;
+        };
+      };
+    };
+    responses: {
+      /** @description 关系列表 */
+      200: {
+        content: {
+          "application/json": {
+            items?: {
+                id?: string;
+                id_type?: string;
+                title?: string;
+              }[];
+            total_count?: number;
+            page?: number;
+            page_size?: number;
+            total_pages?: number;
+          };
+        };
+      };
+      400: components["responses"]["BadRequest"];
+      401: components["responses"]["Unauthorized"];
+      /** @description unique_id 对应文档不存在 */
+      404: {
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
       502: components["responses"]["BadGateway"];
     };
   };
