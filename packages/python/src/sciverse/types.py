@@ -9,6 +9,16 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
+class Collection(Enum):
+    """
+    检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
+    """
+
+    papers = "papers"
+    authors = "authors"
+    sources = "sources"
+
+
 class Operator(Enum):
     """
     过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
@@ -36,6 +46,16 @@ class FiltersAdvancedItem(BaseModel):
     value: Any
 
 
+class Order(Enum):
+    SORT_ORDER_DESC = "SORT_ORDER_DESC"
+    SORT_ORDER_ASC = "SORT_ORDER_ASC"
+
+
+class SortAdvancedItem(BaseModel):
+    field: str
+    order: Order
+
+
 class SortByYear(Enum):
     desc = "desc"
     asc = "asc"
@@ -57,6 +77,10 @@ class FreshnessBoost(Enum):
 
 
 class SearchPapersRequest(BaseModel):
+    collection: Collection | None = Field(
+        "papers",
+        description="检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。",
+    )
     query: str | None = Field(
         None,
         description="BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。",
@@ -82,6 +106,10 @@ class SearchPapersRequest(BaseModel):
     )
     filters_advanced: list[FiltersAdvancedItem] | None = Field(
         None, description="高级过滤逃生舱（仅当上述字段不够用时使用）。"
+    )
+    sort_advanced: list[SortAdvancedItem] | None = Field(
+        None,
+        description="高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。",
     )
     sort_by_year: SortByYear | None = "desc"
     freshness_boost: FreshnessBoost | None = Field(

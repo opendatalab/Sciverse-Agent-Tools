@@ -11,6 +11,7 @@ TOOLS_VERSION = "0.7.1"
 
 class SearchPapersArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
+    collection: str = Field('papers', description='检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。')
     query: str | None = Field(None, description='BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。')
     title_contains: str | None = Field(None, description='标题中必须包含的词（仅匹配 title 字段）。')
     abstract_contains: str | None = Field(None, description='摘要中必须包含的词（仅匹配 abstract 字段）。')
@@ -20,6 +21,7 @@ class SearchPapersArgs(BaseModel):
     journals: list[str] | None = Field(None, description='期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name_unified` 字段（FILTER_OP_IN，规范化后的载体名）。')
     subjects: list[str] | None = Field(None, description='学科分类，如 "computer science"、"biology"。')
     filters_advanced: list[dict[str, Any]] | None = Field(None, description='高级过滤逃生舱（仅当上述字段不够用时使用）。')
+    sort_advanced: list[dict[str, Any]] | None = Field(None, description='高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。')
     sort_by_year: str = Field('desc', description='')
     freshness_boost: str = Field('NONE', description='模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。底层为 function_score + gauss decay over\npublication_published_date。\n')
     page: int = Field(1, description='')
@@ -69,7 +71,9 @@ class SemanticSearchTool(BaseTool):
 
 class ListCatalogArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
+    collection: str = Field('papers', description='字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。')
     include_sample_values: bool = Field(False, description='是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。')
+    include_field_stats: bool = Field(False, description='是否返回字段统计（keyword 字段基数 + 数值字段 min/max/avg/p50/p95）。触发 OpenSearch 聚合，缓存 24h。')
 
 
 class ListCatalogTool(BaseTool):

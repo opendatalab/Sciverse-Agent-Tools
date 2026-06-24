@@ -166,6 +166,19 @@ search_papers(query="protein folding", freshness_boost="MILD")
     # MILD:   10-year decay, for everyday literature search
 ```
 
+**Search authors or journals (collection):**
+
+Set `collection` to `authors` or `sources` (default `papers`) to search
+those entities. Each has its own fields — call
+list_catalog(collection="authors") first; use filters_advanced +
+sort_advanced (papers convenience fields apply to papers only).
+
+```
+search_papers(collection="authors",
+    filters_advanced=[{field: "summary_stats.h_index", operator: "FILTER_OP_GTE", value: 50}],
+    sort_advanced=[{field: "cited_by_count", order: "SORT_ORDER_DESC"}])
+```
+
 **Fetch a paper figure / image:**
 
 When read_content Markdown contains `![alt](file_name)`, call

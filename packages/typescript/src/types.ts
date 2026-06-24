@@ -80,6 +80,12 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     SearchPapersRequest: {
+      /**
+       * @description 检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
+       * @default papers
+       * @enum {string}
+       */
+      collection?: "papers" | "authors" | "sources";
       /** @description BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。 */
       query?: string;
       /** @description 标题中必须包含的词（仅匹配 title 字段）。 */
@@ -106,6 +112,15 @@ export interface components {
            */
           operator?: "FILTER_OP_EQ" | "FILTER_OP_NE" | "FILTER_OP_GT" | "FILTER_OP_GTE" | "FILTER_OP_LT" | "FILTER_OP_LTE" | "FILTER_OP_IN" | "FILTER_OP_NIN" | "FILTER_OP_CONTAINS" | "FILTER_OP_MATCH" | "FILTER_OP_MATCH_PHRASE";
           value: unknown;
+        })[];
+      /** @description 高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。 */
+      sort_advanced?: ({
+          field: string;
+          /**
+           * @default SORT_ORDER_DESC
+           * @enum {string}
+           */
+          order: "SORT_ORDER_DESC" | "SORT_ORDER_ASC";
         })[];
       /**
        * @default desc
@@ -354,8 +369,12 @@ export interface operations {
   list_catalog: {
     parameters: {
       query?: {
+        /** @description 字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。 */
+        collection?: "papers" | "authors" | "sources";
         /** @description 是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。 */
         include_sample_values?: boolean;
+        /** @description 是否返回字段统计（keyword 字段基数 + 数值字段 min/max/avg/p50/p95）。触发 OpenSearch 聚合，缓存 24h。 */
+        include_field_stats?: boolean;
       };
     };
     responses: {
