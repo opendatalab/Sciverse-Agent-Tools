@@ -1,3 +1,9 @@
+## [0.8.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.7.2...v0.8.0) (2026-06-24)
+
+### Features
+
+* **api:** search_papers/list_catalog 支持 collection（authors/sources）+ sort_advanced ([cc3df63](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/cc3df637aff1f6d4b2b024bb138fe8104a827393))
+
 ## [0.7.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.7.1...v0.7.2) (2026-06-17)
 
 ### Bug Fixes
