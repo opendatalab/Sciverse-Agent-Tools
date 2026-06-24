@@ -176,6 +176,11 @@ the user knows specific filter values ("Hinton's papers from 2020-2023",
 `semantic_search`.
 
 - **Args**:
+  - `collection` (str, default `"papers"`) — `papers` / `authors` / `sources`. For
+    authors/sources the convenience args below apply to papers only; use
+    `filters_advanced` + `sort_advanced` with that collection's fields
+    (call `list_catalog(collection=...)` to learn them). Link via a paper's
+    `author[].orcid` → authors `orcid`, `publication_venue_issn` → sources `issn`.
   - `query` (str, optional) — BM25 keyword over title/abstract/journal
   - `title_contains` (str, optional) — Substring match on title
   - `abstract_contains` (str, optional) — Substring match on abstract
@@ -184,6 +189,8 @@ the user knows specific filter values ("Hinton's papers from 2020-2023",
   - `journals` (list[str], optional) — Journal names (any match)
   - `subjects` (list[str], optional) — Subject classification (e.g. "biology")
   - `sort_by_year` (str, default `"desc"`) — `desc` / `asc` / `none`
+  - `sort_advanced` (list, optional) — `[{field, order}]`; sort by any sortable field
+    (e.g. authors by `cited_by_count`, sources by `works_count`)
   - `page` (int, default 1), `page_size` (int, default 10, max 50)
   - `filters_advanced` (list, optional) — Escape hatch with full operator set
     (`FILTER_OP_EQ`, `IN`, `CONTAINS`, `GTE`, `LTE`, …) for fields not surfaced above
@@ -241,6 +248,8 @@ applicable filter operators. Use when constructing precise `search_papers`
 filters or facing an ambiguous field need.
 
 - **Args**:
+  - `collection` (str, default `"papers"`) — entity set whose schema to return:
+    `papers` / `authors` / `sources`.
   - `include_sample_values` (bool, default `false`) — If `true`, also fetch
     top-20 values for enum-like fields (24h cached, ~100s of ms first call).
 - **Returns**: JSON `{fields: [...]}` where each field has `name`, `type`

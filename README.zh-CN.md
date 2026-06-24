@@ -8,8 +8,8 @@
 
 | 工具 | 适用场景 |
 |---|---|
-| `list_catalog` | 字段 introspection：返回可用字段、过滤算子、enum 字段取值样本 |
-| `search_papers` | 按结构化条件查文献元数据（作者/年份/期刊/学科） |
+| `list_catalog` | 字段 introspection：按 `collection` 返回可用字段、过滤算子、enum 取值样本 |
+| `search_papers` | 按结构化条件查 papers / authors / sources（用 `collection` 切换实体集合） |
 | `semantic_search` | 自然语言语义检索片段（RAG 用） |
 | `read_content` | 取原文字节切片（扩展 RAG 上下文） |
 | `get_resource` | 取 `read_content` Markdown 中引用的图片/表格字节流 |

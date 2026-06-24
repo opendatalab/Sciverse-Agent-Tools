@@ -13,8 +13,9 @@ tool protocol. Keep answers grounded in returned `doc_id`, title, and excerpts.
 
 - Need setup, environment variables, script invocation rules, or exit codes:
   read [references/runtime.md](references/runtime.md).
-- Need author/year/journal/DOI/field filtering, schema discovery, or metadata
-  search: read [references/search-tools.md](references/search-tools.md).
+- Need author/year/journal/DOI/field filtering, schema discovery, metadata
+  search, or author / journal (source) entity search via `collection`: read
+  [references/search-tools.md](references/search-tools.md).
 - Need RAG chunks, source text expansion, or paper figures/tables: read
   [references/rag-and-content.md](references/rag-and-content.md).
 - Need a workflow decision tree for combining tools: read

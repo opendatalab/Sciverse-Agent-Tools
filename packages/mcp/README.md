@@ -88,7 +88,7 @@ default (`https://api.sciverse.space`).
 
 | Tool | Purpose |
 |---|---|
-| `search_papers` | Structured metadata search (authors / year / journal / subjects) |
+| `search_papers` | Structured metadata search over papers / authors / sources (set `collection`) |
 | `semantic_search` | Natural-language semantic chunk retrieval (RAG) |
 | `read_content` | Byte-range read of original paper text |
 | `list_catalog` | Field introspection (returns all field names + enum sample values, agents should call this first to learn the schema) |
