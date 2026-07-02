@@ -323,6 +323,8 @@ list_catalog(include_sample_values=true)         # first time only — learn fie
     └─▶ search_papers(filters_advanced=[...])    # construct precise filters
 ```
 
+> Each `search_papers` hit carries **`is_content_accessible`** (bool): `true` only when the paper has fulltext **and** you're authorized — check it before `read_content(doc_id, …)`. Filterable fields keep growing (topic hierarchy, MeSH, identifier lookups, …); call `list_catalog` for the authoritative field list instead of hardcoding.
+
 **3. Structured pre-filter + semantic refine (hybrid):**
 
 ```

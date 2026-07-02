@@ -196,7 +196,15 @@ the user knows specific filter values ("Hinton's papers from 2020-2023",
     (`FILTER_OP_EQ`, `IN`, `CONTAINS`, `GTE`, `LTE`, …) for fields not surfaced above
 - **Returns**: JSON `{hits: [...], total: int}` where each hit has
   `doc_id`, `title`, `author`, `abstract`, `publication_venue_name_unified`,
-  `publication_published_year`.
+  `publication_published_year`, `is_content_accessible`.
+  - `is_content_accessible` (bool) — whether the caller can read the fulltext:
+    `true` only when the paper has fulltext **and** the caller is authorized.
+    Check it before calling `read_content(doc_id, ...)`; `false` means no
+    fulltext or no read permission.
+- **Field discovery**: filterable fields evolve (topic hierarchy
+  `primary_topic.field/subfield`, `topics.field/subfield/domain.id`, MeSH
+  `classifications.mesh.*`, `identifiers.pmid/openalex`, `is_paratext` …). Do not
+  hardcode — call `list_catalog` for the authoritative, permission-scoped field list.
 
 ### Tool: `list_paper_relations`
 

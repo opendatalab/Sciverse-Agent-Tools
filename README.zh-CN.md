@@ -322,6 +322,8 @@ list_catalog(include_sample_values=true)         # 首次接入调一次 —— 
     └─▶ search_papers(filters_advanced=[...])    # 构造精确过滤条件
 ```
 
+> 每条 `search_papers` 结果都带 **`is_content_accessible`**（bool）：仅当论文有全文**且**调用方有读权限时为 `true`——调 `read_content(doc_id, …)` 前先看它。可过滤字段持续增加（主题层级、MeSH、标识符互查……），字段清单以 `list_catalog` 为准，勿硬编码。
+
 **3. 结构化预筛 + 语义精化（hybrid）：**
 
 ```
