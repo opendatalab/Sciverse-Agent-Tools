@@ -147,6 +147,10 @@ class PaperMetadata(BaseModel):
         None,
         description="全文 artifact 的内容哈希（sha256）。仅当文档存在全文时返回；元数据-only 记录无此字段，且无法用 doc_id 过滤命中。",
     )
+    is_content_accessible: bool | None = Field(
+        None,
+        description="正文对当前调用方是否可见 = 文档有全文（后端 access_xinghe_repository_process_status==1）且调用方被授权读全文 artifact。true 时可用 doc_id 调 read_content 取正文；false 表示无全文或无读取权限。服务端注入，不受 fields 投影影响。",
+    )
     title: str
     author: list[AuthorItem] | None = Field(
         None,
