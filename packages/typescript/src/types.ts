@@ -180,6 +180,8 @@ export interface components {
       unique_id: string;
       /** @description 全文 artifact 的内容哈希（sha256）。仅当文档存在全文时返回；元数据-only 记录无此字段，且无法用 doc_id 过滤命中。 */
       doc_id?: string;
+      /** @description 正文对当前调用方是否可见 = 文档有全文（后端 access_xinghe_repository_process_status==1）且调用方被授权读全文 artifact。true 时可用 doc_id 调 read_content 取正文；false 表示无全文或无读取权限。服务端注入，不受 fields 投影影响。 */
+      is_content_accessible?: boolean;
       title: string;
       /** @description 作者列表（OS object 数组，子字段 name/orcid）。按作者名检索：精确走 author.name.keyword、模糊 MATCH 走 author.name；对外过滤仍传 field "author"。 */
       author?: {

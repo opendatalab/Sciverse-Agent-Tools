@@ -189,6 +189,12 @@ read_content(doc_id, offset) → markdown ![Figure 3](dt=xxx/p/f3.png)
     └─▶ get_resource(file_name="dt=xxx/p/f3.png")
 ```
 
+**Reading fulltext (check first):**
+
+Each search_papers hit carries `is_content_accessible` (bool): `true` only when
+the paper has fulltext AND the caller is authorized. Check it before
+`read_content(doc_id, ...)` — `false` means no fulltext or no read permission.
+
 ## Exit codes
 
 - `0` — success; stdout is the JSON response
