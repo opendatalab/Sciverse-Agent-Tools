@@ -11,10 +11,11 @@
 | `list_catalog` | 字段 introspection：按 `collection` 返回可用字段、过滤算子、enum 取值样本 |
 | `search_papers` | 按结构化条件查 papers / authors / sources（用 `collection` 切换实体集合） |
 | `semantic_search` | 自然语言语义检索片段（RAG 用） |
+| `list_paper_relations` | 分页取某篇论文完整的 citations / references / related works（按 `unique_id`） |
 | `read_content` | 取原文字节切片（扩展 RAG 上下文） |
 | `get_resource` | 取 `read_content` Markdown 中引用的图片/表格字节流 |
 
-五个工具共用同一套 Bearer Token 鉴权，并在 Python SDK / TypeScript SDK / MCP server / Claude Code skill / ClawHub skill 中以一致接口暴露。canonical schema 见 [`openapi.yaml`](./openapi.yaml)。
+六个工具共用同一套 Bearer Token 鉴权，并在 Python SDK / TypeScript SDK / MCP server / Claude Code skill / ClawHub skill 中以一致接口暴露。canonical schema 见 [`openapi.yaml`](./openapi.yaml)。
 
 ## 接入方式选择
 
@@ -173,7 +174,7 @@ client = Anthropic()
 msg = client.messages.create(
     model="claude-opus-4-7",
     max_tokens=2048,
-    tools=ANTHROPIC_TOOLS,   # 5 个 tool schema 全包含
+    tools=ANTHROPIC_TOOLS,   # 6 个 tool schema 全包含
     messages=[{"role": "user", "content": "找几篇关于 Transformer 的论文"}]
 )
 ```
@@ -218,6 +219,7 @@ sciverse auth logout                                 # 删凭据文件
 sciverse catalog --samples                           # list_catalog 带 enum 样本
 sciverse search --author Hinton --year-from 2020     # search_papers
 sciverse semantic-search "注意力机制"                  # semantic_search
+sciverse paper-relations <unique_id> --relation CITATIONS   # list_paper_relations
 sciverse content <doc_id> --offset 0 --limit 4096    # read_content
 sciverse resource <file_name> -o figure.png          # get_resource（二进制 → 文件）
 ```
@@ -236,9 +238,11 @@ async with AgentToolsClient() as c:           # token 从 env / 凭据文件读
     await c.search_papers(query=..., authors=[...], year_from=2020, page_size=10)
     # 3. 语义检索（mode: fast / balanced / quality）
     await c.semantic_search(query=..., top_k=10, mode="balanced")
-    # 4. 读原文字节区间
+    # 4. 某篇论文完整的 citations / references / related works
+    await c.list_paper_relations(unique_id=..., relation="CITATIONS", page_size=25)
+    # 5. 读原文字节区间
     await c.read_content(doc_id=..., offset=0, limit=4096)
-    # 5. 取图片字节流（多模态 RAG）
+    # 6. 取图片字节流（多模态 RAG）
     img_bytes, mime = await c.get_resource(file_name="dt=.../p_.../f3.png")
 ```
 
@@ -305,7 +309,7 @@ try {
 | 429 | 配额 / 限流超限（仅生产网关） |
 | 502 / 503 | 上游服务不可用 |
 
-## 五个工具的协同链路
+## 六个工具的协同链路
 
 **1. 自然语言 RAG（最常见）：**
 

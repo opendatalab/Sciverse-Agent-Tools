@@ -11,10 +11,11 @@ With these tools, you can easily empower your AI agents to search for academic p
 | `list_catalog` | Discover available fields, filter operators, and enum sample values (per `collection`) |
 | `search_papers` | Structured metadata search over papers / authors / sources (set `collection`) |
 | `semantic_search` | Natural-language semantic search over passages (RAG) |
+| `list_paper_relations` | Paginate a paper's full citations / references / related works (by `unique_id`) |
 | `read_content` | Fetch a byte-range slice of the source document (extend RAG context) |
 | `get_resource` | Fetch figure / table image bytes referenced inside `read_content` Markdown |
 
-All five tools share the same Bearer-Token authentication and are exposed identically through the Python SDK, the TypeScript SDK, the MCP server, the Claude Code skill, and the ClawHub skill. The canonical schema is [`openapi.yaml`](./openapi.yaml).
+All six tools share the same Bearer-Token authentication and are exposed identically through the Python SDK, the TypeScript SDK, the MCP server, the Claude Code skill, and the ClawHub skill. The canonical schema is [`openapi.yaml`](./openapi.yaml).
 
 ## Pick your integration path
 
@@ -174,7 +175,7 @@ client = Anthropic()
 msg = client.messages.create(
     model="claude-opus-4-7",
     max_tokens=2048,
-    tools=ANTHROPIC_TOOLS,   # all 5 tool schemas
+    tools=ANTHROPIC_TOOLS,   # all 6 tool schemas
     messages=[{"role": "user", "content": "Find a few papers on Transformers"}]
 )
 ```
@@ -219,6 +220,7 @@ sciverse auth logout                                 # delete credentials file
 sciverse catalog --samples                           # list_catalog with enum samples
 sciverse search --author Hinton --year-from 2020     # search_papers
 sciverse semantic-search "attention mechanism"       # semantic_search
+sciverse paper-relations <unique_id> --relation CITATIONS   # list_paper_relations
 sciverse content <doc_id> --offset 0 --limit 4096    # read_content
 sciverse resource <file_name> -o figure.png          # get_resource (binary → file)
 ```
@@ -237,9 +239,11 @@ async with AgentToolsClient() as c:           # token from env / credentials fil
     await c.search_papers(query=..., authors=[...], year_from=2020, page_size=10)
     # 3. Semantic search (mode: fast / balanced / quality)
     await c.semantic_search(query=..., top_k=10, mode="balanced")
-    # 4. Byte-range read of original content
+    # 4. A paper's full citations / references / related works
+    await c.list_paper_relations(unique_id=..., relation="CITATIONS", page_size=25)
+    # 5. Byte-range read of original content
     await c.read_content(doc_id=..., offset=0, limit=4096)
-    # 5. Figure / table image bytes (multimodal RAG)
+    # 6. Figure / table image bytes (multimodal RAG)
     img_bytes, mime = await c.get_resource(file_name="dt=.../p_.../f3.png")
 ```
 
@@ -265,6 +269,7 @@ const c = new AgentToolsClient();   // token from env
 await c.listCatalog({ include_sample_values: true });
 await c.searchPapers({ query, authors, year_from, page_size });
 await c.semanticSearch({ query, top_k, mode });
+await c.listPaperRelations({ unique_id, relation: "CITATIONS", page_size: 25 });
 await c.readContent({ doc_id, offset, limit });
 const { bytes, mimeType } = await c.getResource({ file_name });
 ```
@@ -306,7 +311,7 @@ try {
 | 429 | Quota / rate limit exceeded (production gateway only) |
 | 502 / 503 | Upstream service unavailable |
 
-## How the five tools compose
+## How the six tools compose
 
 **1. Natural-language RAG (the common case):**
 
