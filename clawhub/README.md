@@ -1,6 +1,6 @@
 # academic-retrieval — ClawHub skill bundle
 
-[![ClawHub](https://img.shields.io/badge/clawhub-academic--retrieval-brightgreen)](https://clawhub.ai/academic-retrieval)
+[![ClawHub](https://img.shields.io/badge/clawhub-academic--retrieval-brightgreen)](https://clawhub.ai/sciverse/skills/academic-retrieval)
 
 ClawHub skill that gives any OpenClaw agent Sciverse academic-paper retrieval
 capabilities (English | [中文](#中文说明)).
