@@ -20,7 +20,7 @@ class SearchPapersArgs(BaseModel):
     year_to: int | None = Field(None, description='结束发表年（含）。')
     journals: list[str] | None = Field(None, description='期刊名（任一命中即可）。SDK 内部映射到后端 `publication_venue_name_unified` 字段（FILTER_OP_IN，规范化后的载体名）。')
     subjects: list[str] | None = Field(None, description='学科分类，如 "computer science"、"biology"。')
-    filters_advanced: list[dict[str, Any]] | None = Field(None, description='高级过滤逃生舱（仅当上述字段不够用时使用）。')
+    filters_advanced: list[dict[str, Any]] | None = Field(None, description='高级过滤逃生舱（仅当上述字段不够用时使用）。可用字段见 get_field_catalog。\n\n引文反查（常用）：field="references_unique_id" 查「谁引用了某篇论文」，\nvalue 填目标论文的 unique_id。相比 list_paper_relations 的 CITATIONS，\n它支持深翻页与任意排序，适合超高被引论文。可叠加条件，\n例如「引用了 ResNet 且 2023 年后发表」：\n  [{"field":"references_unique_id","value":"paper:10.1109/cvpr.2016.90"},\n   {"field":"publication_published_year","operator":"FILTER_OP_GTE","value":2023}]\n该字段仅支持过滤，不能排序/聚合，也不能放进 fields 返回。\n')
     sort_advanced: list[dict[str, Any]] | None = Field(None, description='高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。')
     sort_by_year: str = Field('desc', description='')
     freshness_boost: str = Field('NONE', description='模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。底层为 function_score + gauss decay over\npublication_published_date。\n')
@@ -107,11 +107,15 @@ class ListPaperRelationsArgs(BaseModel):
 class ListPaperRelationsTool(BaseTool):
     name: str = "list_paper_relations"
     description: str = """分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
-（高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+（单篇最大 34 万条），在 search_papers 中**不可投影**，取这些列表只能用本接口。
 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
 （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+两个上限（仅 CITATIONS 可能触发；REFERENCES/RELATED_WORKS 实测最大 11833/20 条）：
+关系数超 10000 返回 429；page×page_size 超 10000 返回 400。两种情况都改用
+search_papers 的 filters_advanced 传 references_unique_id 反查——可深翻页并任意排序。
+total_count 为库内命中数（不含指向库外论文的边），与论文自身 citation_count 可能有 ±1% 差异。
 """
     args_schema: type[BaseModel] = ListPaperRelationsArgs
 

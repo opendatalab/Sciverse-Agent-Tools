@@ -53,8 +53,25 @@ Common arguments:
 
 ## list_paper_relations
 
-Paginate a paper's full citations / references / related works. `search_papers` only
-inlines a truncated few of these unbounded arrays, so use this for the complete list.
+Paginate a paper's full citations / references / related works. These are unbounded
+arrays (up to 340k entries) and are **not projectable** in `search_papers`, so this
+endpoint is the only way to read them.
+
+**Limits (CITATIONS only)**: over 10000 relations returns 429; `page * page_size`
+above 10000 returns 400. In both cases switch to reverse lookup via `search_papers`:
+
+```bash
+node scripts/search_papers.mjs '{
+  "filters_advanced": [
+    {"field": "references_unique_id", "value": "paper:10.1109/cvpr.2016.90"}
+  ],
+  "sort_advanced": [{"field": "citation_count", "order": "SORT_ORDER_DESC"}],
+  "page_size": 50
+}'
+```
+
+`total_count` counts in-corpus matches only, so it can differ from the paper's own
+`citation_count` by about 1%.
 
 ```bash
 node scripts/list_paper_relations.mjs '{

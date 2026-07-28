@@ -105,7 +105,8 @@ class SearchPapersRequest(BaseModel):
         None, description='学科分类，如 "computer science"、"biology"。'
     )
     filters_advanced: list[FiltersAdvancedItem] | None = Field(
-        None, description="高级过滤逃生舱（仅当上述字段不够用时使用）。"
+        None,
+        description='高级过滤逃生舱（仅当上述字段不够用时使用）。可用字段见 get_field_catalog。\n\n引文反查（常用）：field="references_unique_id" 查「谁引用了某篇论文」，\nvalue 填目标论文的 unique_id。相比 list_paper_relations 的 CITATIONS，\n它支持深翻页与任意排序，适合超高被引论文。可叠加条件，\n例如「引用了 ResNet 且 2023 年后发表」：\n  [{"field":"references_unique_id","value":"paper:10.1109/cvpr.2016.90"},\n   {"field":"publication_published_year","operator":"FILTER_OP_GTE","value":2023}]\n该字段仅支持过滤，不能排序/聚合，也不能放进 fields 返回。\n',
     )
     sort_advanced: list[SortAdvancedItem] | None = Field(
         None,

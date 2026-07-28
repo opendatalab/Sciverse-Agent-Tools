@@ -103,14 +103,20 @@ enum-like fields (OpenSearch terms aggregation, 24h cached).
 ### list_paper_relations
 
 Paginate the full relation list of a paper. citations/references/related_works
-are unbounded arrays (a highly-cited paper can have thousands); search_papers
-only inlines a truncated few, so use this endpoint for the full list.
+are unbounded arrays (up to 340k entries for a single paper) and are NOT
+projectable in search_papers, so this endpoint is the only way to read them.
 Use when: "What does paper X cite?" (relation=REFERENCES), "Which papers cite
 paper X?" (relation=CITATIONS), "Works related to paper X" (relation=RELATED_WORKS).
 Note: CITATIONS (incoming: who cites me) and REFERENCES (outgoing: who I cite)
 are opposite directions.
 Typical chain: get unique_id from search_papers / semantic_search, then paginate
 here by relation.
+Two limits (CITATIONS only; REFERENCES/RELATED_WORKS max out at 11833/20 in practice):
+more than 10000 relations returns 429; page*page_size above 10000 returns 400.
+In both cases switch to search_papers with filters_advanced on
+references_unique_id — it supports deep paging and arbitrary sorting.
+total_count counts in-corpus matches only, so it can differ from the paper's own
+citation_count by about 1%.
 
 ### read_content
 

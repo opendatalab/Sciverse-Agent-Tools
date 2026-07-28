@@ -44,11 +44,15 @@ export interface paths {
     /**
      * 分页查一篇论文的引用/被引/相关工作列表
      * @description 分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
-     * （高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+     * （单篇最大 34 万条），在 search_papers 中**不可投影**，取这些列表只能用本接口。
      * 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
      * （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
      * 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
      * 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+     * 两个上限（仅 CITATIONS 可能触发；REFERENCES/RELATED_WORKS 实测最大 11833/20 条）：
+     * 关系数超 10000 返回 429；page×page_size 超 10000 返回 400。两种情况都改用
+     * search_papers 的 filters_advanced 传 references_unique_id 反查——可深翻页并任意排序。
+     * total_count 为库内命中数（不含指向库外论文的边），与论文自身 citation_count 可能有 ±1% 差异。
      */
     post: operations["list_paper_relations"];
   };
@@ -102,7 +106,17 @@ export interface components {
       journals?: string[];
       /** @description 学科分类，如 "computer science"、"biology"。 */
       subjects?: string[];
-      /** @description 高级过滤逃生舱（仅当上述字段不够用时使用）。 */
+      /**
+       * @description 高级过滤逃生舱（仅当上述字段不够用时使用）。可用字段见 get_field_catalog。
+       *
+       * 引文反查（常用）：field="references_unique_id" 查「谁引用了某篇论文」，
+       * value 填目标论文的 unique_id。相比 list_paper_relations 的 CITATIONS，
+       * 它支持深翻页与任意排序，适合超高被引论文。可叠加条件，
+       * 例如「引用了 ResNet 且 2023 年后发表」：
+       *   [{"field":"references_unique_id","value":"paper:10.1109/cvpr.2016.90"},
+       *    {"field":"publication_published_year","operator":"FILTER_OP_GTE","value":2023}]
+       * 该字段仅支持过滤，不能排序/聚合，也不能放进 fields 返回。
+       */
       filters_advanced?: ({
           field: string;
           /**
@@ -393,11 +407,15 @@ export interface operations {
   /**
    * 分页查一篇论文的引用/被引/相关工作列表
    * @description 分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
-   * （高被引文献可达数千条），search_papers 只内联截断少量，要翻完整列表用本接口。
+   * （单篇最大 34 万条），在 search_papers 中**不可投影**，取这些列表只能用本接口。
    * 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
    * （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
    * 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
    * 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+   * 两个上限（仅 CITATIONS 可能触发；REFERENCES/RELATED_WORKS 实测最大 11833/20 条）：
+   * 关系数超 10000 返回 429；page×page_size 超 10000 返回 400。两种情况都改用
+   * search_papers 的 filters_advanced 传 references_unique_id 反查——可深翻页并任意排序。
+   * total_count 为库内命中数（不含指向库外论文的边），与论文自身 citation_count 可能有 ±1% 差异。
    */
   list_paper_relations: {
     requestBody: {
