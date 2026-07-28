@@ -81,7 +81,7 @@
           },
           "filters_advanced": {
             "type": "array",
-            "description": "高级过滤逃生舱（仅当上述字段不够用时使用）。",
+            "description": "高级过滤逃生舱（仅当上述字段不够用时使用）。可用字段见 get_field_catalog。\n\n引文反查（常用）：field=\"references_unique_id\" 查「谁引用了某篇论文」，\nvalue 填目标论文的 unique_id。相比 list_paper_relations 的 CITATIONS，\n它支持深翻页与任意排序，适合超高被引论文。可叠加条件，\n例如「引用了 ResNet 且 2023 年后发表」：\n  [{\"field\":\"references_unique_id\",\"value\":\"paper:10.1109/cvpr.2016.90\"},\n   {\"field\":\"publication_published_year\",\"operator\":\"FILTER_OP_GTE\",\"value\":2023}]\n该字段仅支持过滤，不能排序/聚合，也不能放进 fields 返回。\n",
             "items": {
               "type": "object",
               "required": [
@@ -249,7 +249,7 @@
     },
     {
       "name": "list_paper_relations",
-      "description": "Paginate the full relation list of a paper. citations/references/related_works\nare unbounded arrays (a highly-cited paper can have thousands); search_papers\nonly inlines a truncated few, so use this endpoint for the full list.\nUse when: \"What does paper X cite?\" (relation=REFERENCES), \"Which papers cite\npaper X?\" (relation=CITATIONS), \"Works related to paper X\" (relation=RELATED_WORKS).\nNote: CITATIONS (incoming: who cites me) and REFERENCES (outgoing: who I cite)\nare opposite directions.\nTypical chain: get unique_id from search_papers / semantic_search, then paginate\nhere by relation.",
+      "description": "Paginate the full relation list of a paper. citations/references/related_works\nare unbounded arrays (up to 340k entries for a single paper) and are NOT\nprojectable in search_papers, so this endpoint is the only way to read them.\nUse when: \"What does paper X cite?\" (relation=REFERENCES), \"Which papers cite\npaper X?\" (relation=CITATIONS), \"Works related to paper X\" (relation=RELATED_WORKS).\nNote: CITATIONS (incoming: who cites me) and REFERENCES (outgoing: who I cite)\nare opposite directions.\nTypical chain: get unique_id from search_papers / semantic_search, then paginate\nhere by relation.\nTwo limits (CITATIONS only; REFERENCES/RELATED_WORKS max out at 11833/20 in practice):\nmore than 10000 relations returns 429; page*page_size above 10000 returns 400.\nIn both cases switch to search_papers with filters_advanced on\nreferences_unique_id — it supports deep paging and arbitrary sorting.\ntotal_count counts in-corpus matches only, so it can differ from the paper's own\ncitation_count by about 1%.",
       "script": "scripts/list_paper_relations.mjs",
       "input_schema": {
         "type": "object",
