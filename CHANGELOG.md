@@ -1,3 +1,9 @@
+## [0.10.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.9.0...v0.10.0) (2026-07-28)
+
+### Features
+
+* 引文反查能力与 relations 契约变更同步，0.8.1 → 0.9.0 ([#19](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/19)) ([bc97589](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/bc97589b68e9eca0f228a68b4af711536745ebf1))
+
 ## [0.9.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.8.1...v0.9.0) (2026-07-03)
 
 ### Features
