@@ -1,3 +1,10 @@
+## [0.11.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.10.0...v0.11.0) (2026-07-31)
+
+### Features
+
+* MCP HTTP 入口鉴权双通道（IP 白名单 + Authorization 透传）+ 请求日志 ([608a898](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/608a8987ec6d8141cd8632fbedfcac5ef82cfdba))
+* 鉴权判定器去部署专名并补信任代理门（XFF 仅对可信对端采信） ([059e359](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/059e3597024250f7a53cbe09c739e67f5f4ee766))
+
 ## [0.10.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.9.0...v0.10.0) (2026-07-28)
 
 ### Features
