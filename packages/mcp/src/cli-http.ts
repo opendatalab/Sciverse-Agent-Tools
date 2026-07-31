@@ -7,8 +7,9 @@
 //      session id 由 SDK 在 initialize 阶段通过 crypto.randomUUID() 分配，
 //      存到内存 Map，容器重启即清空。Phase 1 单副本部署可接受。
 //   3. 鉴权双通道（Phase 1.5，http-auth.ts）：Authorization: Bearer 透传（channel
-//      "remote"）或来源 IP ∈ SCP Hub 白名单走内置 token（channel 沿用配置）；
+//      "remote"）或来源 IP ∈ 可信 IP 白名单走内置 token（channel 沿用配置）；
 //      两者皆无 → 401。session 与首次判定的凭据绑定，后续请求不一致同样 401。
+//      XFF 仅在 TCP 对端命中信任代理网段时采信（默认永不），防直连伪造。
 //   4. /healthz 返回 200 纯文本，供 K8s readiness/liveness probe 使用（不鉴权、不记日志）。
 //   5. 配置错误 (loadConfig 抛 ConfigError) 时 stderr 输出并 exit(2)，
 //      与 cli.ts 行为一致。
@@ -295,15 +296,16 @@ async function main(): Promise<void> {
   }
 
   const auth = loadAuthOptions();
-  if (auth.hubIps.size === 0) {
+  if (auth.trustedIps.size === 0) {
     process.stderr.write(
-      "[sciverse-mcp] SCP_HUB_IPS 未配置：hub 通道关闭，所有请求都需要 Authorization\n",
+      "[sciverse-mcp] SCIVERSE_MCP_TRUSTED_IPS 未配置：可信 IP 通道关闭，所有请求都需要 Authorization\n",
     );
   }
   const handle = await startHttpServer(config, { port, auth });
+  const proxyCount = auth.trustedProxies.v4.length + auth.trustedProxies.exact.size;
   process.stderr.write(
     `[sciverse-mcp] listening on :${handle.port}${MCP_PATH} ` +
-      `(hub_ips=${auth.hubIps.size} trusted_hops=${auth.trustedHops})\n`,
+      `(trusted_ips=${auth.trustedIps.size} trusted_proxies=${proxyCount} hops=${auth.trustedHops})\n`,
   );
 
   // 收到信号时优雅退出
