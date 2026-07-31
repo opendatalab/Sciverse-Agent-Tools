@@ -6,11 +6,14 @@
 //   2. 每个 MCP session 独立一份 Server + Transport，避免不同会话间状态串扰；
 //      session id 由 SDK 在 initialize 阶段通过 crypto.randomUUID() 分配，
 //      存到内存 Map，容器重启即清空。Phase 1 单副本部署可接受。
-//   3. 边缘信任模型：本进程不校验 SCP-HUB-API-KEY，由 Ingress IP 白名单兜底；
-//      Phase 1.5 再补 header 校验。
-//   4. /healthz 返回 200 纯文本，供 K8s readiness/liveness probe 使用。
+//   3. 鉴权双通道（Phase 1.5，http-auth.ts）：Authorization: Bearer 透传（channel
+//      "remote"）或来源 IP ∈ SCP Hub 白名单走内置 token（channel 沿用配置）；
+//      两者皆无 → 401。session 与首次判定的凭据绑定，后续请求不一致同样 401。
+//   4. /healthz 返回 200 纯文本，供 K8s readiness/liveness probe 使用（不鉴权、不记日志）。
 //   5. 配置错误 (loadConfig 抛 ConfigError) 时 stderr 输出并 exit(2)，
 //      与 cli.ts 行为一致。
+//   6. 每个 /mcp 请求向 stdout 写一行结构化日志（SLS 经 aliyun_logs_app_logs=stdout
+//      采集）；恒不落 token。
 import { randomUUID } from "node:crypto";
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 
@@ -18,6 +21,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 
 import { ConfigError, loadConfig, type Config } from "./config.js";
+import { loadAuthOptions, resolveLane, type AuthOptions, type Lane } from "./http-auth.js";
 import { createServer } from "./server.js";
 
 const DEFAULT_PORT = 8080;
@@ -64,38 +68,95 @@ export interface HttpServerHandle {
   close: () => Promise<void>;
 }
 
+// 每请求日志的可变元信息：handleMcp 边处理边填，响应关闭时统一写一行。
+interface ReqLogMeta {
+  lane: Lane | "anon";
+  rpc: string;
+  session: string;
+}
+
+// 从 JSON-RPC payload 提取方法名（batch 用 + 连接），仅用于日志。
+function rpcMethodOf(body: unknown): string {
+  if (Array.isArray(body)) {
+    const names = body
+      .map((m) => (m && typeof m === "object" ? (m as { method?: string }).method : undefined))
+      .filter((s): s is string => typeof s === "string");
+    return names.length > 0 ? names.join("+") : "batch";
+  }
+  if (body && typeof body === "object") {
+    const method = (body as { method?: unknown }).method;
+    if (typeof method === "string") return method;
+  }
+  return "-";
+}
+
+function writeUnauthorized(res: ServerResponse): void {
+  res.setHeader("www-authenticate", "Bearer");
+  writeJsonRpcError(
+    res,
+    401,
+    "Unauthorized: provide `Authorization: Bearer <sciverse token>` (get one at https://sciverse.space)",
+  );
+}
+
 // 启动 HTTP server，返回句柄。导出供测试复用，避免 spawn 子进程。
 export async function startHttpServer(
   config: Config,
-  options: { port?: number; host?: string } = {},
+  options: { port?: number; host?: string; auth?: AuthOptions } = {},
 ): Promise<HttpServerHandle> {
   const port = options.port ?? DEFAULT_PORT;
   const host = options.host ?? "0.0.0.0";
+  const auth = options.auth ?? loadAuthOptions();
 
-  // session id → { transport, server } 映射。Phase 1 进程内 Map 即可。
+  // session id → transport + 首次判定的凭据（lane/token 绑定，防 session id 被盗用）。
   const sessions = new Map<
     string,
-    { transport: StreamableHTTPServerTransport; close: () => Promise<void> }
+    {
+      transport: StreamableHTTPServerTransport;
+      close: () => Promise<void>;
+      lane: Lane;
+      token: string;
+    }
   >();
 
-  const handleMcp = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+  const handleMcp = async (
+    req: IncomingMessage,
+    res: ServerResponse,
+    meta: ReqLogMeta,
+  ): Promise<void> => {
     const method = req.method ?? "GET";
     const sessionId = req.headers["mcp-session-id"];
     const sessionIdStr = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+    if (sessionIdStr) meta.session = sessionIdStr.slice(0, 8);
+
+    // 鉴权判定先于一切处理；不通过的请求不进 MCP 协议层。
+    const decision = resolveLane(req, config, auth);
+    if (!decision) {
+      writeUnauthorized(res);
+      return;
+    }
+    meta.lane = decision.lane;
+
+    // 复用 session 时校验凭据与首次判定一致；不一致按未授权处理（不泄露 session 存在性）。
+    const boundEntry = sessionIdStr ? sessions.get(sessionIdStr) : undefined;
+    if (boundEntry && (boundEntry.lane !== decision.lane || boundEntry.token !== decision.token)) {
+      writeUnauthorized(res);
+      return;
+    }
 
     // POST：初始化 or 后续 JSON-RPC 调用
     if (method === "POST") {
       const raw = await readBody(req);
       const body = parseJsonBody(raw);
+      meta.rpc = rpcMethodOf(body);
 
       // 已有 session：复用 transport
-      if (sessionIdStr && sessions.has(sessionIdStr)) {
-        const entry = sessions.get(sessionIdStr)!;
-        await entry.transport.handleRequest(req, res, body);
+      if (boundEntry) {
+        await boundEntry.transport.handleRequest(req, res, body);
         return;
       }
 
-      // 无 session + 是 initialize：新建 transport + Server
+      // 无 session + 是 initialize：新建 transport + Server（携带本 session 的凭据）
       if (!sessionIdStr && isInitializeRequest(body)) {
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: () => randomUUID(),
@@ -103,6 +164,8 @@ export async function startHttpServer(
             // 在 initialize 完成时把 transport 注册进表；规避请求先于 sessionId 落表的竞态。
             sessions.set(sid, {
               transport,
+              lane: decision.lane,
+              token: decision.token,
               close: async () => {
                 await transport.close();
                 await server.close();
@@ -116,7 +179,8 @@ export async function startHttpServer(
             sessions.delete(sid);
           }
         };
-        const server = createServer(config);
+        // 每 session 一份 config：token/channel 来自通道判定，其余沿用进程配置。
+        const server = createServer({ ...config, token: decision.token, channel: decision.channel });
         await server.connect(transport);
         await transport.handleRequest(req, res, body);
         return;
@@ -129,14 +193,13 @@ export async function startHttpServer(
 
     // GET (SSE 长轮询) / DELETE (session 终止)：必须带 session id
     if (method === "GET" || method === "DELETE") {
-      if (!sessionIdStr || !sessions.has(sessionIdStr)) {
+      if (!boundEntry) {
         res.statusCode = 400;
         res.setHeader("content-type", "text/plain");
         res.end("Invalid or missing session ID");
         return;
       }
-      const entry = sessions.get(sessionIdStr)!;
-      await entry.transport.handleRequest(req, res);
+      await boundEntry.transport.handleRequest(req, res);
       return;
     }
 
@@ -155,7 +218,17 @@ export async function startHttpServer(
       return;
     }
     if (url === MCP_PATH || url.startsWith(`${MCP_PATH}?`) || url.startsWith(`${MCP_PATH}/`)) {
-      handleMcp(req, res).catch((err) => {
+      const startedAt = Date.now();
+      const meta: ReqLogMeta = { lane: "anon", rpc: "-", session: "-" };
+      // "close" 同时覆盖正常结束与客户端中断；一行 key=value 结构化日志（恒不含 token）。
+      res.once("close", () => {
+        process.stdout.write(
+          `[sciverse-mcp] req method=${req.method ?? "-"} path=${MCP_PATH} rpc=${meta.rpc} ` +
+            `lane=${meta.lane} session=${meta.session} status=${res.statusCode} ` +
+            `dur_ms=${Date.now() - startedAt}\n`,
+        );
+      });
+      handleMcp(req, res, meta).catch((err) => {
         process.stderr.write(
           `[sciverse-mcp] handleRequest error: ${err instanceof Error ? err.stack ?? err.message : String(err)}\n`,
         );
@@ -221,8 +294,17 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  const handle = await startHttpServer(config, { port });
-  process.stderr.write(`[sciverse-mcp] listening on :${handle.port}${MCP_PATH}\n`);
+  const auth = loadAuthOptions();
+  if (auth.hubIps.size === 0) {
+    process.stderr.write(
+      "[sciverse-mcp] SCP_HUB_IPS 未配置：hub 通道关闭，所有请求都需要 Authorization\n",
+    );
+  }
+  const handle = await startHttpServer(config, { port, auth });
+  process.stderr.write(
+    `[sciverse-mcp] listening on :${handle.port}${MCP_PATH} ` +
+      `(hub_ips=${auth.hubIps.size} trusted_hops=${auth.trustedHops})\n`,
+  );
 
   // 收到信号时优雅退出
   const shutdown = async (signal: string): Promise<void> => {
