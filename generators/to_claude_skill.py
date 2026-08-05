@@ -254,10 +254,10 @@ def generate_skill_md(openapi_path: Path) -> str:
         "  so `read_content(doc_id, ...)` will work; `false` means no fulltext or no permission.",
         "- **When a chunk looks promising but truncated**: `read_content(doc_id, offset)`",
         "  to expand. `read_content` returns `more: true` when more bytes are available.",
-        "- **Pagination**: `semantic_search` top_k allows up to 100, but fast/balanced",
-        "  modes recall a single path whose server-side fusion pool keeps ~50 — use",
-        "  `mode=quality` when you need more than ~50 hits. `search_papers` returns",
-        "  max 50 per page; use `page` to paginate.",
+        "- **Pagination**: `semantic_search` top_k allows up to 100, but `balanced`",
+        "  truncates to ~50 server-side — use `quality` (or `fast`) when you need more.",
+        "  At most ~3 chunks come back per paper, so a high top_k needs many distinct",
+        "  papers to be matched. `search_papers` returns max 50 per page; use `page`.",
         "",
     ])
 

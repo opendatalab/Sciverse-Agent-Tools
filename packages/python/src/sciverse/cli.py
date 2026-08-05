@@ -285,8 +285,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     sem.add_argument("query", help="自然语言查询（1-200 字最佳）")
     sem.add_argument("--top-k", type=int, default=10, dest="top_k",
-                     help="返回 chunk 数量，默认 10，上限 100（fast/balanced 单路召回实际至多约 50，"
-                          "更多命中用 --mode quality）")
+                     help="返回 chunk 数量，默认 10，上限 100（balanced 在服务端固定截到约 50，"
+                          "要更多请用 --mode quality 或 fast）")
     sem.add_argument("--mode", choices=["fast", "balanced", "quality"], default="balanced",
                      help="fast=纯关键词 (~200ms) / balanced=混合 (~600ms，默认) / quality=LLM 改写 (~2-4s)")
     sem.set_defaults(func=_cmd_semantic_search)
