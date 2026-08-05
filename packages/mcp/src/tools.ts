@@ -78,6 +78,28 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
   return out;
 }
 
+// 上游 agentic-search（Go 服务）没有 mode 字段，未知字段会被静默丢弃，
+// 所以 mode 必须在这里翻译为上游真实参数 retrieval / sub_queries。
+// 与 packages/typescript/src/client.ts 的 SEMANTIC_MODE_MAP 保持一致（同 toBackendPayload 的复制约定）。
+const SEMANTIC_MODE_MAP: Record<string, Record<string, unknown>> = {
+  fast: { retrieval: "es" },
+  balanced: { retrieval: "hybrid" },
+  quality: { retrieval: "hybrid", sub_queries: 3 },
+};
+
+function toSemanticSearchPayload(args: Record<string, unknown>): Record<string, unknown> {
+  const { mode, ...rest } = args;
+  if (mode === undefined || mode === null) return rest;
+  const mapped = SEMANTIC_MODE_MAP[mode as string];
+  if (!mapped) {
+    throw new Error(
+      `mode must be one of ${Object.keys(SEMANTIC_MODE_MAP).join(" / ")}, got ${JSON.stringify(mode)}`,
+    );
+  }
+  // 显式传入的 retrieval / sub_queries 优先于 mode 映射。
+  return { ...mapped, ...rest };
+}
+
 const PLATFORM = process.platform;
 
 async function call(
@@ -189,8 +211,18 @@ export async function executeTool(
   switch (name) {
     case "search_papers":
       return call(config, "POST", endpoint.path, { body: toBackendPayload(args) });
-    case "semantic_search":
-      return call(config, "POST", endpoint.path, { body: args });
+    case "semantic_search": {
+      let body: Record<string, unknown>;
+      try {
+        body = toSemanticSearchPayload(args);
+      } catch (e) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: JSON.stringify({ error: (e as Error).message }) }],
+        };
+      }
+      return call(config, "POST", endpoint.path, { body });
+    }
     case "list_catalog": {
       const { include_sample_values, include_field_stats, collection } = args as {
         include_sample_values?: boolean;
