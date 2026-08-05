@@ -8,6 +8,19 @@ from pydantic import BaseModel, ConfigDict, Field
 
 TOOLS_VERSION = "0.11.1"
 
+_NO_CLIENT = (
+    "No Sciverse client bound. Build these tools with build_tools(client), passing a "
+    "sciverse.AgentToolsClient — it holds the credentials and translates arguments such "
+    "as `mode` into the parameters the API actually accepts."
+)
+
+# The Sciverse client is async-only, and calling asyncio.run() from inside a running
+# event loop raises. Async-only tools are a standard LangChain pattern: drive them with
+# ainvoke() / an async executor.
+_SYNC_UNSUPPORTED = (
+    "{name} is async-only. Use `await tool.ainvoke(...)` or an async agent executor."
+)
+
 
 class SearchPapersArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -36,12 +49,15 @@ class SearchPapersTool(BaseTool):
 返回：论文元数据列表，每条含 unique_id（始终存在）、doc_id（仅当有全文）、title、author、abstract、publication_venue_name_unified、publication_published_year 等。
 """
     args_schema: type[BaseModel] = SearchPapersArgs
+    client: Any = None
 
     def _run(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        raise NotImplementedError(_SYNC_UNSUPPORTED.format(name=self.name))
 
     async def _arun(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        if self.client is None:
+            raise ValueError(_NO_CLIENT)
+        return await self.client.search_papers(**kwargs)
 
 
 class SemanticSearchArgs(BaseModel):
@@ -61,12 +77,15 @@ class SemanticSearchTool(BaseTool):
 典型链路：semantic_search → 选取 chunk → read_content(doc_id, offset)。
 """
     args_schema: type[BaseModel] = SemanticSearchArgs
+    client: Any = None
 
     def _run(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        raise NotImplementedError(_SYNC_UNSUPPORTED.format(name=self.name))
 
     async def _arun(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        if self.client is None:
+            raise ValueError(_NO_CLIENT)
+        return await self.client.semantic_search(**kwargs)
 
 
 class ListCatalogArgs(BaseModel):
@@ -88,12 +107,15 @@ class ListCatalogTool(BaseTool):
 include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
 """
     args_schema: type[BaseModel] = ListCatalogArgs
+    client: Any = None
 
     def _run(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        raise NotImplementedError(_SYNC_UNSUPPORTED.format(name=self.name))
 
     async def _arun(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        if self.client is None:
+            raise ValueError(_NO_CLIENT)
+        return await self.client.list_catalog(**kwargs)
 
 
 class ListPaperRelationsArgs(BaseModel):
@@ -118,12 +140,15 @@ search_papers 的 filters_advanced 传 references_unique_id 反查——可深�
 total_count 为库内命中数（不含指向库外论文的边），与论文自身 citation_count 可能有 ±1% 差异。
 """
     args_schema: type[BaseModel] = ListPaperRelationsArgs
+    client: Any = None
 
     def _run(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        raise NotImplementedError(_SYNC_UNSUPPORTED.format(name=self.name))
 
     async def _arun(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        if self.client is None:
+            raise ValueError(_NO_CLIENT)
+        return await self.client.list_paper_relations(**kwargs)
 
 
 class ReadContentArgs(BaseModel):
@@ -140,12 +165,15 @@ class ReadContentTool(BaseTool):
 返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。
 """
     args_schema: type[BaseModel] = ReadContentArgs
+    client: Any = None
 
     def _run(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        raise NotImplementedError(_SYNC_UNSUPPORTED.format(name=self.name))
 
     async def _arun(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        if self.client is None:
+            raise ValueError(_NO_CLIENT)
+        return await self.client.read_content(**kwargs)
 
 
 class GetResourceArgs(BaseModel):
@@ -163,10 +191,30 @@ agent 需要把图给用户看时调本接口。
 SDK / MCP server 包装层会做 base64 + mime 转换以便 agent 多模态使用。
 """
     args_schema: type[BaseModel] = GetResourceArgs
+    client: Any = None
 
     def _run(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        raise NotImplementedError(_SYNC_UNSUPPORTED.format(name=self.name))
 
     async def _arun(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        if self.client is None:
+            raise ValueError(_NO_CLIENT)
+        return await self.client.get_resource(**kwargs)
+
+
+
+TOOL_CLASSES: list[type[BaseTool]] = [SearchPapersTool, SemanticSearchTool, ListCatalogTool, ListPaperRelationsTool, ReadContentTool, GetResourceTool]
+
+
+def build_tools(client: Any) -> list[BaseTool]:
+    """Return every Sciverse tool bound to `client`, ready to hand to an agent.
+
+    `client` is a `sciverse.AgentToolsClient`. Bind through it rather than calling the
+    HTTP API yourself: it owns credentials, retries, and the argument translation the
+    raw endpoints do not perform (an unmapped `mode`, for one, is silently ignored
+    upstream, so `quality` would quietly behave like `balanced`).
+
+    The tools are async-only — drive them with `ainvoke()` or an async executor.
+    """
+    return [cls(client=client) for cls in TOOL_CLASSES]
 

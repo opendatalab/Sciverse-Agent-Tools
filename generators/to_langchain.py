@@ -15,6 +15,19 @@ from langchain_core.tools import BaseTool
 from pydantic import BaseModel, ConfigDict, Field
 
 TOOLS_VERSION = "{version}"
+
+_NO_CLIENT = (
+    "No Sciverse client bound. Build these tools with build_tools(client), passing a "
+    "sciverse.AgentToolsClient — it holds the credentials and translates arguments such "
+    "as `mode` into the parameters the API actually accepts."
+)
+
+# The Sciverse client is async-only, and calling asyncio.run() from inside a running
+# event loop raises. Async-only tools are a standard LangChain pattern: drive them with
+# ainvoke() / an async executor.
+_SYNC_UNSUPPORTED = (
+    "{{name}} is async-only. Use `await tool.ainvoke(...)` or an async agent executor."
+)
 '''
 
 
@@ -69,12 +82,33 @@ class {class_name}(BaseTool):
     name: str = "{operation_id}"
     description: str = """{desc}"""
     args_schema: type[BaseModel] = {args_class}
+    client: Any = None
 
     def _run(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        raise NotImplementedError(_SYNC_UNSUPPORTED.format(name=self.name))
 
     async def _arun(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("bind a client via .with_client(...)")
+        if self.client is None:
+            raise ValueError(_NO_CLIENT)
+        return await self.client.{operation_id}(**kwargs)
+'''
+
+
+FOOTER = '''
+TOOL_CLASSES: list[type[BaseTool]] = [{class_list}]
+
+
+def build_tools(client: Any) -> list[BaseTool]:
+    """Return every Sciverse tool bound to `client`, ready to hand to an agent.
+
+    `client` is a `sciverse.AgentToolsClient`. Bind through it rather than calling the
+    HTTP API yourself: it owns credentials, retries, and the argument translation the
+    raw endpoints do not perform (an unmapped `mode`, for one, is silently ignored
+    upstream, so `quality` would quietly behave like `balanced`).
+
+    The tools are async-only — drive them with `ainvoke()` or an async executor.
+    """
+    return [cls(client=client) for cls in TOOL_CLASSES]
 '''
 
 
@@ -82,11 +116,14 @@ def generate(openapi_path: Path) -> str:
     spec = load_openapi(openapi_path)
     version = spec["info"]["x-sciverse-tools-version"]
     out = [HEADER.format(version=version)]
+    class_names = []
     for _path, _method, op in iter_operations(spec):
         args_class = f"{_camel(op['operationId'])}Args"
         schema = get_request_schema(op, spec)
         out.append(_emit_args_model(args_class, schema))
         out.append(_emit_tool_class(op["operationId"], op.get("description", ""), args_class))
+        class_names.append(f"{_camel(op['operationId'])}Tool")
+    out.append(FOOTER.format(class_list=", ".join(class_names)))
     return "\n\n".join(out) + "\n"
 
 

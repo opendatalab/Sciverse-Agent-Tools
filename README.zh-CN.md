@@ -193,6 +193,23 @@ const resp = await openai.chat.completions.create({
 });
 ```
 
+**LangChain（Python）：**
+
+`dist/langchain_tools.py` 是由同一份 OpenAPI 生成的 `BaseTool` 子类。用 `build_tools`
+绑定 `AgentToolsClient` 后使用——client 持有凭据，并负责翻译裸接口不认识的参数
+（例如 `mode`，上游会静默丢弃，自己拼 HTTP 会让 `quality` 实际跑成 `balanced`）。
+
+```python
+from langchain_tools import build_tools   # 来自 dist/langchain_tools.py
+from sciverse import AgentToolsClient
+
+async with AgentToolsClient() as client:
+    tools = build_tools(client)           # 6 个工具，均已绑定
+    hits = await tools[1].ainvoke({"query": "Transformer attention", "mode": "quality"})
+```
+
+这些工具仅支持异步：用 `ainvoke()` 或异步 agent executor 驱动。
+
 完整端到端示例（含 tool 调用回环）见 [`examples/`](./examples/)：
 
 **SDK 直接调用（自己写 tool calling 回环）：**
