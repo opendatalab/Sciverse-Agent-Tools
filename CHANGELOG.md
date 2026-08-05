@@ -1,3 +1,9 @@
+## [0.11.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.11.1...v0.11.2) (2026-08-05)
+
+### Bug Fixes
+
+* top_k 上限声明与服务端实际对齐（30 → 100，注明单路有效约 50） ([#22](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/22)) ([aa5a52e](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/aa5a52e4065e73a149e02d0faaac283b5e884998))
+
 ## [0.11.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.11.0...v0.11.1) (2026-08-05)
 
 ### Bug Fixes
