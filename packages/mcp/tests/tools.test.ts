@@ -80,7 +80,7 @@ describe("executeTool", () => {
     expect(headers2["x-sciverse-source"]).toMatch(/^[a-z0-9]+-scp$/);
   });
 
-  it("semantic_search: 透传 body 到 /agentic-search", async () => {
+  it("semantic_search: mode 翻译为 retrieval / sub_queries（不透传）", async () => {
     const captured = mockFetch(200, { hits: [] });
     await executeTool(CONFIG, "semantic_search", {
       query: "Transformer attention",
@@ -90,7 +90,39 @@ describe("executeTool", () => {
     expect(captured[0]!.url).toBe("https://api.sciverse.space/agentic-search");
     expect(captured[0]!.init.method).toBe("POST");
     const body = JSON.parse(captured[0]!.init.body as string);
-    expect(body).toEqual({ query: "Transformer attention", top_k: 3, mode: "balanced" });
+    expect(body).toEqual({ query: "Transformer attention", top_k: 3, retrieval: "hybrid" });
+  });
+
+  it("semantic_search: quality → hybrid + sub_queries=3；fast → es", async () => {
+    const captured = mockFetch(200, { hits: [] });
+    await executeTool(CONFIG, "semantic_search", { query: "x", mode: "quality" });
+    expect(JSON.parse(captured[0]!.init.body as string)).toEqual({
+      query: "x",
+      retrieval: "hybrid",
+      sub_queries: 3,
+    });
+
+    const captured2 = mockFetch(200, { hits: [] });
+    await executeTool(CONFIG, "semantic_search", { query: "x", mode: "fast" });
+    expect(JSON.parse(captured2[0]!.init.body as string)).toEqual({
+      query: "x",
+      retrieval: "es",
+    });
+  });
+
+  it("semantic_search: 不传 mode 时不注入 retrieval/sub_queries", async () => {
+    const captured = mockFetch(200, { hits: [] });
+    await executeTool(CONFIG, "semantic_search", { query: "x", top_k: 5 });
+    expect(JSON.parse(captured[0]!.init.body as string)).toEqual({ query: "x", top_k: 5 });
+  });
+
+  it("semantic_search: 非法 mode 返回 isError，不打后端", async () => {
+    const captured = mockFetch(200, { hits: [] });
+    const result = await executeTool(CONFIG, "semantic_search", { query: "x", mode: "turbo" });
+    expect(result.isError).toBe(true);
+    expect(result.content[0]!.type).toBe("text");
+    expect((result.content[0] as { text: string }).text).toContain("mode");
+    expect(captured.length).toBe(0);
   });
 
   it("read_content: 构造 querystring", async () => {

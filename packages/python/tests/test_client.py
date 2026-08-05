@@ -17,15 +17,60 @@ async def test_search_papers_happy_path():
 
 @pytest.mark.asyncio
 @respx.mock
-async def test_semantic_search_passes_mode():
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [
+        ("fast", {"retrieval": "es"}),
+        ("balanced", {"retrieval": "hybrid"}),
+        ("quality", {"retrieval": "hybrid", "sub_queries": 3}),
+    ],
+)
+async def test_semantic_search_maps_mode_to_upstream_params(mode, expected):
+    """mode 不透传（上游无此字段会静默丢弃），翻译为 retrieval / sub_queries。"""
     route = respx.post("https://api.example/agentic-search").mock(
         return_value=Response(200, json={"hits": []})
     )
     async with AgentToolsClient(base_url="https://api.example", token="t") as c:
-        await c.semantic_search(query="hello", mode="quality", top_k=5)
-    body = route.calls.last.request.read()
-    assert b'"mode":"quality"' in body
-    assert b'"top_k":5' in body
+        await c.semantic_search(query="hello", mode=mode, top_k=5)
+    import json as _json
+    parsed = _json.loads(route.calls.last.request.read())
+    assert "mode" not in parsed
+    assert parsed == {"query": "hello", "top_k": 5, **expected}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_semantic_search_without_mode_adds_nothing():
+    """不传 mode 时不注入 retrieval/sub_queries（上游默认即 hybrid）。"""
+    route = respx.post("https://api.example/agentic-search").mock(
+        return_value=Response(200, json={"hits": []})
+    )
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        await c.semantic_search(query="hello")
+    import json as _json
+    assert _json.loads(route.calls.last.request.read()) == {"query": "hello"}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_semantic_search_explicit_params_override_mode():
+    """显式 retrieval / sub_queries 优先于 mode 映射。"""
+    route = respx.post("https://api.example/agentic-search").mock(
+        return_value=Response(200, json={"hits": []})
+    )
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        await c.semantic_search(query="hello", mode="quality", sub_queries=1)
+    import json as _json
+    parsed = _json.loads(route.calls.last.request.read())
+    assert parsed == {"query": "hello", "retrieval": "hybrid", "sub_queries": 1}
+
+
+@pytest.mark.asyncio
+async def test_semantic_search_invalid_mode_rejected():
+    """非法 mode 值在 SDK 层校验阶段就被拒（不打到后端）。"""
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        with pytest.raises(ValueError, match="mode"):
+            await c.semantic_search(query="x", mode="turbo")
 
 
 @pytest.mark.asyncio

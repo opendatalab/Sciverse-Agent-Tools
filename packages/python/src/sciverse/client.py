@@ -16,6 +16,14 @@ _SOURCE = f"{_PLATFORM}-{_CHANNEL}"
 _PASSTHROUGH = ("query", "page", "page_size", "fields", "freshness_boost", "collection")
 _FRESHNESS_BOOST_VALUES = frozenset({"NONE", "MILD", "STRONG"})
 
+# 上游 agentic-search（Go 服务）没有 mode 字段，未知字段会被静默丢弃，
+# 所以 mode 必须在 SDK 层翻译为上游真实参数 retrieval / sub_queries。
+_SEMANTIC_MODE_MAP: dict[str, dict[str, Any]] = {
+    "fast": {"retrieval": "es"},
+    "balanced": {"retrieval": "hybrid"},
+    "quality": {"retrieval": "hybrid", "sub_queries": 3},
+}
+
 
 def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
     """把 search_papers 高级参数映射为 platform-console MetaSearchBody 接受的
@@ -169,8 +177,21 @@ class AgentToolsClient:
         return resp.json()
 
     async def semantic_search(self, *, query: str, **kwargs: Any) -> dict[str, Any]:
-        """对应 POST /agentic-search。"""
+        """对应 POST /agentic-search。
+
+        mode（fast/balanced/quality）在 SDK 层翻译为上游参数：
+        fast → retrieval=es；balanced → retrieval=hybrid；
+        quality → retrieval=hybrid + sub_queries=3。
+        显式传入的 retrieval / sub_queries 优先于 mode 映射。
+        """
         body = {"query": query, **{k: v for k, v in kwargs.items() if v is not None}}
+        mode = body.pop("mode", None)
+        if mode is not None:
+            if mode not in _SEMANTIC_MODE_MAP:
+                raise ValueError(
+                    f"mode must be one of {sorted(_SEMANTIC_MODE_MAP)}, got {mode!r}"
+                )
+            body = {**_SEMANTIC_MODE_MAP[mode], **body}
         resp = await self._client.post("/agentic-search", json=body)
         resp.raise_for_status()
         return resp.json()

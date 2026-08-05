@@ -86,6 +86,28 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
   return out;
 }
 
+// 上游 agentic-search（Go 服务）没有 mode 字段，未知字段会被静默丢弃，
+// 所以 mode 必须在 SDK 层翻译为上游真实参数 retrieval / sub_queries。
+const SEMANTIC_MODE_MAP: Record<string, Record<string, unknown>> = {
+  fast: { retrieval: "es" },
+  balanced: { retrieval: "hybrid" },
+  quality: { retrieval: "hybrid", sub_queries: 3 },
+};
+
+function toSemanticSearchPayload(body: Record<string, unknown>): Record<string, unknown> {
+  const { mode, ...rest } = body;
+  const out = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
+  if (mode === undefined || mode === null) return out;
+  const mapped = SEMANTIC_MODE_MAP[mode as string];
+  if (!mapped) {
+    throw new Error(
+      `mode must be one of ${Object.keys(SEMANTIC_MODE_MAP).join(" / ")}, got ${JSON.stringify(mode)}`,
+    );
+  }
+  // 显式传入的 retrieval / sub_queries 优先于 mode 映射。
+  return { ...mapped, ...out };
+}
+
 export class AgentToolsClient {
   private baseUrl: string;
   private token: string;
@@ -132,7 +154,7 @@ export class AgentToolsClient {
   }
 
   async semanticSearch(body: { query: string } & Record<string, unknown>): Promise<unknown> {
-    const cleaned = Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined));
+    const cleaned = toSemanticSearchPayload(body);
     return this.request("/agentic-search", { method: "POST", body: JSON.stringify(cleaned) });
   }
 

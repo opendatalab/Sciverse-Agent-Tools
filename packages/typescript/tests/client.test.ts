@@ -112,6 +112,47 @@ describe("AgentToolsClient", () => {
     });
   });
 
+  it("semanticSearch maps mode to retrieval / sub_queries (mode 不透传)", async () => {
+    const bodies: any[] = [];
+    server.use(
+      http.post("https://api.example/agentic-search", async ({ request }) => {
+        bodies.push(await request.json());
+        return HttpResponse.json({ hits: [] });
+      })
+    );
+    const c = new AgentToolsClient({ baseUrl: "https://api.example", token: "t" });
+    await c.semanticSearch({ query: "q", mode: "fast" });
+    await c.semanticSearch({ query: "q", mode: "balanced", top_k: 5 });
+    await c.semanticSearch({ query: "q", mode: "quality" });
+    expect(bodies).toEqual([
+      { query: "q", retrieval: "es" },
+      { query: "q", retrieval: "hybrid", top_k: 5 },
+      { query: "q", retrieval: "hybrid", sub_queries: 3 },
+    ]);
+  });
+
+  it("semanticSearch without mode adds nothing; explicit params override mode", async () => {
+    const bodies: any[] = [];
+    server.use(
+      http.post("https://api.example/agentic-search", async ({ request }) => {
+        bodies.push(await request.json());
+        return HttpResponse.json({ hits: [] });
+      })
+    );
+    const c = new AgentToolsClient({ baseUrl: "https://api.example", token: "t" });
+    await c.semanticSearch({ query: "q" });
+    await c.semanticSearch({ query: "q", mode: "quality", sub_queries: 1 });
+    expect(bodies).toEqual([
+      { query: "q" },
+      { query: "q", retrieval: "hybrid", sub_queries: 1 },
+    ]);
+  });
+
+  it("semanticSearch rejects invalid mode before hitting backend", async () => {
+    const c = new AgentToolsClient({ baseUrl: "https://api.example", token: "t" });
+    await expect(c.semanticSearch({ query: "q", mode: "turbo" })).rejects.toThrow(/mode/);
+  });
+
   it("search_papers passthrough keeps only canonical fields", async () => {
     let captured: any;
     server.use(
