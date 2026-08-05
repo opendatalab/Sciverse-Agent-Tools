@@ -194,6 +194,24 @@ const resp = await openai.chat.completions.create({
 });
 ```
 
+**LangChain (Python):**
+
+`dist/langchain_tools.py` ships `BaseTool` subclasses generated from the same OpenAPI
+spec. Bind them to an `AgentToolsClient` with `build_tools` — the client carries the
+credentials and translates arguments the raw endpoints do not accept (`mode`, for one,
+is ignored upstream, so a hand-rolled HTTP call makes `quality` behave like `balanced`).
+
+```python
+from langchain_tools import build_tools   # from dist/langchain_tools.py
+from sciverse import AgentToolsClient
+
+async with AgentToolsClient() as client:
+    tools = build_tools(client)           # all 6 tools, bound
+    hits = await tools[1].ainvoke({"query": "Transformer attention", "mode": "quality"})
+```
+
+The tools are async-only: drive them with `ainvoke()` or an async agent executor.
+
 End-to-end examples (full tool-calling loop) live in [`examples/`](./examples/):
 
 **Direct SDK use (you own the tool-calling loop):**

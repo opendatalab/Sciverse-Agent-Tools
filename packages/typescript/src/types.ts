@@ -213,7 +213,14 @@ export interface components {
     SemanticSearchRequest: {
       /** @description 自然语言查询，1-200 字最佳。 */
       query: string;
-      /** @default 10 */
+      /**
+       * @description 返回命中条数上限，合法 1-100（服务端校验，超出报 400）。
+       * 实际条数还受 mode 影响：balanced 单路混合召回在服务端固定截到约 50 条，
+       * top_k 超过 50 时多出的部分不会返回；fast 与 quality 可取到 top_k。
+       * 另外同一篇论文最多返回约 3 个 chunk，因此高 top_k 需要命中足够多的不同论文。
+       *
+       * @default 10
+       */
       top_k?: number;
       source_types?: ("web" | "pdf")[];
       /**

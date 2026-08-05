@@ -18,7 +18,9 @@ node scripts/semantic_search.mjs '{
 Common arguments:
 
 - `query`: required natural-language query.
-- `top_k`: number of chunks; maximum 30.
+- `top_k`: number of chunks; maximum 100. `balanced` truncates to ~50 server-side
+  regardless of `top_k`; `fast` and `quality` reach the requested `top_k`. At most
+  ~3 chunks are returned per paper.
 - `source_types`: optional `["web"]`, `["pdf"]`, or both.
 - `mode`: `fast`, `balanced`, or `quality`.
 
