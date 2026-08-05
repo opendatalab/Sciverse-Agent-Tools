@@ -1,3 +1,9 @@
+## [0.11.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.11.0...v0.11.1) (2026-08-05)
+
+### Bug Fixes
+
+* semantic_search mode 参数全链路 no-op——出站前翻译为上游 retrieval/sub_queries ([#21](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/21)) ([5e89dc8](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/5e89dc87d571fdc6b40f1520bf497fb4a3d830c8))
+
 ## [0.11.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.10.0...v0.11.0) (2026-07-31)
 
 ### Features
