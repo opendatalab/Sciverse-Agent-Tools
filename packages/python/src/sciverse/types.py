@@ -188,7 +188,12 @@ class SemanticSearchRequest(BaseModel):
     query: str = Field(
         ..., description="自然语言查询，1-200 字最佳。", max_length=4096, min_length=1
     )
-    top_k: int | None = Field(10, ge=1, le=30)
+    top_k: int | None = Field(
+        10,
+        description="返回命中条数上限，合法 1-100（服务端校验，超出报 400）。\nfast/balanced 为单路召回，服务端每路融合池当前保留约 50 条、实际返回至多约 50；\n需要更多命中请用 quality 模式（多路子查询改写后合并，可超过 50）。\n",
+        ge=1,
+        le=100,
+    )
     source_types: list[SourceType] | None = None
     mode: Mode | None = Field(
         "balanced",

@@ -47,7 +47,7 @@ class SearchPapersTool(BaseTool):
 class SemanticSearchArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
     query: str = Field(..., description='自然语言查询，1-200 字最佳。')
-    top_k: int = Field(10, description='')
+    top_k: int = Field(10, description='返回命中条数上限，合法 1-100（服务端校验，超出报 400）。\nfast/balanced 为单路召回，服务端每路融合池当前保留约 50 条、实际返回至多约 50；\n需要更多命中请用 quality 模式（多路子查询改写后合并，可超过 50）。\n')
     source_types: list[str] | None = Field(None, description='')
     mode: str = Field('balanced', description='fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。\n')
 

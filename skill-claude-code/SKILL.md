@@ -263,5 +263,7 @@ search_papers(collection="authors", filters_advanced=[{field: "orcid", value: "h
   so `read_content(doc_id, ...)` will work; `false` means no fulltext or no permission.
 - **When a chunk looks promising but truncated**: `read_content(doc_id, offset)`
   to expand. `read_content` returns `more: true` when more bytes are available.
-- **Pagination**: max 30 hits per `semantic_search`, max 50 per `search_papers`
-  page; use `page` to paginate.
+- **Pagination**: `semantic_search` top_k allows up to 100, but fast/balanced
+  modes recall a single path whose server-side fusion pool keeps ~50 — use
+  `mode=quality` when you need more than ~50 hits. `search_papers` returns
+  max 50 per page; use `page` to paginate.

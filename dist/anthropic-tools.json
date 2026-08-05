@@ -170,7 +170,8 @@
             "type": "integer",
             "default": 10,
             "minimum": 1,
-            "maximum": 30
+            "maximum": 100,
+            "description": "返回命中条数上限，合法 1-100（服务端校验，超出报 400）。\nfast/balanced 为单路召回，服务端每路融合池当前保留约 50 条、实际返回至多约 50；\n需要更多命中请用 quality 模式（多路子查询改写后合并，可超过 50）。\n"
           },
           "source_types": {
             "type": "array",

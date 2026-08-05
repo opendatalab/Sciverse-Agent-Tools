@@ -18,7 +18,8 @@ node scripts/semantic_search.mjs '{
 Common arguments:
 
 - `query`: required natural-language query.
-- `top_k`: number of chunks; maximum 30.
+- `top_k`: number of chunks; maximum 100. In `fast`/`balanced` modes the server's
+  single-path fusion pool keeps ~50, so expect at most ~50 hits; use `quality` for more.
 - `source_types`: optional `["web"]`, `["pdf"]`, or both.
 - `mode`: `fast`, `balanced`, or `quality`.
 
