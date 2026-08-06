@@ -6,20 +6,7 @@ from typing import Any
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, ConfigDict, Field
 
-TOOLS_VERSION = "0.11.2"
-
-_NO_CLIENT = (
-    "No Sciverse client bound. Build these tools with build_tools(client), passing a "
-    "sciverse.AgentToolsClient — it holds the credentials and translates arguments such "
-    "as `mode` into the parameters the API actually accepts."
-)
-
-# The Sciverse client is async-only, and calling asyncio.run() from inside a running
-# event loop raises. Async-only tools are a standard LangChain pattern: drive them with
-# ainvoke() / an async executor.
-_SYNC_UNSUPPORTED = (
-    "{name} is async-only. Use `await tool.ainvoke(...)` or an async agent executor."
-)
+TOOLS_VERSION = "0.12.0"
 
 _NO_CLIENT = (
     "No Sciverse client bound. Build these tools with build_tools(client), passing a "

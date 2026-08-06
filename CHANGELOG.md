@@ -1,3 +1,9 @@
+## [0.12.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.11.2...v0.12.0) (2026-08-06)
+
+### Features
+
+* semantic_search 补 doc_id 硬 scope 契约与工作流——受限语义检索取代客户端交集 ([00e1113](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/00e1113ea2b76e49643530d2744df758fc5ec78f))
+
 ## [0.11.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.11.1...v0.11.2) (2026-08-05)
 
 ### Bug Fixes
