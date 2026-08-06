@@ -1,0 +1,14 @@
+# 生成产物：禁用文本合并。两个分支各自重新生成同一文件时，git 的三方文本合并可能
+# 静默保留双方内容（2026-08-06 事故：dist/langchain_tools.py 合并后 _NO_CLIENT /
+# _SYNC_UNSUPPORTED 定义块重复，Test 的 Assert no drift 红灯）。标记 -merge 后
+# 合并这些文件一律报冲突——任选一侧解决后必须重跑 bash scripts/build.sh 再提交，
+# drift 门禁会兜底校验。清单与 .github/workflows/test.yml 的 Assert no drift 对齐。
+dist/** -merge
+packages/python/src/sciverse/types.py -merge
+packages/python/src/sciverse/tools.py -merge
+packages/typescript/src/types.ts -merge
+packages/typescript/src/tools.ts -merge
+clawhub/SKILL.md -merge
+clawhub/manifest.json -merge
+skill-claude-code/SKILL.md -merge
+.claude-plugin/marketplace.json -merge
