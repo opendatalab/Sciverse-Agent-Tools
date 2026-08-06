@@ -152,12 +152,21 @@ search_papers(
 )
 ```
 
-**Structured + semantic hybrid:**
+**Scoped semantic search (constrained corpus):**
 
 ```
-search_papers(authors=[...], year_from=2020) → doc_ids
-semantic_search(query=...) → filter hits client-side by doc_ids
+semantic_search(
+    query="...",
+    filters={"author": ["Hinton"],
+             "publication_published_year": {"gte": 2020}}
+)   # applied at recall time, server-side; AND across fields
 ```
+
+Soft semantics: chunks missing that metadata are NOT excluded.
+Only when the constraint needs meta-only fields (fwci, citation graph,
+complex hit-sets): search_papers(...) → collect doc_id →
+semantic_search(query=...) → intersect client-side. Lossy (global
+top-k truncation happens first) — keep candidate sets small.
 
 **Bias fuzzy search toward recent work (freshness boost):**
 

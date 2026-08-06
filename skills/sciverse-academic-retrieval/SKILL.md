@@ -228,8 +228,19 @@ work?"). Typical chain: `semantic_search` → pick chunk → `read_content`.
 
 - **Args**:
   - `query` (str, required) — Natural-language query, 1-200 words optimal
-  - `top_k` (int, default 10, max 30)
+  - `top_k` (int, default 10, max 100; `balanced` mode effectively caps at ~50,
+    and each paper contributes at most ~3 chunks)
   - `source_types` (list[str], optional) — Filter by `web` / `pdf`
+  - `filters` (dict, optional) — Structured recall-time filters, AND across
+    fields; same-field arrays are OR. Supported: `author`,
+    `publication_published_year` / `publication_published_date` (value or range
+    `{"gte":..,"lte":..}` / `[min,max]`), `publication_venue_name_unified`,
+    `publication_venue_type`, `citation_count`, `influential_citation_count`,
+    `lang`, `metadata_type`, `title`, `topics`
+    (`{"dimensions":{"primary_topic":..,"primary_topic_domain":..},"logic":"and|or"}`).
+    Soft semantics: chunks missing that metadata are NOT excluded — treat as a
+    broad constraint, not a hard guarantee. Prefer this over client-side
+    `doc_id` intersection for "concept within a constrained corpus" asks.
   - `mode` (str, default `"balanced"`) — `fast` (~200ms keyword only) /
     `balanced` (~600ms hybrid) / `quality` (~2-4s LLM-rewrite + hybrid)
 - **Returns**: JSON `{hits: [...]}` where each hit has

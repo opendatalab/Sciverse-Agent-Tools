@@ -188,6 +188,45 @@ export const OPENAI_TOOLS = [
               ]
             }
           },
+          "filters": {
+            "type": "object",
+            "description": "结构化过滤（可选）。在召回阶段与语义检索同时生效（ES+Milvus 双引擎下推，\n不是结果后过滤）；多个字段之间 AND，同一字段传数组时数组内 OR。\n⚠️ 宽松（软）语义：chunk 侧元数据缺失的文档不会被排除——例如按年份过滤时，\n缺年份信息的 chunk 仍可能返回。需要严格范围保证时勿当硬约束使用，\n表述结论时注明范围为\"近似过滤\"。\n数值/日期字段支持区间：{\"gte\":2020,\"lte\":2025} 或 [min,max]（null 表示一侧不限）；\n日期接受 YYYY / YYYY-MM / YYYY-MM-DD。\n实际可用字段受账号字段权限约束；未知字段服务端返回 400。\n例：{\"author\":[\"Hinton\"],\"publication_published_year\":{\"gte\":2023},\n    \"topics\":{\"dimensions\":{\"primary_topic_domain\":\"Health Sciences\"}}}\n",
+            "properties": {
+              "lang": {
+                "description": "语言代码，如 \"en\"、\"zh\"；也接受别名 language。"
+              },
+              "metadata_type": {
+                "description": "资源类型，仅单值：\"paper\" 或 \"ebook\"。"
+              },
+              "author": {
+                "description": "作者名，string 或 string[]（数组=任一命中）。"
+              },
+              "publication_venue_name_unified": {
+                "description": "发表载体名称（期刊/会议，规范化名，适合精确匹配）。"
+              },
+              "publication_venue_type": {
+                "description": "载体类型：\"journal\"、\"conference\"、\"repository\"、\"book series\"、\"ebook platform\"、\"metadata\"、\"raidRegistry\"、\"igsnCatalog\"、\"other\"（不区分大小写）。"
+              },
+              "publication_published_year": {
+                "description": "发表年份，单值或区间（{\"gte\":..,\"lte\":..} / [min,max]）。"
+              },
+              "publication_published_date": {
+                "description": "发表日期，\"YYYY[-MM[-DD]]\" 单值或区间。"
+              },
+              "citation_count": {
+                "description": "被引次数，单值或区间。"
+              },
+              "influential_citation_count": {
+                "description": "高影响力被引次数，单值或区间。"
+              },
+              "title": {
+                "description": "标题精确匹配（标题检索一般更适合 search_papers）。"
+              },
+              "topics": {
+                "description": "主题组合过滤：{\"logic\":\"and|or\",\"dimensions\":{\"primary_topic\":\"...\",\"primary_topic_domain\":\"Physical Sciences|Social Sciences|Health Sciences|Life Sciences\"}}；logic 省略默认 or。"
+              }
+            }
+          },
           "mode": {
             "type": "string",
             "enum": [
@@ -506,6 +545,45 @@ export const ANTHROPIC_TOOLS = [
               "web",
               "pdf"
             ]
+          }
+        },
+        "filters": {
+          "type": "object",
+          "description": "结构化过滤（可选）。在召回阶段与语义检索同时生效（ES+Milvus 双引擎下推，\n不是结果后过滤）；多个字段之间 AND，同一字段传数组时数组内 OR。\n⚠️ 宽松（软）语义：chunk 侧元数据缺失的文档不会被排除——例如按年份过滤时，\n缺年份信息的 chunk 仍可能返回。需要严格范围保证时勿当硬约束使用，\n表述结论时注明范围为\"近似过滤\"。\n数值/日期字段支持区间：{\"gte\":2020,\"lte\":2025} 或 [min,max]（null 表示一侧不限）；\n日期接受 YYYY / YYYY-MM / YYYY-MM-DD。\n实际可用字段受账号字段权限约束；未知字段服务端返回 400。\n例：{\"author\":[\"Hinton\"],\"publication_published_year\":{\"gte\":2023},\n    \"topics\":{\"dimensions\":{\"primary_topic_domain\":\"Health Sciences\"}}}\n",
+          "properties": {
+            "lang": {
+              "description": "语言代码，如 \"en\"、\"zh\"；也接受别名 language。"
+            },
+            "metadata_type": {
+              "description": "资源类型，仅单值：\"paper\" 或 \"ebook\"。"
+            },
+            "author": {
+              "description": "作者名，string 或 string[]（数组=任一命中）。"
+            },
+            "publication_venue_name_unified": {
+              "description": "发表载体名称（期刊/会议，规范化名，适合精确匹配）。"
+            },
+            "publication_venue_type": {
+              "description": "载体类型：\"journal\"、\"conference\"、\"repository\"、\"book series\"、\"ebook platform\"、\"metadata\"、\"raidRegistry\"、\"igsnCatalog\"、\"other\"（不区分大小写）。"
+            },
+            "publication_published_year": {
+              "description": "发表年份，单值或区间（{\"gte\":..,\"lte\":..} / [min,max]）。"
+            },
+            "publication_published_date": {
+              "description": "发表日期，\"YYYY[-MM[-DD]]\" 单值或区间。"
+            },
+            "citation_count": {
+              "description": "被引次数，单值或区间。"
+            },
+            "influential_citation_count": {
+              "description": "高影响力被引次数，单值或区间。"
+            },
+            "title": {
+              "description": "标题精确匹配（标题检索一般更适合 search_papers）。"
+            },
+            "topics": {
+              "description": "主题组合过滤：{\"logic\":\"and|or\",\"dimensions\":{\"primary_topic\":\"...\",\"primary_topic_domain\":\"Physical Sciences|Social Sciences|Health Sciences|Life Sciences\"}}；logic 省略默认 or。"
+            }
           }
         },
         "mode": {

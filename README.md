@@ -348,15 +348,20 @@ list_catalog(include_sample_values=true)         # first time only — learn fie
 
 > Each `search_papers` hit carries **`is_content_accessible`** (bool): `true` only when the paper has fulltext **and** you're authorized — check it before `read_content(doc_id, …)`. Filterable fields keep growing (topic hierarchy, MeSH, identifier lookups, …); call `list_catalog` for the authoritative field list instead of hardcoding.
 
-**3. Structured pre-filter + semantic refine (hybrid):**
+**3. Scoped semantic search (constrained corpus):**
 
 ```
-search_papers(authors=[...], year_from=2020)     # narrow by structured filters first
-    └─▶ list of hits[].doc_id
-            └─▶ semantic_search(query="...")     # semantic search within the narrowed set
-                                                 # (filter the second pass yourself —
-                                                 #  semantic_search has no doc_id whitelist)
+semantic_search(query="...",
+                filters={"author": ["Hinton"],
+                         "publication_published_year": {"gte": 2020}})
+    # constraints applied at recall time, server-side; AND across fields.
+    # Soft semantics: chunks missing that metadata are NOT excluded.
 ```
+
+Only when the constraint needs meta-only fields (fwci, citation graph, complex
+hit-sets): `search_papers` → collect `doc_id` → `semantic_search` → intersect
+client-side. Lossy (global top-k truncation happens first) — keep candidate
+sets small.
 
 **4. Multimodal RAG with figures:**
 

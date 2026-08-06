@@ -22,14 +22,34 @@
 2. Use `search_papers` with `filters_advanced`.
 3. Return the matched paper metadata and note if no exact match is found.
 
-## Hybrid Search
+## Hybrid Search (Scoped Semantic Search)
 
 Use this when the user asks for a concept within a constrained corpus, such as a
-specific author, journal, or year range.
+specific author, journal, year range, or topic.
 
-1. Run `search_papers` to establish the candidate corpus.
+Preferred path — one call, server-side scoping:
+
+1. Run `semantic_search` with `filters` (author, publication year/date, venue,
+   topics, citation counts, language, ...). Constraints are applied at recall
+   time inside both retrieval engines, not by post-filtering results.
+2. Use `read_content` for final evidence.
+
+Note the soft semantics: chunks missing that metadata are NOT excluded (e.g. a
+chunk without year information still passes a year filter). Treat `filters` as
+a broad constraint, not a hard guarantee — say so when precision matters.
+
+Fallback — only when the constraint needs meta-only fields that
+`semantic_search.filters` does not support (e.g. fwci, citation-graph queries,
+complex `search_papers` hit-sets):
+
+1. Run `search_papers` to establish the candidate corpus (collect `doc_id`;
+   only papers with full text have one).
 2. Run `semantic_search` for the concept.
-3. Filter semantic hits by candidate `doc_id` when possible.
+3. Intersect semantic hits with candidate `doc_id` client-side. This is lossy:
+   global top-k truncation (~50 per retrieval path) happens before your
+   intersection and each paper returns at most ~3 chunks, so recall degrades
+   quickly as the candidate set grows. Keep candidate sets small and prefer
+   the `filters` path whenever possible.
 4. Use `read_content` for final evidence.
 
 ## Author / Journal Entity Profiles
