@@ -173,6 +173,60 @@ class SourceType(Enum):
     pdf = "pdf"
 
 
+class Filters(BaseModel):
+    """
+    结构化过滤（可选）。在召回阶段与语义检索同时生效（ES+Milvus 双引擎下推，
+    不是结果后过滤）；多个字段之间 AND，同一字段传数组时数组内 OR。
+    ⚠️ 宽松（软）语义：chunk 侧元数据缺失的文档不会被排除——例如按年份过滤时，
+    缺年份信息的 chunk 仍可能返回。需要严格范围保证时勿当硬约束使用，
+    表述结论时注明范围为"近似过滤"。
+    数值/日期字段支持区间：{"gte":2020,"lte":2025} 或 [min,max]（null 表示一侧不限）；
+    日期接受 YYYY / YYYY-MM / YYYY-MM-DD。
+    实际可用字段受账号字段权限约束；未知字段服务端返回 400。
+    例：{"author":["Hinton"],"publication_published_year":{"gte":2023},
+        "topics":{"dimensions":{"primary_topic_domain":"Health Sciences"}}}
+
+    """
+
+    lang: Any | None = Field(
+        None, description='语言代码，如 "en"、"zh"；也接受别名 language。'
+    )
+    metadata_type: Any | None = Field(
+        None, description='资源类型，仅单值："paper" 或 "ebook"。'
+    )
+    author: Any | None = Field(
+        None, description="作者名，string 或 string[]（数组=任一命中）。"
+    )
+    publication_venue_name_unified: Any | None = Field(
+        None, description="发表载体名称（期刊/会议，规范化名，适合精确匹配）。"
+    )
+    publication_venue_type: Any | None = Field(
+        None,
+        description='载体类型："journal"、"conference"、"repository"、"book series"、"ebook platform"、"metadata"、"raidRegistry"、"igsnCatalog"、"other"（不区分大小写）。',
+    )
+    publication_published_year: Any | None = Field(
+        None, description='发表年份，单值或区间（{"gte":..,"lte":..} / [min,max]）。'
+    )
+    publication_published_date: Any | None = Field(
+        None, description='发表日期，"YYYY[-MM[-DD]]" 单值或区间。'
+    )
+    citation_count: Any | None = Field(None, description="被引次数，单值或区间。")
+    influential_citation_count: Any | None = Field(
+        None, description="高影响力被引次数，单值或区间。"
+    )
+    title: Any | None = Field(
+        None, description="标题精确匹配（标题检索一般更适合 search_papers）。"
+    )
+    topics: Any | None = Field(
+        None,
+        description='主题组合过滤：{"logic":"and|or","dimensions":{"primary_topic":"...","primary_topic_domain":"Physical Sciences|Social Sciences|Health Sciences|Life Sciences"}}；logic 省略默认 or。',
+    )
+    doc_id: Any | None = Field(
+        None,
+        description="唯一的硬约束字段（其余字段均为软语义）：命中绝不越出给定集合。\n值为 64 位小写 hex sha256（即 search_papers 返回的 doc_id；仅有全文的论文才有），\nstring 或 string[]，仅 eq/in。去重后上限默认 1000，超限返回 400 SCOPE_TOO_LARGE；\n显式传空数组返回 200 空 hits（候选集为空，不退化为全局检索）。\n典型用法：先 search_papers 圈定候选集合，再在集合内做受限语义检索。\n",
+    )
+
+
 class Mode(Enum):
     """
     fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。
@@ -195,6 +249,10 @@ class SemanticSearchRequest(BaseModel):
         le=100,
     )
     source_types: list[SourceType] | None = None
+    filters: Filters | None = Field(
+        None,
+        description='结构化过滤（可选）。在召回阶段与语义检索同时生效（ES+Milvus 双引擎下推，\n不是结果后过滤）；多个字段之间 AND，同一字段传数组时数组内 OR。\n⚠️ 宽松（软）语义：chunk 侧元数据缺失的文档不会被排除——例如按年份过滤时，\n缺年份信息的 chunk 仍可能返回。需要严格范围保证时勿当硬约束使用，\n表述结论时注明范围为"近似过滤"。\n数值/日期字段支持区间：{"gte":2020,"lte":2025} 或 [min,max]（null 表示一侧不限）；\n日期接受 YYYY / YYYY-MM / YYYY-MM-DD。\n实际可用字段受账号字段权限约束；未知字段服务端返回 400。\n例：{"author":["Hinton"],"publication_published_year":{"gte":2023},\n    "topics":{"dimensions":{"primary_topic_domain":"Health Sciences"}}}\n',
+    )
     mode: Mode | None = Field(
         "balanced",
         description="fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。\n",

@@ -22,15 +22,40 @@
 2. Use `search_papers` with `filters_advanced`.
 3. Return the matched paper metadata and note if no exact match is found.
 
-## Hybrid Search
+## Hybrid Search (Scoped Semantic Search)
 
 Use this when the user asks for a concept within a constrained corpus, such as a
-specific author, journal, or year range.
+specific author, journal, year range, or topic.
 
-1. Run `search_papers` to establish the candidate corpus.
-2. Run `semantic_search` for the concept.
-3. Filter semantic hits by candidate `doc_id` when possible.
-4. Use `read_content` for final evidence.
+Preferred path — one call, server-side scoping:
+
+1. Run `semantic_search` with `filters` (author, publication year/date, venue,
+   topics, citation counts, language, ...). Constraints are applied at recall
+   time inside both retrieval engines, not by post-filtering results.
+2. Use `read_content` for final evidence.
+
+Note the soft semantics: chunks missing that metadata are NOT excluded (e.g. a
+chunk without year information still passes a year filter). Treat `filters` as
+a broad constraint, not a hard guarantee — say so when precision matters.
+
+Hard scope — when the constraint must be a hard guarantee, or needs meta-only
+fields that `semantic_search.filters` does not support (fwci, citation-graph
+queries, complex `search_papers` hit-sets):
+
+1. Run `search_papers` to establish the candidate corpus. Project
+   `fields: ["doc_id", "title"]`; only papers with full text carry a `doc_id`,
+   so the scope naturally narrows to fulltext-available candidates.
+2. Run `semantic_search` with `filters: {"doc_id": [...]}`. This is a HARD
+   constraint applied at recall time: hits never leave the candidate set, and
+   an explicitly empty list returns empty hits (never falls back to global
+   search). Up to 1000 deduped ids per request — beyond that the server
+   returns 400 `SCOPE_TOO_LARGE`; narrow the meta criteria instead of paging
+   endlessly (each `search_papers` page also spends rate-limit budget).
+3. Use `read_content` for final evidence.
+
+Do not intersect global `semantic_search` results with candidate `doc_id`
+client-side — that loses recall to global top-k truncation. `filters.doc_id`
+replaces that pattern.
 
 ## Author / Journal Entity Profiles
 

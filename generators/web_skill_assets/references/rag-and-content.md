@@ -22,6 +22,28 @@ Common arguments:
   regardless of `top_k`; `fast` and `quality` reach the requested `top_k`. At most
   ~3 chunks are returned per paper.
 - `source_types`: optional `["web"]`, `["pdf"]`, or both.
+- `filters`: optional structured constraints applied at recall time inside both
+  retrieval engines (not post-filtering). AND across fields; same-field arrays
+  are OR. Supported fields: `author`, `publication_published_year` /
+  `publication_published_date` (value or range `{"gte":..,"lte":..}` /
+  `[min,max]`), `publication_venue_name_unified`, `publication_venue_type`,
+  `citation_count`, `influential_citation_count`, `lang`, `metadata_type`,
+  `title`, `topics` (`{"dimensions":{"primary_topic":..,
+  "primary_topic_domain":..},"logic":"and|or"}`). Soft semantics: chunks
+  missing that metadata are NOT excluded — treat as a broad constraint, not a
+  hard guarantee. Exception: `doc_id` (64-char lowercase sha256, value or
+  list) is the one HARD filter — hits never leave the given set, an explicit
+  empty list returns empty hits, up to 1000 deduped ids per request
+  (400 `SCOPE_TOO_LARGE` beyond). Build the set from `search_papers` results
+  to scope semantic search to a candidate corpus. Example:
+
+  ```bash
+  node scripts/semantic_search.mjs '{
+    "query": "methods to reduce hallucination in clinical QA",
+    "filters": {"publication_published_year": {"gte": 2023},
+                "topics": {"dimensions": {"primary_topic_domain": "Health Sciences"}}}
+  }'
+  ```
 - `mode`: `fast`, `balanced`, or `quality`.
 
 Use returned `doc_id`, title, chunk text, score, and offset to decide whether to

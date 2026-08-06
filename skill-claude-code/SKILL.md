@@ -197,13 +197,27 @@ search_papers(
 )
 ```
 
-**5. Structured pre-filter + semantic refine (hybrid):**
+**5. Scoped semantic search (constrained corpus):**
 
 ```
-search_papers(authors=["Hinton"], year_from=2020, page_size=50)
-    └─▶ collect hits[].doc_id list
-semantic_search(query="attention", top_k=20)
-    └─▶ filter hits to those whose doc_id appears in step-1 list
+semantic_search(
+    query="attention",
+    filters={"author": ["Hinton"],
+             "publication_published_year": {"gte": 2020}}
+)
+    # filters apply at recall time (server-side), AND across fields;
+    # soft semantics: chunks missing that metadata are NOT excluded
+```
+
+For a hard guarantee, or meta-only constraints (fwci, citation graph,
+complex hit-sets), scope by doc_id — a HARD recall-time filter:
+
+```
+search_papers(..., fields=["doc_id","title"])
+    └─▶ collect hits[].doc_id (only fulltext papers carry one)
+semantic_search(query="attention", filters={"doc_id": [...]})
+    # hits never leave the set; empty list → empty hits (never global);
+    # up to 1000 deduped ids (400 SCOPE_TOO_LARGE beyond)
 ```
 
 **6. Bias fuzzy search toward recent work (freshness boost):**

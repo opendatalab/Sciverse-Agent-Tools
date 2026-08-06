@@ -21,6 +21,19 @@ _SYNC_UNSUPPORTED = (
     "{name} is async-only. Use `await tool.ainvoke(...)` or an async agent executor."
 )
 
+_NO_CLIENT = (
+    "No Sciverse client bound. Build these tools with build_tools(client), passing a "
+    "sciverse.AgentToolsClient — it holds the credentials and translates arguments such "
+    "as `mode` into the parameters the API actually accepts."
+)
+
+# The Sciverse client is async-only, and calling asyncio.run() from inside a running
+# event loop raises. Async-only tools are a standard LangChain pattern: drive them with
+# ainvoke() / an async executor.
+_SYNC_UNSUPPORTED = (
+    "{name} is async-only. Use `await tool.ainvoke(...)` or an async agent executor."
+)
+
 
 class SearchPapersArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -65,6 +78,7 @@ class SemanticSearchArgs(BaseModel):
     query: str = Field(..., description='自然语言查询，1-200 字最佳。')
     top_k: int = Field(10, description='返回命中条数上限，合法 1-100（服务端校验，超出报 400）。\n实际条数还受 mode 影响：balanced 单路混合召回在服务端固定截到约 50 条，\ntop_k 超过 50 时多出的部分不会返回；fast 与 quality 可取到 top_k。\n另外同一篇论文最多返回约 3 个 chunk，因此高 top_k 需要命中足够多的不同论文。\n')
     source_types: list[str] | None = Field(None, description='')
+    filters: dict[str, Any] | None = Field(None, description='结构化过滤（可选）。在召回阶段与语义检索同时生效（ES+Milvus 双引擎下推，\n不是结果后过滤）；多个字段之间 AND，同一字段传数组时数组内 OR。\n⚠️ 宽松（软）语义：chunk 侧元数据缺失的文档不会被排除——例如按年份过滤时，\n缺年份信息的 chunk 仍可能返回。需要严格范围保证时勿当硬约束使用，\n表述结论时注明范围为"近似过滤"。\n数值/日期字段支持区间：{"gte":2020,"lte":2025} 或 [min,max]（null 表示一侧不限）；\n日期接受 YYYY / YYYY-MM / YYYY-MM-DD。\n实际可用字段受账号字段权限约束；未知字段服务端返回 400。\n例：{"author":["Hinton"],"publication_published_year":{"gte":2023},\n    "topics":{"dimensions":{"primary_topic_domain":"Health Sciences"}}}\n')
     mode: str = Field('balanced', description='fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。\n')
 
 
