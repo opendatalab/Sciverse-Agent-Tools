@@ -5,6 +5,8 @@ name: Test
 on:
   push:
     branches: [main]
+  # 手动触发：用于在 [skip ci] 的 release 提交之后按需验证 main（如 drift 门禁复核）。
+  workflow_dispatch:
   pull_request:
     branches: [main]
   workflow_dispatch:
