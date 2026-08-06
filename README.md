@@ -358,10 +358,15 @@ semantic_search(query="...",
     # Soft semantics: chunks missing that metadata are NOT excluded.
 ```
 
-Only when the constraint needs meta-only fields (fwci, citation graph, complex
-hit-sets): `search_papers` → collect `doc_id` → `semantic_search` → intersect
-client-side. Lossy (global top-k truncation happens first) — keep candidate
-sets small.
+For a hard guarantee, or meta-only constraints (fwci, citation graph, complex
+hit-sets), scope by `doc_id` — a hard recall-time filter:
+
+```
+search_papers(..., fields=["doc_id","title"])    # only fulltext papers carry doc_id
+    └─▶ semantic_search(query="...", filters={"doc_id": [...]})
+            # hits never leave the set; empty list → empty hits (never global);
+            # up to 1000 deduped ids (400 SCOPE_TOO_LARGE beyond)
+```
 
 **4. Multimodal RAG with figures:**
 

@@ -38,19 +38,24 @@ Note the soft semantics: chunks missing that metadata are NOT excluded (e.g. a
 chunk without year information still passes a year filter). Treat `filters` as
 a broad constraint, not a hard guarantee — say so when precision matters.
 
-Fallback — only when the constraint needs meta-only fields that
-`semantic_search.filters` does not support (e.g. fwci, citation-graph queries,
-complex `search_papers` hit-sets):
+Hard scope — when the constraint must be a hard guarantee, or needs meta-only
+fields that `semantic_search.filters` does not support (fwci, citation-graph
+queries, complex `search_papers` hit-sets):
 
-1. Run `search_papers` to establish the candidate corpus (collect `doc_id`;
-   only papers with full text have one).
-2. Run `semantic_search` for the concept.
-3. Intersect semantic hits with candidate `doc_id` client-side. This is lossy:
-   global top-k truncation (~50 per retrieval path) happens before your
-   intersection and each paper returns at most ~3 chunks, so recall degrades
-   quickly as the candidate set grows. Keep candidate sets small and prefer
-   the `filters` path whenever possible.
-4. Use `read_content` for final evidence.
+1. Run `search_papers` to establish the candidate corpus. Project
+   `fields: ["doc_id", "title"]`; only papers with full text carry a `doc_id`,
+   so the scope naturally narrows to fulltext-available candidates.
+2. Run `semantic_search` with `filters: {"doc_id": [...]}`. This is a HARD
+   constraint applied at recall time: hits never leave the candidate set, and
+   an explicitly empty list returns empty hits (never falls back to global
+   search). Up to 1000 deduped ids per request — beyond that the server
+   returns 400 `SCOPE_TOO_LARGE`; narrow the meta criteria instead of paging
+   endlessly (each `search_papers` page also spends rate-limit budget).
+3. Use `read_content` for final evidence.
+
+Do not intersect global `semantic_search` results with candidate `doc_id`
+client-side — that loses recall to global top-k truncation. `filters.doc_id`
+replaces that pattern.
 
 ## Author / Journal Entity Profiles
 

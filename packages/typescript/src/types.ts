@@ -258,6 +258,14 @@ export interface components {
         title?: unknown;
         /** @description 主题组合过滤：{"logic":"and|or","dimensions":{"primary_topic":"...","primary_topic_domain":"Physical Sciences|Social Sciences|Health Sciences|Life Sciences"}}；logic 省略默认 or。 */
         topics?: unknown;
+        /**
+         * @description 唯一的硬约束字段（其余字段均为软语义）：命中绝不越出给定集合。
+         * 值为 64 位小写 hex sha256（即 search_papers 返回的 doc_id；仅有全文的论文才有），
+         * string 或 string[]，仅 eq/in。去重后上限默认 1000，超限返回 400 SCOPE_TOO_LARGE；
+         * 显式传空数组返回 200 空 hits（候选集为空，不退化为全局检索）。
+         * 典型用法：先 search_papers 圈定候选集合，再在集合内做受限语义检索。
+         */
+        doc_id?: unknown;
       };
       /**
        * @description fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。

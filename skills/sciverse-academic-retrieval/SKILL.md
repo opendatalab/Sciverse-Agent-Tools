@@ -239,8 +239,11 @@ work?"). Typical chain: `semantic_search` → pick chunk → `read_content`.
     `lang`, `metadata_type`, `title`, `topics`
     (`{"dimensions":{"primary_topic":..,"primary_topic_domain":..},"logic":"and|or"}`).
     Soft semantics: chunks missing that metadata are NOT excluded — treat as a
-    broad constraint, not a hard guarantee. Prefer this over client-side
-    `doc_id` intersection for "concept within a constrained corpus" asks.
+    broad constraint, not a hard guarantee. Exception: `doc_id` (64-char
+    lowercase sha256, value or list) is a HARD recall-time scope — hits never
+    leave the given set, an explicit empty list returns empty hits, up to
+    1000 deduped ids (400 `SCOPE_TOO_LARGE` beyond). Build the set from
+    `search_papers` results for "concept within a constrained corpus" asks.
   - `mode` (str, default `"balanced"`) — `fast` (~200ms keyword only) /
     `balanced` (~600ms hybrid) / `quality` (~2-4s LLM-rewrite + hybrid)
 - **Returns**: JSON `{hits: [...]}` where each hit has

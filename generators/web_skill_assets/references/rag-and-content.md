@@ -31,7 +31,11 @@ Common arguments:
   `title`, `topics` (`{"dimensions":{"primary_topic":..,
   "primary_topic_domain":..},"logic":"and|or"}`). Soft semantics: chunks
   missing that metadata are NOT excluded — treat as a broad constraint, not a
-  hard guarantee. Example:
+  hard guarantee. Exception: `doc_id` (64-char lowercase sha256, value or
+  list) is the one HARD filter — hits never leave the given set, an explicit
+  empty list returns empty hits, up to 1000 deduped ids per request
+  (400 `SCOPE_TOO_LARGE` beyond). Build the set from `search_papers` results
+  to scope semantic search to a candidate corpus. Example:
 
   ```bash
   node scripts/semantic_search.mjs '{

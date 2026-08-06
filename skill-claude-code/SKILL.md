@@ -209,9 +209,16 @@ semantic_search(
     # soft semantics: chunks missing that metadata are NOT excluded
 ```
 
-Fallback when the constraint is meta-only (fwci, citation graph, complex
-hit-sets): search_papers → collect doc_id → semantic_search → intersect
-client-side. Lossy (global top-k truncation) — keep candidate sets small.
+For a hard guarantee, or meta-only constraints (fwci, citation graph,
+complex hit-sets), scope by doc_id — a HARD recall-time filter:
+
+```
+search_papers(..., fields=["doc_id","title"])
+    └─▶ collect hits[].doc_id (only fulltext papers carry one)
+semantic_search(query="attention", filters={"doc_id": [...]})
+    # hits never leave the set; empty list → empty hits (never global);
+    # up to 1000 deduped ids (400 SCOPE_TOO_LARGE beyond)
+```
 
 **6. Bias fuzzy search toward recent work (freshness boost):**
 
