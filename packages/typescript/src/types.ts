@@ -142,15 +142,41 @@ export interface components {
        */
       sort_by_year?: "desc" | "asc" | "none";
       /**
-       * @description 模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。
+       * @description 模糊搜索新鲜度加权：结果偏向新文献（仅 query 非空时生效；传排序
+       * （sort_by_year 非 none / sort_advanced）时被忽略，硬排优先）。
        * MILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪
-       * 研究方向 / 追最新进展。底层为 function_score + gauss decay over
-       * publication_published_date。
+       * 研究方向 / 追最新进展。与 impact_boost / language_affinity 可叠加
+       * （均为乘法因子）。boost 生效时为浅翻页：不产 next_cursor、不支持
+       * cursor 深翻页。
        *
        * @default NONE
        * @enum {string}
        */
       freshness_boost?: "NONE" | "MILD" | "STRONG";
+      /**
+       * @description 模糊搜索影响力加权：高被引文献在保留相关性的前提下上浮（仅 query
+       * 非空时生效；传排序时被忽略）。MILD: 轻度上浮，相关性仍主导；
+       * STRONG: 明显偏向高被引。引用因子有界、零被引中性（不会归零）。
+       * 与 freshness_boost / language_affinity 可叠加；boost 生效时为浅翻页。
+       *
+       * @default NONE
+       * @enum {string}
+       */
+      impact_boost?: "NONE" | "MILD" | "STRONG";
+      /**
+       * @description 模糊搜索语言亲和加权：非 query 语言的结果降序、但不排除（仅 query
+       * 非空时生效；传排序时被忽略）。目标语言由服务端从 query 文本判定
+       * （假名→ja / 谚文→ko / 汉字→zh / 拉丁→en，其他书写系统不生效）；
+       * 语言未知的文献保持中性不降权。MILD: 非目标语言 ×0.5，跨语言强相关
+       * 结果仍可上浮；STRONG: ×0.2，几乎只看目标语言。与 freshness_boost /
+       * impact_boost 可叠加；boost 生效时为浅翻页。要硬排除某语言请改用
+       * filters_advanced 的 language 字段（如 {"field":"language","value":"en"}，
+       * 软硬两层语义不同：本参数只调序，filter 直接排除）。
+       *
+       * @default NONE
+       * @enum {string}
+       */
+      language_affinity?: "NONE" | "MILD" | "STRONG";
       /** @default 1 */
       page?: number;
       /** @default 10 */

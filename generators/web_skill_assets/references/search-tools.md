@@ -49,6 +49,14 @@ Common arguments:
 - `sort_by_year`: `desc`, `asc`, or `none`.
 - `sort_advanced`: `[{field, order}]` — sort by any sortable field (e.g. authors by
   `cited_by_count`, sources by `works_count`). `order` is `SORT_ORDER_DESC` / `SORT_ORDER_ASC`.
+- `freshness_boost` / `impact_boost` / `language_affinity`: soft ranking boosts
+  (`NONE`/`MILD`/`STRONG`, stackable multiplicative factors). Freshness biases toward
+  recent papers (MILD=10-year decay, STRONG=3-year); impact floats highly-cited papers
+  (bounded, zero-citation neutral); language affinity demotes (never excludes) results
+  not in the query's language — target language detected from the query text,
+  unknown-language papers stay neutral; to hard-exclude a language use
+  `filters_advanced` on `language` instead. All three: only effective when `query` is
+  non-empty; ignored when any sort is set; shallow paging while active (no `next_cursor`).
 - `page`, `page_size`: pagination; `page_size` is capped at 50.
 
 ## list_paper_relations

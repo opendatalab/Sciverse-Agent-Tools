@@ -144,6 +144,8 @@ def _cmd_search(args: argparse.Namespace) -> int:
         if args.sort_by_year != "none": kwargs["sort_by_year"] = args.sort_by_year
         if getattr(args, "collection", "papers") != "papers": kwargs["collection"] = args.collection
         if args.freshness_boost != "NONE": kwargs["freshness_boost"] = args.freshness_boost
+        if args.impact_boost != "NONE": kwargs["impact_boost"] = args.impact_boost
+        if args.language_affinity != "NONE": kwargs["language_affinity"] = args.language_affinity
         kwargs["page"] = args.page
         kwargs["page_size"] = args.page_size
         r = await client.search_papers(**kwargs)
@@ -273,7 +275,13 @@ def _build_parser() -> argparse.ArgumentParser:
                         dest="sort_by_year", help="按年份排序，默认 desc；与 query 同传会冲突")
     search.add_argument("--freshness-boost", choices=["NONE", "MILD", "STRONG"], default="NONE",
                         dest="freshness_boost",
-                        help="模糊搜索新鲜度加权：MILD=近10年加权 / STRONG=近3年加权。仅 query 非空时生效；与 sort-by-year 互斥")
+                        help="模糊搜索新鲜度加权：MILD=近10年加权 / STRONG=近3年加权。仅 query 非空时生效；传排序时被忽略")
+    search.add_argument("--impact-boost", choices=["NONE", "MILD", "STRONG"], default="NONE",
+                        dest="impact_boost",
+                        help="模糊搜索影响力加权：高被引上浮（有界、零被引中性）。仅 query 非空时生效；可与其他 boost 叠加")
+    search.add_argument("--language-affinity", choices=["NONE", "MILD", "STRONG"], default="NONE",
+                        dest="language_affinity",
+                        help="模糊搜索语言亲和加权：非 query 语言结果降序（不排除）；MILD=×0.5 / STRONG=×0.2。仅 query 非空时生效")
     search.add_argument("--page", type=int, default=1, help="页码，从 1 开始")
     search.add_argument("--page-size", type=int, default=10, dest="page_size",
                         help="每页数量，默认 10，上限 50")
