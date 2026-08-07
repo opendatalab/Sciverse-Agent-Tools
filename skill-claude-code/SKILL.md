@@ -220,17 +220,24 @@ semantic_search(query="attention", filters={"doc_id": [...]})
     # up to 1000 deduped ids (400 SCOPE_TOO_LARGE beyond)
 ```
 
-**6. Bias fuzzy search toward recent work (freshness boost):**
+**6. Bias fuzzy search ranking (soft boosts — stackable):**
 
-Set `freshness_boost` to weight results by publication date with gauss
-decay over `publication_published_date`. Only effective when `query`
-is non-empty; mutually exclusive with `sort_by_year`.
+Three multiplicative boosts reorder fuzzy-search results while keeping
+relevance. Only effective when `query` is non-empty; ignored when any
+sort is set; shallow paging while active (no `next_cursor`).
 
 ```
 search_papers(query="large language model", freshness_boost="STRONG")
-    # STRONG: 3-year decay, for tracking research directions
-search_papers(query="protein folding", freshness_boost="MILD")
-    # MILD:   10-year decay, for everyday literature search
+    # recent first: STRONG=3-year decay, MILD=10-year
+search_papers(query="protein folding", impact_boost="MILD")
+    # highly-cited float up (bounded; zero-citation stays neutral)
+search_papers(query="深度学习", language_affinity="MILD")
+    # demote (never exclude) results not in the query's language;
+    # target detected from query text (kana→ja/hangul→ko/Han→zh/Latin→en);
+    # unknown-language papers stay neutral. Hard-exclude instead:
+    # filters_advanced=[{"field":"language","value":"zh"}]
+search_papers(query="...", freshness_boost="MILD", impact_boost="MILD",
+              language_affinity="MILD")   # stack: relevant+recent+cited+same-lang
 ```
 
 **7. Show a figure / image from the paper:**

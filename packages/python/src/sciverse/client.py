@@ -13,8 +13,13 @@ _PLATFORM = platform.system().lower()  # "linux" | "darwin" | "windows"
 _SOURCE = f"{_PLATFORM}-{_CHANNEL}"
 
 
-_PASSTHROUGH = ("query", "page", "page_size", "fields", "freshness_boost", "collection")
-_FRESHNESS_BOOST_VALUES = frozenset({"NONE", "MILD", "STRONG"})
+_PASSTHROUGH = (
+    "query", "page", "page_size", "fields", "collection",
+    "freshness_boost", "impact_boost", "language_affinity",
+)
+# 三个软加权档位共用同一枚举值域（NONE/MILD/STRONG）。
+_BOOST_FIELDS = ("freshness_boost", "impact_boost", "language_affinity")
+_BOOST_VALUES = frozenset({"NONE", "MILD", "STRONG"})
 
 # 上游 agentic-search（Go 服务）没有 mode 字段，未知字段会被静默丢弃，
 # 所以 mode 必须在 SDK 层翻译为上游真实参数 retrieval / sub_queries。
@@ -36,12 +41,13 @@ def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
         if k in kwargs and kwargs[k] is not None:
             out[k] = kwargs[k]
 
-    # freshness_boost 校验：枚举值不合法直接报错（在打到后端前）。
-    if (boost := out.get("freshness_boost")) is not None:
-        if not isinstance(boost, str) or boost not in _FRESHNESS_BOOST_VALUES:
-            raise ValueError(
-                f"freshness_boost must be one of {sorted(_FRESHNESS_BOOST_VALUES)}, got {boost!r}"
-            )
+    # 软加权枚举校验：枚举值不合法直接报错（在打到后端前）。
+    for boost_field in _BOOST_FIELDS:
+        if (boost := out.get(boost_field)) is not None:
+            if not isinstance(boost, str) or boost not in _BOOST_VALUES:
+                raise ValueError(
+                    f"{boost_field} must be one of {sorted(_BOOST_VALUES)}, got {boost!r}"
+                )
 
     def _filter(field: str, op: str, value: Any) -> None:
         filters.append({"field": field, "operator": op, "value": value})
@@ -149,8 +155,14 @@ class AgentToolsClient:
         - filters_advanced  → 直接拼到 filters 列表
         - sort_by_year  → sort publication_published_year DESC/ASC
         - freshness_boost  → 模糊搜索新鲜度加权（NONE/MILD/STRONG，默认 NONE）。
-          仅 query 非空时生效；与 sort_by_year 互斥（boost 已在影响排序）。
+          仅 query 非空时生效；传排序时被忽略（硬排优先）。
           MILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年，适合跟踪研究方向。
+        - impact_boost  → 模糊搜索影响力加权（NONE/MILD/STRONG，默认 NONE）。
+          高被引文献在保留相关性的前提下上浮；有界、零被引中性。
+        - language_affinity  → 模糊搜索语言亲和加权（NONE/MILD/STRONG，默认 NONE）。
+          非 query 语言的结果降序（不排除）；目标语言由服务端从 query 文本判定；
+          语言未知的文献中性不降权。要硬排除某语言用 filters_advanced 的 language 字段。
+        三个 boost 可叠加（均为乘法因子）；任一生效时为浅翻页（无 next_cursor）。
         """
         body = _to_backend_payload(kwargs)
         resp = await self._client.post("/meta-search", json=body)

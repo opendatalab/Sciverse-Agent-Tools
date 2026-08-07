@@ -36,7 +36,9 @@ class SearchPapersArgs(BaseModel):
     filters_advanced: list[dict[str, Any]] | None = Field(None, description='高级过滤逃生舱（仅当上述字段不够用时使用）。可用字段见 get_field_catalog。\n\n引文反查（常用）：field="references_unique_id" 查「谁引用了某篇论文」，\nvalue 填目标论文的 unique_id。相比 list_paper_relations 的 CITATIONS，\n它支持深翻页与任意排序，适合超高被引论文。可叠加条件，\n例如「引用了 ResNet 且 2023 年后发表」：\n  [{"field":"references_unique_id","value":"paper:10.1109/cvpr.2016.90"},\n   {"field":"publication_published_year","operator":"FILTER_OP_GTE","value":2023}]\n该字段仅支持过滤，不能排序/聚合，也不能放进 fields 返回。\n')
     sort_advanced: list[dict[str, Any]] | None = Field(None, description='高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。')
     sort_by_year: str = Field('desc', description='')
-    freshness_boost: str = Field('NONE', description='模糊搜索新鲜度加权（仅 query 非空时生效；与 sort_by_year 互斥）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。底层为 function_score + gauss decay over\npublication_published_date。\n')
+    freshness_boost: str = Field('NONE', description='模糊搜索新鲜度加权：结果偏向新文献（仅 query 非空时生效；传排序\n（sort_by_year 非 none / sort_advanced）时被忽略，硬排优先）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。与 impact_boost / language_affinity 可叠加\n（均为乘法因子）。boost 生效时为浅翻页：不产 next_cursor、不支持\ncursor 深翻页。\n')
+    impact_boost: str = Field('NONE', description='模糊搜索影响力加权：高被引文献在保留相关性的前提下上浮（仅 query\n非空时生效；传排序时被忽略）。MILD: 轻度上浮，相关性仍主导；\nSTRONG: 明显偏向高被引。引用因子有界、零被引中性（不会归零）。\n与 freshness_boost / language_affinity 可叠加；boost 生效时为浅翻页。\n')
+    language_affinity: str = Field('NONE', description='模糊搜索语言亲和加权：非 query 语言的结果降序、但不排除（仅 query\n非空时生效；传排序时被忽略）。目标语言由服务端从 query 文本判定\n（假名→ja / 谚文→ko / 汉字→zh / 拉丁→en，其他书写系统不生效）；\n语言未知的文献保持中性不降权。MILD: 非目标语言 ×0.5，跨语言强相关\n结果仍可上浮；STRONG: ×0.2，几乎只看目标语言。与 freshness_boost /\nimpact_boost 可叠加；boost 生效时为浅翻页。要硬排除某语言请改用\nfilters_advanced 的 language 字段（如 {"field":"language","value":"en"}，\n软硬两层语义不同：本参数只调序，filter 直接排除）。\n')
     page: int = Field(1, description='')
     page_size: int = Field(10, description='')
 
