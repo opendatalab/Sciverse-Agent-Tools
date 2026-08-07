@@ -1,3 +1,9 @@
+## [0.13.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.13.0...v0.13.1) (2026-08-07)
+
+### Bug Fixes
+
+* **ci:** 去掉 test.yml 中重复的 workflow_dispatch ([86c0ce4](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/86c0ce4111e2d621787e6bc4ac13490f1ccb6b5c)), closes [#24](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/24)
+
 ## [0.13.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.12.0...v0.13.0) (2026-08-07)
 
 ### Features
