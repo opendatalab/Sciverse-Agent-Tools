@@ -1,3 +1,9 @@
+## [0.13.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.12.0...v0.13.0) (2026-08-07)
+
+### Features
+
+* search_papers 补齐三档软加权契约（language_affinity + impact_boost 存量缺口 + TS 透传修复） ([31feb73](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/31feb736ce9163ba10383234aacccddd25243e48))
+
 ## [0.12.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.11.2...v0.12.0) (2026-08-06)
 
 ### Features
