@@ -9,8 +9,8 @@ info:
     All endpoints require Bearer Token authentication (obtain one from
     https://sciverse.space). The platform indexes academic papers (titles,
     authors, abstracts, full-text chunks) for citation-grade RAG.
-  version: 0.13.1
-  x-sciverse-tools-version: 0.13.1
+  version: 0.14.0
+  x-sciverse-tools-version: 0.14.0
 
 tags:
   - name: search

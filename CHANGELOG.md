@@ -1,3 +1,9 @@
+## [0.14.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.13.1...v0.14.0) (2026-08-14)
+
+### Features
+
+* search_papers 排序默认改 auto——有 query 保相关性，纯筛选按年降序；修 web-skill 便利参数裸透传静默失效 ([#27](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/27)) ([be6d588](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/be6d588d3b9e1633c79cc74e3e4b888fc599b0ac))
+
 ## [0.13.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.13.0...v0.13.1) (2026-08-07)
 
 ### Bug Fixes
