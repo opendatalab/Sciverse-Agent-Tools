@@ -110,13 +110,20 @@ def test_search_basic(logged_in, capsys):
     assert data["hits"][0]["doc_id"] == "p_1"
 
 
-def test_search_default_sort_omitted_when_none(logged_in, capsys):
-    """`--sort-by-year none` 应该不传 sort_by_year 给 SDK。"""
+def test_search_sort_by_year_passed_through_verbatim(logged_in, capsys):
+    """CLI 把 sort_by_year 原样透传给 SDK（auto/none 语义由 client 统一解析，
+    避免 CLI 与 SDK 各解析一套出现渠道分叉——曾经 CLI 默认 desc、SDK 默认无排序）。"""
     p, inst = _patch_client("search_papers", {"hits": [], "total": 0})
     with p:
         code = main(["search", "x", "--sort-by-year", "none"])
     assert code == 0
-    assert "sort_by_year" not in inst.search_papers.call_args.kwargs
+    assert inst.search_papers.call_args.kwargs["sort_by_year"] == "none"
+
+    p, inst = _patch_client("search_papers", {"hits": [], "total": 0})
+    with p:
+        code = main(["search", "x"])
+    assert code == 0
+    assert inst.search_papers.call_args.kwargs["sort_by_year"] == "auto"
 
 
 def test_semantic_search(logged_in, capsys):

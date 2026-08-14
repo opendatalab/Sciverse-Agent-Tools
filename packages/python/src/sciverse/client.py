@@ -20,6 +20,7 @@ _PASSTHROUGH = (
 # 三个软加权档位共用同一枚举值域（NONE/MILD/STRONG）。
 _BOOST_FIELDS = ("freshness_boost", "impact_boost", "language_affinity")
 _BOOST_VALUES = frozenset({"NONE", "MILD", "STRONG"})
+_SORT_BY_YEAR_VALUES = frozenset({"auto", "desc", "asc", "none"})
 
 # 上游 agentic-search（Go 服务）没有 mode 字段，未知字段会被静默丢弃，
 # 所以 mode 必须在 SDK 层翻译为上游真实参数 retrieval / sub_queries。
@@ -72,8 +73,17 @@ def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
             entry.setdefault("operator", "FILTER_OP_EQ")
             filters.append(entry)
 
-    sort_by_year = kwargs.get("sort_by_year")
-    if sort_by_year and sort_by_year != "none":
+    # sort_by_year 默认 auto：有 query（或 sort_advanced）时不加年份排序——保 BM25
+    # 相关性且软加权可用（显式排序会让 query 退化为命中过滤、boost 全失效）；
+    # 纯结构化筛选时按年份降序（后端默认序是 unique_id，实质乱序）。
+    sort_by_year = kwargs.get("sort_by_year") or "auto"
+    if sort_by_year not in _SORT_BY_YEAR_VALUES:
+        raise ValueError(
+            f"sort_by_year must be one of {sorted(_SORT_BY_YEAR_VALUES)}, got {sort_by_year!r}"
+        )
+    if sort_by_year == "auto":
+        sort_by_year = "none" if (out.get("query") or kwargs.get("sort_advanced")) else "desc"
+    if sort_by_year != "none":
         sort.append({
             "field": "publication_published_year",
             "order": "SORT_ORDER_DESC" if sort_by_year == "desc" else "SORT_ORDER_ASC",
@@ -153,7 +163,9 @@ class AgentToolsClient:
         - journals  → filter publication_venue_name_unified IN
         - subjects  → filter subjects IN
         - filters_advanced  → 直接拼到 filters 列表
-        - sort_by_year  → sort publication_published_year DESC/ASC
+        - sort_by_year  → 按年份排序（auto/desc/asc/none，默认 auto）。auto = 有 query
+          时不排序（保 BM25 相关性与软加权）、纯结构化筛选时年份降序。
+          勿用 query+desc 求「相关且新」——那会退化为命中过滤，应改用 freshness_boost。
         - freshness_boost  → 模糊搜索新鲜度加权（NONE/MILD/STRONG，默认 NONE）。
           仅 query 非空时生效；传排序时被忽略（硬排优先）。
           MILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年，适合跟踪研究方向。

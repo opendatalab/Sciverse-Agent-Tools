@@ -179,6 +179,9 @@ Three multiplicative boosts (`freshness_boost` / `impact_boost` /
 `language_affinity`, each NONE/MILD/STRONG) reorder fuzzy-search
 results while keeping relevance. Only effective when `query` is
 non-empty; ignored when any sort is set; shallow paging while active.
+`sort_by_year` defaults to `auto` (relevance with `query`, newest-first
+for pure filters); `query`+`desc` is an anti-pattern — it degrades the
+query to a match filter and disables all boosts; use `freshness_boost`.
 
 ```
 search_papers(query="large language model", freshness_boost="STRONG")

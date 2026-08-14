@@ -162,6 +162,60 @@ async def test_search_papers_maps_sort_by_year():
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_sort_by_year_auto_with_query_keeps_relevance():
+    """auto（默认）+ query：不加年份排序——保 BM25 相关性，软加权可用。
+    显式排序会让 query 退化为命中过滤（后端 sort+query 语义），auto 必须避开。"""
+    route = respx.post("https://api.example/meta-search").mock(
+        return_value=Response(200, json={"hits": [], "total": 0, "page": 1, "page_size": 10})
+    )
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        await c.search_papers(query="transformer")
+    import json as _json
+    parsed = _json.loads(route.calls.last.request.read())
+    assert "sort" not in parsed
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_sort_by_year_auto_without_query_defaults_to_desc():
+    """auto（默认）+ 纯结构化筛选：按年份降序——后端无排序时是 unique_id 序（实质乱序）。"""
+    route = respx.post("https://api.example/meta-search").mock(
+        return_value=Response(200, json={"hits": [], "total": 0, "page": 1, "page_size": 10})
+    )
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        await c.search_papers(authors=["Hinton"])
+    import json as _json
+    parsed = _json.loads(route.calls.last.request.read())
+    assert parsed["sort"] == [{
+        "field": "publication_published_year",
+        "order": "SORT_ORDER_DESC",
+    }]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_sort_by_year_auto_yields_to_sort_advanced():
+    """auto + sort_advanced：显式排序优先，不叠加年份排序。"""
+    route = respx.post("https://api.example/meta-search").mock(
+        return_value=Response(200, json={"hits": [], "total": 0, "page": 1, "page_size": 10})
+    )
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        await c.search_papers(sort_advanced=[{"field": "citation_count", "order": "SORT_ORDER_DESC"}])
+    import json as _json
+    parsed = _json.loads(route.calls.last.request.read())
+    assert parsed["sort"] == [{"field": "citation_count", "order": "SORT_ORDER_DESC"}]
+
+
+@pytest.mark.asyncio
+async def test_sort_by_year_invalid_value_raises():
+    """非法枚举值在 SDK 层直接报错（此前任意脏值会被静默当成 asc）。"""
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        with pytest.raises(ValueError, match="sort_by_year"):
+            await c.search_papers(query="x", sort_by_year="descending")
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_search_papers_maps_journals_and_subjects():
     route = respx.post("https://api.example/meta-search").mock(
         return_value=Response(200, json={"hits": [], "total": 0, "page": 1, "page_size": 10})
