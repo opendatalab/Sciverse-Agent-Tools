@@ -90,3 +90,54 @@ export function readJsonArg() {
     process.exit(2);
   }
 }
+
+// search_papers 便利参数 → platform-console /meta-search canonical 格式。
+// 与 SDK / MCP 的 toBackendPayload 同款语义（后端 Pydantic 会静默忽略未知字段，
+// 便利参数不翻译=静默失效，所以必须在脚本侧转换）。
+const META_PASSTHROUGH = [
+  "query", "page", "page_size", "fields", "collection", "cursor", "facets",
+  "freshness_boost", "impact_boost", "language_affinity",
+];
+
+export function toMetaSearchPayload(args) {
+  const out = {};
+  const filters = [];
+  const sort = [];
+  for (const k of META_PASSTHROUGH) {
+    if (args[k] !== undefined && args[k] !== null) out[k] = args[k];
+  }
+  const addFilter = (field, operator, value) => filters.push({ field, operator, value });
+  if (args.title_contains != null) addFilter("title", "FILTER_OP_CONTAINS", args.title_contains);
+  if (args.abstract_contains != null) addFilter("abstract", "FILTER_OP_CONTAINS", args.abstract_contains);
+  if (Array.isArray(args.authors) && args.authors.length > 0) addFilter("author", "FILTER_OP_IN", args.authors);
+  if (args.year_from != null) addFilter("publication_published_year", "FILTER_OP_GTE", args.year_from);
+  if (args.year_to != null) addFilter("publication_published_year", "FILTER_OP_LTE", args.year_to);
+  if (Array.isArray(args.journals) && args.journals.length > 0) addFilter("publication_venue_name_unified", "FILTER_OP_IN", args.journals);
+  if (Array.isArray(args.subjects) && args.subjects.length > 0) addFilter("subjects", "FILTER_OP_IN", args.subjects);
+  if (Array.isArray(args.filters)) filters.push(...args.filters); // canonical 直传兼容
+  if (Array.isArray(args.filters_advanced)) {
+    for (const item of args.filters_advanced) filters.push({ operator: "FILTER_OP_EQ", ...item });
+  }
+  // sort_by_year 默认 auto：有 query（或 sort_advanced）时不加年份排序——保 BM25
+  // 相关性且软加权可用；纯结构化筛选时按年份降序（后端默认序实质乱序）。
+  let sortByYear = args.sort_by_year ?? "auto";
+  if (sortByYear === "auto") {
+    sortByYear = args.query || (Array.isArray(args.sort_advanced) && args.sort_advanced.length > 0)
+      ? "none" : "desc";
+  }
+  if (sortByYear !== "none") {
+    sort.push({
+      field: "publication_published_year",
+      order: sortByYear === "desc" ? "SORT_ORDER_DESC" : "SORT_ORDER_ASC",
+    });
+  }
+  if (Array.isArray(args.sort)) sort.push(...args.sort); // canonical 直传兼容
+  if (Array.isArray(args.sort_advanced)) {
+    for (const item of args.sort_advanced) {
+      if (item && item.field) sort.push({ field: item.field, order: item.order ?? "SORT_ORDER_DESC" });
+    }
+  }
+  if (filters.length > 0) out.filters = filters;
+  if (sort.length > 0) out.sort = sort;
+  return out;
+}

@@ -225,6 +225,11 @@ semantic_search(query="attention", filters={"doc_id": [...]})
 Three multiplicative boosts reorder fuzzy-search results while keeping
 relevance. Only effective when `query` is non-empty; ignored when any
 sort is set; shallow paging while active (no `next_cursor`).
+`sort_by_year` defaults to `auto`: relevance when `query` is set,
+newest-first for pure filters. Never combine `query` with
+`sort_by_year=desc` expecting "relevant and recent" — explicit sort
+degrades the query to a match filter (OR, no ranking) and disables
+all boosts; use `freshness_boost` instead.
 
 ```
 search_papers(query="large language model", freshness_boost="STRONG")

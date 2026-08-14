@@ -141,7 +141,7 @@ def _cmd_search(args: argparse.Namespace) -> int:
         if args.subjects: kwargs["subjects"] = args.subjects
         if args.title_contains: kwargs["title_contains"] = args.title_contains
         if args.abstract_contains: kwargs["abstract_contains"] = args.abstract_contains
-        if args.sort_by_year != "none": kwargs["sort_by_year"] = args.sort_by_year
+        kwargs["sort_by_year"] = args.sort_by_year  # auto/none 的语义由 client 统一解析
         if getattr(args, "collection", "papers") != "papers": kwargs["collection"] = args.collection
         if args.freshness_boost != "NONE": kwargs["freshness_boost"] = args.freshness_boost
         if args.impact_boost != "NONE": kwargs["impact_boost"] = args.impact_boost
@@ -271,8 +271,10 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="学科分类（可多次传）")
     search.add_argument("--title-contains", dest="title_contains", help="标题包含关键词")
     search.add_argument("--abstract-contains", dest="abstract_contains", help="摘要包含关键词")
-    search.add_argument("--sort-by-year", choices=["desc", "asc", "none"], default="desc",
-                        dest="sort_by_year", help="按年份排序，默认 desc；与 query 同传会冲突")
+    search.add_argument("--sort-by-year", choices=["auto", "desc", "asc", "none"], default="auto",
+                        dest="sort_by_year",
+                        help="按年份排序，默认 auto（有 query 走相关性、纯筛选按年降序）；"
+                             "query+desc 会让相关性失效，求「相关且新」用 --freshness-boost")
     search.add_argument("--freshness-boost", choices=["NONE", "MILD", "STRONG"], default="NONE",
                         dest="freshness_boost",
                         help="模糊搜索新鲜度加权：MILD=近10年加权 / STRONG=近3年加权。仅 query 非空时生效；传排序时被忽略")

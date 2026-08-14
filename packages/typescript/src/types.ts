@@ -137,10 +137,17 @@ export interface components {
           order: "SORT_ORDER_DESC" | "SORT_ORDER_ASC";
         })[];
       /**
-       * @default desc
+       * @description 按发表年份排序。默认 auto：传了 query（或 sort_advanced）时不加年份排序
+       * ——保留 BM25 相关性排序，且 freshness/impact/language_affinity 软加权可用；
+       * 纯结构化筛选（无 query）时按年份降序（否则后端默认序是 unique_id，实质乱序）。
+       * ⚠️ 不要用 query + desc 求「最相关且最新」：显式排序会让 query 退化为命中
+       * 过滤（OR 语义、无相关性排序）、三个软加权全部失效——返回的是「含任一关键词
+       * 的最新文档」。要「相关且偏新」请用 freshness_boost。
+       *
+       * @default auto
        * @enum {string}
        */
-      sort_by_year?: "desc" | "asc" | "none";
+      sort_by_year?: "auto" | "desc" | "asc" | "none";
       /**
        * @description 模糊搜索新鲜度加权：结果偏向新文献（仅 query 非空时生效；传排序
        * （sort_by_year 非 none / sort_advanced）时被忽略，硬排优先）。

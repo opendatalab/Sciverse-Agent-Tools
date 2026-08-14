@@ -59,8 +59,14 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
     }
   }
 
-  const sortByYear = args.sort_by_year as string | undefined;
-  if (sortByYear && sortByYear !== "none") {
+  // sort_by_year 默认 auto：有 query（或 sort_advanced）时不加年份排序——保 BM25
+  // 相关性且软加权可用；纯结构化筛选时按年份降序（后端默认序实质乱序）。
+  let sortByYear = (args.sort_by_year as string | undefined) ?? "auto";
+  if (sortByYear === "auto") {
+    sortByYear = args.query || (Array.isArray(args.sort_advanced) && args.sort_advanced.length > 0)
+      ? "none" : "desc";
+  }
+  if (sortByYear !== "none") {
     sort.push({
       field: "publication_published_year",
       order: sortByYear === "desc" ? "SORT_ORDER_DESC" : "SORT_ORDER_ASC",

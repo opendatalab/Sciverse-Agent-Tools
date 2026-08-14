@@ -46,7 +46,13 @@ Common arguments:
 - `year_from`, `year_to`: inclusive publication year bounds.
 - `filters_advanced`: explicit field/operator/value filters after consulting
   `list_catalog`.
-- `sort_by_year`: `desc`, `asc`, or `none`.
+- `sort_by_year`: `auto` (default) / `desc` / `asc` / `none`. `auto` keeps BM25
+  relevance when `query` is set (soft boosts stay usable) and falls back to
+  newest-first for pure structured filtering. **Anti-pattern**: `query` +
+  `desc` does NOT mean "relevant and recent" — an explicit sort degrades the
+  query to a match filter (OR semantics, no relevance ranking) and disables
+  all soft boosts; you get "newest documents containing any query word".
+  Use `freshness_boost` for "relevant and recent".
 - `sort_advanced`: `[{field, order}]` — sort by any sortable field (e.g. authors by
   `cited_by_count`, sources by `works_count`). `order` is `SORT_ORDER_DESC` / `SORT_ORDER_ASC`.
 - `freshness_boost` / `impact_boost` / `language_affinity`: soft ranking boosts

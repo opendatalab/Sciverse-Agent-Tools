@@ -141,11 +141,13 @@
           "sort_by_year": {
             "type": "string",
             "enum": [
+              "auto",
               "desc",
               "asc",
               "none"
             ],
-            "default": "desc"
+            "default": "auto",
+            "description": "按发表年份排序。默认 auto：传了 query（或 sort_advanced）时不加年份排序\n——保留 BM25 相关性排序，且 freshness/impact/language_affinity 软加权可用；\n纯结构化筛选（无 query）时按年份降序（否则后端默认序是 unique_id，实质乱序）。\n⚠️ 不要用 query + desc 求「最相关且最新」：显式排序会让 query 退化为命中\n过滤（OR 语义、无相关性排序）、三个软加权全部失效——返回的是「含任一关键词\n的最新文档」。要「相关且偏新」请用 freshness_boost。\n"
           },
           "freshness_boost": {
             "type": "string",

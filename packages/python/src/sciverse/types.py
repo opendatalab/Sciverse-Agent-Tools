@@ -57,6 +57,17 @@ class SortAdvancedItem(BaseModel):
 
 
 class SortByYear(Enum):
+    """
+    按发表年份排序。默认 auto：传了 query（或 sort_advanced）时不加年份排序
+    ——保留 BM25 相关性排序，且 freshness/impact/language_affinity 软加权可用；
+    纯结构化筛选（无 query）时按年份降序（否则后端默认序是 unique_id，实质乱序）。
+    ⚠️ 不要用 query + desc 求「最相关且最新」：显式排序会让 query 退化为命中
+    过滤（OR 语义、无相关性排序）、三个软加权全部失效——返回的是「含任一关键词
+    的最新文档」。要「相关且偏新」请用 freshness_boost。
+
+    """
+
+    auto = "auto"
     desc = "desc"
     asc = "asc"
     none = "none"
@@ -146,7 +157,10 @@ class SearchPapersRequest(BaseModel):
         None,
         description="高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。",
     )
-    sort_by_year: SortByYear | None = "desc"
+    sort_by_year: SortByYear | None = Field(
+        "auto",
+        description="按发表年份排序。默认 auto：传了 query（或 sort_advanced）时不加年份排序\n——保留 BM25 相关性排序，且 freshness/impact/language_affinity 软加权可用；\n纯结构化筛选（无 query）时按年份降序（否则后端默认序是 unique_id，实质乱序）。\n⚠️ 不要用 query + desc 求「最相关且最新」：显式排序会让 query 退化为命中\n过滤（OR 语义、无相关性排序）、三个软加权全部失效——返回的是「含任一关键词\n的最新文档」。要「相关且偏新」请用 freshness_boost。\n",
+    )
     freshness_boost: FreshnessBoost | None = Field(
         "NONE",
         description="模糊搜索新鲜度加权：结果偏向新文献（仅 query 非空时生效；传排序\n（sort_by_year 非 none / sort_advanced）时被忽略，硬排优先）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。与 impact_boost / language_affinity 可叠加\n（均为乘法因子）。boost 生效时为浅翻页：不产 next_cursor、不支持\ncursor 深翻页。\n",
