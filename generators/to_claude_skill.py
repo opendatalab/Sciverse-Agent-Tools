@@ -62,7 +62,7 @@ def generate_skill_md(openapi_path: Path) -> str:
         "Retrieval skill for the Sciverse open platform. Exposes six tools",
         "for working with scientific literature: field introspection,",
         "structured metadata search, semantic chunk retrieval for RAG,",
-        "citation / reference pagination, byte-range content reading, and",
+        "citation / reference pagination, character-range content reading, and",
         "figure / table image fetching.",
         "",
         "## When to use",
