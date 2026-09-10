@@ -1,3 +1,9 @@
+## [0.14.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.14.0...v0.14.1) (2026-09-10)
+
+### Bug Fixes
+
+* read_content 契约改为 Unicode 码点语义，MCP/TS SDK 补默认 offset/limit ([#29](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/29)) ([b7c035e](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/b7c035e1b7fe2a0dda98f66f841f307d52345841))
+
 ## [0.14.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.13.1...v0.14.0) (2026-08-14)
 
 ### Features
