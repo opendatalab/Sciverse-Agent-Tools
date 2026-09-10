@@ -1,0 +1,75 @@
+# 手动补发：release.yml 的 semantic-release 打完 tag 后，publish.sh 若在中途失败
+# （典型：NPM_TOKEN 失效），重跑 release.yml 不会再发——tag 已存在、无新提交，
+# semantic-release 判定 no release。本 workflow 按 tag 检出、直接跑幂等的
+# scripts/publish.sh <version>：已发的包（PyPI --skip-existing / npm 版本存在 /
+# ClawHub already exists）自动跳过，只补没发出去的。
+#
+# 触发：gh workflow run republish.yml -f version=0.14.1
+name: Republish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "要补发的版本号（对应已存在的 tag v<version>，如 0.14.1）"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  republish:
+    name: publish.sh (idempotent)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 按 release tag 检出，保证发出去的就是 semantic-release bump 后的那份
+          ref: v${{ inputs.version }}
+
+      - uses: astral-sh/setup-uv@v3
+      - name: Python 3.13
+        run: uv python install 3.13
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install root deps (generators + build.sh)
+        run: uv sync
+
+      - name: Install typescript deps
+        working-directory: packages/typescript
+        # rollup native binary 不全（npm cli#4828）：rm lockfile + npm install，同 release.yml
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
+
+      - name: Install python SDK deps (for publish)
+        working-directory: packages/python
+        run: |
+          uv venv --python 3.13
+          uv sync
+          uv pip install twine
+
+      - name: Install mcp deps (for publish)
+        working-directory: packages/mcp
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
+
+      - name: Assert checkout version matches input
+        run: |
+          V=$(uv run python -c "import yaml; print(yaml.safe_load(open('openapi.yaml'))['info']['version'])")
+          if [ "$V" != "${{ inputs.version }}" ]; then
+            echo "openapi.yaml info.version=$V != input ${{ inputs.version }}" >&2
+            exit 1
+          fi
+
+      - name: Run publish.sh
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: bash scripts/publish.sh "${{ inputs.version }}"
