@@ -257,7 +257,7 @@ async with AgentToolsClient() as c:           # token 从 env / 凭据文件读
     await c.semantic_search(query=..., top_k=10, mode="balanced")
     # 4. 某篇论文完整的 citations / references / related works
     await c.list_paper_relations(unique_id=..., relation="CITATIONS", page_size=25)
-    # 5. 读原文字节区间
+    # 5. 读原文 Unicode 码点区间（offset/limit 以码点计）
     await c.read_content(doc_id=..., offset=0, limit=4096)
     # 6. 取图片字节流（多模态 RAG）
     img_bytes, mime = await c.get_resource(file_name="dt=.../p_.../f3.png")

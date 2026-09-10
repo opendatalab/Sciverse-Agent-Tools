@@ -174,7 +174,12 @@ class SearchPapersRequest(BaseModel):
         description='模糊搜索语言亲和加权：非 query 语言的结果降序、但不排除（仅 query\n非空时生效；传排序时被忽略）。目标语言由服务端从 query 文本判定\n（假名→ja / 谚文→ko / 汉字→zh / 拉丁→en，其他书写系统不生效）；\n语言未知的文献保持中性不降权。MILD: 非目标语言 ×0.5，跨语言强相关\n结果仍可上浮；STRONG: ×0.2，几乎只看目标语言。与 freshness_boost /\nimpact_boost 可叠加；boost 生效时为浅翻页。要硬排除某语言请改用\nfilters_advanced 的 language 字段（如 {"field":"language","value":"en"}，\n软硬两层语义不同：本参数只调序，filter 直接排除）。\n',
     )
     page: int | None = Field(1, ge=1)
-    page_size: int | None = Field(10, ge=1, le=50)
+    page_size: int | None = Field(
+        25,
+        description="每页条数。省略时为服务端默认 25（SDK / MCP 不注入默认值）；工具层上限 50。",
+        ge=1,
+        le=50,
+    )
 
 
 class AuthorItem(BaseModel):
@@ -323,7 +328,8 @@ class SearchChunk(BaseModel):
     chunk: str | None = None
     score: float
     offset: int = Field(
-        ..., description="chunk 在原文中的字节偏移，可直接传给 read_content。"
+        ...,
+        description="chunk 在原文中的 Unicode 码点偏移（不是字节），可直接作为 read_content 的 offset。",
     )
     page_no: int | None = None
     source_type: str | None = None
@@ -331,10 +337,15 @@ class SearchChunk(BaseModel):
 
 class ReadContentResponse(BaseModel):
     text: str
-    bytes_returned: int
-    next_offset: int
+    bytes_returned: int = Field(
+        ...,
+        description="text 的 UTF-8 字节长度，仅供参考；翻页请用 next_offset（两者单位不同）。",
+    )
+    next_offset: int = Field(
+        ..., description="下一段起始的 Unicode 码点偏移，可直接作为下次请求的 offset。"
+    )
     more: bool = Field(
-        ..., description="为 true 表示可能还有后续字节，可用 next_offset 继续请求。"
+        ..., description="为 true 表示可能还有后续内容，可用 next_offset 继续请求。"
     )
 
 

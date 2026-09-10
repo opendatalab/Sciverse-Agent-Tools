@@ -76,7 +76,7 @@ export SCIVERSE_API_TOKEN=sv-xxx   # 从 https://sciverse.space 控制台申请
 | `list_catalog` | 字段 introspection（首次接入调一次，学习可用字段和 enum 取值） |
 | `search_papers` | 按结构化条件查 papers / authors / sources（用 `collection` 切换实体集合） |
 | `semantic_search` | 自然语言语义检索文献片段（RAG 用） |
-| `read_content` | 按字节区间读取文献原文片段 |
+| `read_content` | 按 Unicode 码点区间读取文献原文片段 |
 | `get_resource` | 取 `read_content` Markdown 中引用的图片字节流（多模态 RAG） |
 
 agent 视角的完整文档见 `SKILL.md`（英文）。

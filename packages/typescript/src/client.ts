@@ -199,8 +199,9 @@ export class AgentToolsClient {
   async readContent(params: { doc_id: string; offset?: number; limit?: number }): Promise<unknown> {
     const qs = new URLSearchParams();
     qs.set("doc_id", params.doc_id);
-    if (params.offset !== undefined) qs.set("offset", String(params.offset));
-    if (params.limit !== undefined) qs.set("limit", String(params.limit));
+    // 后端未传 offset 时返回整篇全文并忽略 limit；默认值与 Python SDK 一致。
+    qs.set("offset", String(params.offset ?? 0));
+    qs.set("limit", String(params.limit ?? 4096));
     return this.request(`/content?${qs.toString()}`, { method: "GET" });
   }
 }

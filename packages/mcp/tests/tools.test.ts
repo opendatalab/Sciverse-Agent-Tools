@@ -163,6 +163,14 @@ describe("executeTool", () => {
     expect(captured[0]!.init.method).toBe("GET");
   });
 
+  it("read_content: 省略 offset/limit 时补默认值（后端缺 offset 会返回整篇全文）", async () => {
+    const captured = mockFetch(200, { text: "x", bytes_returned: 1, next_offset: 1, more: false });
+    await executeTool(CONFIG, "read_content", { doc_id: "p_abc" });
+    expect(captured[0]!.url).toBe(
+      "https://api.sciverse.space/content?doc_id=p_abc&offset=0&limit=4096",
+    );
+  });
+
   it("list_catalog: 默认不拉 sample_values", async () => {
     const captured = mockFetch(200, { fields: [], default_fields: [], filter_operators: [], index_name: "xinghe_meta" });
     await executeTool(CONFIG, "list_catalog", {});

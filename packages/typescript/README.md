@@ -219,7 +219,7 @@ await c.searchPapers({
 // 2. 自然语言语义检索（向量 + BM25 混合，返回 chunk）
 await c.semanticSearch({ query: "注意力机制如何工作？", top_k: 10, mode: "balanced" });
 
-// 3. 按字节区间读原文
+// 3. 按 Unicode 码点区间读原文
 await c.readContent({ doc_id: "p_xxx", offset: 0, limit: 8192 });
 
 // 4. 字段 introspection —— Agent 接入第一步

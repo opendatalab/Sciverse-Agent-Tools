@@ -323,7 +323,7 @@ await c.search_papers(
 # 2. 自然语言语义检索（向量 + BM25 混合，返回 chunk）
 await c.semantic_search(query="注意力机制如何工作？", top_k=10, mode="balanced")
 
-# 3. 按字节区间读原文（配合 semantic_search 返回的 doc_id + offset 用）
+# 3. 按 Unicode 码点区间读原文（配合 semantic_search 返回的 doc_id + offset 用）
 await c.read_content(doc_id="p_xxx", offset=0, limit=8192)
 
 # 4. 字段 introspection —— Agent 接入第一步先调一次拿 schema + 枚举值

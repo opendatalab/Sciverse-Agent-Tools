@@ -17,7 +17,7 @@ Trigger this skill when the user's request involves any of:
 
 - Locating academic papers by structured criteria (authors, year, journal, subjects)
 - Grounding answers in paper excerpts (RAG / citations)
-- Expanding the original text around a known doc_id (more bytes before/after a chunk)
+- Expanding the original text around a known doc_id (more text before/after a chunk)
 
 ## Authentication
 
@@ -94,10 +94,17 @@ citation_count by about 1%.
 
 ### read_content
 
-Read a UTF-8 byte range of a paper's original text. Typically used with
-a doc_id/offset returned by semantic_search to expand context (read
-more bytes before or after a chunk).
-Returns: text fragment, bytes_returned, next_offset, more (boolean).
+Read a range of a paper's original text addressed in Unicode code
+points (offset/limit count characters like Python len(), not bytes).
+Typically used with a doc_id/offset returned by semantic_search to
+expand context (read more text before or after a chunk).
+Returns: text fragment, bytes_returned (UTF-8 byte length of text, for
+reference only), next_offset (code-point offset of the next fragment —
+page with it, never with bytes_returned), more (boolean).
+Server behaviour: limit above 524288 is silently clamped; omitting
+offset returns the whole document ignoring limit — the SDKs / MCP
+server send offset=0 and limit=4096 by default, so pass offset
+explicitly when calling the HTTP API directly.
 
 **Invoke**: `node scripts/read_content.mjs '<JSON args>'`
 

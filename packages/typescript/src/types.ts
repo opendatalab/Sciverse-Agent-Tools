@@ -58,10 +58,13 @@ export interface paths {
   };
   "/content": {
     /**
-     * 按字节区间读取文献原文片段
-     * @description 按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，
-     * 用于扩展上下文（往前/往后读更多字节）。
-     * 返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。
+     * 按 Unicode 码点区间读取文献原文片段
+     * @description 按 Unicode 码点区间读取文献原文片段（offset/limit 均以码点计，与 Python len 一致，不是字节）。
+     * 通常配合 semantic_search 返回的 doc_id/offset 使用，用于扩展上下文（往前/往后读更多文本）。
+     * 返回：UTF-8 文本片段、bytes_returned（text 的 UTF-8 字节数，仅供参考）、
+     * next_offset（下一段起始码点偏移，翻页请用它而不是 bytes_returned）、是否还有后续。
+     * 服务端行为：limit 超过 524288 时静默钳制；未传 offset 时服务端返回整篇全文并忽略 limit——
+     * SDK / MCP server 会自动补 offset=0、limit=4096，直接调 HTTP 时务必显式传 offset。
      */
     get: operations["read_content"];
   };
@@ -186,7 +189,10 @@ export interface components {
       language_affinity?: "NONE" | "MILD" | "STRONG";
       /** @default 1 */
       page?: number;
-      /** @default 10 */
+      /**
+       * @description 每页条数。省略时为服务端默认 25（SDK / MCP 不注入默认值）；工具层上限 50。
+       * @default 25
+       */
       page_size?: number;
     };
     SearchPapersResponse: {
@@ -321,7 +327,7 @@ export interface components {
       score: number;
       /**
        * Format: int64
-       * @description chunk 在原文中的字节偏移，可直接传给 read_content。
+       * @description chunk 在原文中的 Unicode 码点偏移（不是字节），可直接作为 read_content 的 offset。
        */
       offset: number;
       page_no?: number;
@@ -329,10 +335,14 @@ export interface components {
     };
     ReadContentResponse: {
       text: string;
+      /** @description text 的 UTF-8 字节长度，仅供参考；翻页请用 next_offset（两者单位不同）。 */
       bytes_returned: number;
-      /** Format: int64 */
+      /**
+       * Format: int64
+       * @description 下一段起始的 Unicode 码点偏移，可直接作为下次请求的 offset。
+       */
       next_offset: number;
-      /** @description 为 true 表示可能还有后续字节，可用 next_offset 继续请求。 */
+      /** @description 为 true 表示可能还有后续内容，可用 next_offset 继续请求。 */
       more: boolean;
     };
     CatalogResponse: {
@@ -548,17 +558,22 @@ export interface operations {
     };
   };
   /**
-   * 按字节区间读取文献原文片段
-   * @description 按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，
-   * 用于扩展上下文（往前/往后读更多字节）。
-   * 返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。
+   * 按 Unicode 码点区间读取文献原文片段
+   * @description 按 Unicode 码点区间读取文献原文片段（offset/limit 均以码点计，与 Python len 一致，不是字节）。
+   * 通常配合 semantic_search 返回的 doc_id/offset 使用，用于扩展上下文（往前/往后读更多文本）。
+   * 返回：UTF-8 文本片段、bytes_returned（text 的 UTF-8 字节数，仅供参考）、
+   * next_offset（下一段起始码点偏移，翻页请用它而不是 bytes_returned）、是否还有后续。
+   * 服务端行为：limit 超过 524288 时静默钳制；未传 offset 时服务端返回整篇全文并忽略 limit——
+   * SDK / MCP server 会自动补 offset=0、limit=4096，直接调 HTTP 时务必显式传 offset。
    */
   read_content: {
     parameters: {
       query: {
         /** @description 文献 ID（来自 search_papers / semantic_search）。 */
         doc_id: string;
+        /** @description 起始 Unicode 码点偏移，直接使用 semantic_search 返回的 offset。默认 0。 */
         offset?: number;
+        /** @description 最多返回的 Unicode 码点数。默认 4096；服务端上限 524288（超出静默钳制）。LLM 场景建议 ≤ 16384，避免撑爆上下文。 */
         limit?: number;
       };
     };

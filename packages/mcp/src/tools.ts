@@ -254,7 +254,10 @@ export async function executeTool(
           content: [{ type: "text", text: JSON.stringify({ error: "doc_id is required" }) }],
         };
       }
-      return call(config, "GET", endpoint.path, { query: { doc_id, offset, limit } });
+      // 后端未传 offset 时返回整篇全文并忽略 limit；这里始终显式传两者，避免把整篇论文灌进模型上下文。
+      return call(config, "GET", endpoint.path, {
+        query: { doc_id, offset: offset ?? 0, limit: limit ?? 4096 },
+      });
     }
     case "get_resource": {
       const { file_name } = args as { file_name?: string };
