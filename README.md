@@ -259,7 +259,7 @@ async with AgentToolsClient() as c:           # token from env / credentials fil
     await c.semantic_search(query=..., top_k=10, mode="balanced")
     # 4. A paper's full citations / references / related works
     await c.list_paper_relations(unique_id=..., relation="CITATIONS", page_size=25)
-    # 5. Byte-range read of original content
+    # 5. Code-point-range read of original content (offset/limit are Unicode code points)
     await c.read_content(doc_id=..., offset=0, limit=4096)
     # 6. Figure / table image bytes (multimodal RAG)
     img_bytes, mime = await c.get_resource(file_name="dt=.../p_.../f3.png")

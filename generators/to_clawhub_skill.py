@@ -112,7 +112,7 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
         "",
         "- Locating academic papers by structured criteria (authors, year, journal, subjects)",
         "- Grounding answers in paper excerpts (RAG / citations)",
-        "- Expanding the original text around a known doc_id (more bytes before/after a chunk)",
+        "- Expanding the original text around a known doc_id (more text before/after a chunk)",
         "",
         "## Authentication",
         "",

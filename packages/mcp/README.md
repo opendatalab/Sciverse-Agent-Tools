@@ -217,7 +217,7 @@ Token / endpoint 解析顺序：MCP 配置里显式 `env` → `SCIVERSE_API_TOKE
 |---|---|
 | `search_papers` | 结构化元数据检索（作者 / 年份 / 期刊 / 学科） |
 | `semantic_search` | 自然语言语义检索（RAG 用） |
-| `read_content` | 按字节区间读文献原文 |
+| `read_content` | 按 Unicode 码点区间读文献原文 |
 | `list_catalog` | 字段 introspection（返回所有字段名 + 枚举值样本，agent 接入时建议先调一次学 schema） |
 | `get_resource` | 取文献附属图片字节流；MCP server 包装为 `image` content block + base64 + mimeType，多模态模型（如 Claude）可直接读图 |
 

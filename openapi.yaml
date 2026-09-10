@@ -247,18 +247,28 @@ paths:
   /content:
     get:
       tags: [content]
-      summary: 按字节区间读取文献原文片段
+      summary: 按 Unicode 码点区间读取文献原文片段
       operationId: read_content
       description: |
-        按字节区间读取文献原文片段。通常配合 semantic_search 返回的 doc_id/offset 使用，
-        用于扩展上下文（往前/往后读更多字节）。
-        返回：UTF-8 文本片段、bytes_returned、next_offset、是否还有后续。
-      x-en-summary: Read paper content by byte range
+        按 Unicode 码点区间读取文献原文片段（offset/limit 均以码点计，与 Python len 一致，不是字节）。
+        通常配合 semantic_search 返回的 doc_id/offset 使用，用于扩展上下文（往前/往后读更多文本）。
+        返回：UTF-8 文本片段、bytes_returned（text 的 UTF-8 字节数，仅供参考）、
+        next_offset（下一段起始码点偏移，翻页请用它而不是 bytes_returned）、是否还有后续。
+        服务端行为：limit 超过 524288 时静默钳制；未传 offset 时服务端返回整篇全文并忽略 limit——
+        SDK / MCP server 会自动补 offset=0、limit=4096，直接调 HTTP 时务必显式传 offset。
+      x-en-summary: Read paper content by Unicode code-point range
       x-en-description: |
-        Read a UTF-8 byte range of a paper's original text. Typically used with
-        a doc_id/offset returned by semantic_search to expand context (read
-        more bytes before or after a chunk).
-        Returns: text fragment, bytes_returned, next_offset, more (boolean).
+        Read a range of a paper's original text addressed in Unicode code
+        points (offset/limit count characters like Python len(), not bytes).
+        Typically used with a doc_id/offset returned by semantic_search to
+        expand context (read more text before or after a chunk).
+        Returns: text fragment, bytes_returned (UTF-8 byte length of text, for
+        reference only), next_offset (code-point offset of the next fragment —
+        page with it, never with bytes_returned), more (boolean).
+        Server behaviour: limit above 524288 is silently clamped; omitting
+        offset returns the whole document ignoring limit — the SDKs / MCP
+        server send offset=0 and limit=4096 by default, so pass offset
+        explicitly when calling the HTTP API directly.
       parameters:
         - name: doc_id
           in: query
@@ -268,11 +278,13 @@ paths:
         - name: offset
           in: query
           required: false
-          schema: { type: integer, format: int64, default: 0 }
+          schema: { type: integer, format: int64, default: 0, minimum: 0 }
+          description: 起始 Unicode 码点偏移，直接使用 semantic_search 返回的 offset。默认 0。
         - name: limit
           in: query
           required: false
-          schema: { type: integer, format: int64, default: 4096, maximum: 16384 }
+          schema: { type: integer, format: int64, default: 4096, minimum: 1, maximum: 524288 }
+          description: 最多返回的 Unicode 码点数。默认 4096；服务端上限 524288（超出静默钳制）。LLM 场景建议 ≤ 16384，避免撑爆上下文。
       responses:
         '200':
           description: 内容片段
@@ -467,9 +479,10 @@ components:
           minimum: 1
         page_size:
           type: integer
-          default: 10
+          default: 25
           minimum: 1
           maximum: 50
+          description: 每页条数。省略时为服务端默认 25（SDK / MCP 不注入默认值）；工具层上限 50。
 
     SearchPapersResponse:
       type: object
@@ -640,7 +653,7 @@ components:
         offset:
           type: integer
           format: int64
-          description: chunk 在原文中的字节偏移，可直接传给 read_content。
+          description: chunk 在原文中的 Unicode 码点偏移（不是字节），可直接作为 read_content 的 offset。
         page_no: { type: integer }
         source_type: { type: string }
 
@@ -649,11 +662,16 @@ components:
       required: [text, bytes_returned, next_offset, more]
       properties:
         text: { type: string }
-        bytes_returned: { type: integer }
-        next_offset: { type: integer, format: int64 }
+        bytes_returned:
+          type: integer
+          description: text 的 UTF-8 字节长度，仅供参考；翻页请用 next_offset（两者单位不同）。
+        next_offset:
+          type: integer
+          format: int64
+          description: 下一段起始的 Unicode 码点偏移，可直接作为下次请求的 offset。
         more:
           type: boolean
-          description: 为 true 表示可能还有后续字节，可用 next_offset 继续请求。
+          description: 为 true 表示可能还有后续内容，可用 next_offset 继续请求。
 
     CatalogResponse:
       type: object

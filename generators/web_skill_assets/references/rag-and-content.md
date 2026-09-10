@@ -65,8 +65,8 @@ node scripts/read_content.mjs '{
 Common arguments:
 
 - `doc_id`: required.
-- `offset`: byte offset; default 0.
-- `limit`: byte count; maximum 16384.
+- `offset`: Unicode code-point offset (pass a `semantic_search` hit's `offset` as-is); default 0. Always send it — the backend returns the whole document when it is omitted.
+- `limit`: number of Unicode code points; default 4096, server cap 524288 (silently clamped). Keep it at or below 16384 in LLM contexts.
 
 When `more` is true, continue with `next_offset` only if the user needs more
 surrounding context.

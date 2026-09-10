@@ -18,7 +18,7 @@
 - `list_catalog` — 字段 introspection（agent 第一次碰到不确定的字段先调此接口）
 - `search_papers` — 结构化元数据检索
 - `semantic_search` — 自然语言语义检索（RAG）
-- `read_content` — 按字节区间读取文献原文
+- `read_content` — 按 Unicode 码点区间读取文献原文
 - `get_resource` — 取 `read_content` Markdown 中引用的图片字节流（多模态 RAG）
 
 ## 通用前置条件

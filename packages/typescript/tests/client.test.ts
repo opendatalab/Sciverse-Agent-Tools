@@ -46,6 +46,19 @@ describe("AgentToolsClient", () => {
     expect(url).toContain("offset=100");
   });
 
+  it("read_content defaults offset=0 and limit=4096 when omitted", async () => {
+    let url = "";
+    server.use(
+      http.get("https://api.example/content", ({ request }) => {
+        url = request.url;
+        return HttpResponse.json({ text: "x", bytes_returned: 1, next_offset: 1, more: false });
+      })
+    );
+    await new AgentToolsClient({ baseUrl: "https://api.example", token: "t" }).readContent({ doc_id: "p_1" });
+    expect(url).toContain("offset=0");
+    expect(url).toContain("limit=4096");
+  });
+
   it("throws on 4xx", async () => {
     server.use(
       http.post("https://api.example/meta-search", () =>

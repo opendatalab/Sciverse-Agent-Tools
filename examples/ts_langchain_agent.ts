@@ -30,7 +30,7 @@ const tools = [
   }),
   new DynamicStructuredTool({
     name: "read_content",
-    description: "按字节区间读取文献原文片段。",
+    description: "按 Unicode 码点区间读取文献原文片段。",
     schema: z.object({
       doc_id: z.string(),
       offset: z.number().int().optional(),

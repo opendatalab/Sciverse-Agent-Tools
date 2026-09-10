@@ -313,11 +313,11 @@ def _build_parser() -> argparse.ArgumentParser:
                      help="每页数量，默认 25，上限 200")
     rel.set_defaults(func=_cmd_paper_relations)
 
-    content = sub.add_parser("content", help="读文献原文字节区间（GET /content）")
+    content = sub.add_parser("content", help="读文献原文 Unicode 码点区间（GET /content）")
     content.add_argument("doc_id", help="文献 ID（来自 search / semantic-search hits）")
-    content.add_argument("--offset", type=int, default=0, help="起始字节偏移，默认 0")
+    content.add_argument("--offset", type=int, default=0, help="起始 Unicode 码点偏移，默认 0")
     content.add_argument("--limit", type=int, default=4096,
-                         help="读取字节数，默认 4096，上限 16384")
+                         help="读取的 Unicode 码点数，默认 4096，服务端上限 524288")
     content.set_defaults(func=_cmd_content)
 
     cat = sub.add_parser(
