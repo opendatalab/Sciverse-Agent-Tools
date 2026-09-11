@@ -125,7 +125,7 @@ await c.search_papers(
 # 2. Natural-language semantic search (vector + BM25 hybrid, returns chunks)
 await c.semantic_search(query="How does attention work?", top_k=10, mode="balanced")
 
-# 3. Byte-range read of original paper text
+# 3. Character-range (Unicode code point) read of original paper text
 #    (use doc_id + offset from semantic_search hits)
 await c.read_content(doc_id="p_xxx", offset=0, limit=8192)
 

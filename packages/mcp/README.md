@@ -90,7 +90,7 @@ default (`https://api.sciverse.space`).
 |---|---|
 | `search_papers` | Structured metadata search over papers / authors / sources (set `collection`) |
 | `semantic_search` | Natural-language semantic chunk retrieval (RAG) |
-| `read_content` | Byte-range read of original paper text |
+| `read_content` | Character-range read of original paper text (offset/limit in Unicode code points) |
 | `list_catalog` | Field introspection (returns all field names + enum sample values, agents should call this first to learn the schema) |
 | `get_resource` | Fetch a paper figure / table image; the server wraps the bytes as an MCP `image` content block (base64 + mimeType) so multimodal models (e.g. Claude) can read the figure inline |
 

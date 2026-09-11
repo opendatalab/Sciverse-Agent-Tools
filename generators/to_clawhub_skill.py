@@ -22,7 +22,8 @@ SKILL_NAME = "sciverse-academic-retrieval"
 SKILL_SLUG = "academic-retrieval"
 SKILL_DESCRIPTION_EN = (
     "Sciverse academic paper retrieval: structured metadata search, semantic "
-    "chunk retrieval for RAG, and byte-range content reading. For agent "
+    "chunk retrieval for RAG, and character-range content reading (offsets in "
+    "Unicode code points). For agent "
     "workflows that need citation-grade scientific literature."
 )
 

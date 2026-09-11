@@ -12,7 +12,7 @@ With these tools, you can easily empower your AI agents to search for academic p
 | `search_papers` | Structured metadata search over papers / authors / sources (set `collection`) |
 | `semantic_search` | Natural-language semantic search over passages (RAG) |
 | `list_paper_relations` | Paginate a paper's full citations / references / related works (by `unique_id`) |
-| `read_content` | Fetch a byte-range slice of the source document (extend RAG context) |
+| `read_content` | Fetch a character-range slice of the source document (offsets in Unicode code points; extend RAG context) |
 | `get_resource` | Fetch figure / table image bytes referenced inside `read_content` Markdown |
 
 All six tools share the same Bearer-Token authentication and are exposed identically through the Python SDK, the TypeScript SDK, the MCP server, the Claude Code skill, and the ClawHub skill. The canonical schema is [`openapi.yaml`](./openapi.yaml).

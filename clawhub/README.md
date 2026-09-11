@@ -26,7 +26,7 @@ export SCIVERSE_API_TOKEN=sv-xxx       # obtain from https://sciverse.space
 | `list_catalog` | Field introspection (call once to learn available fields + enum values) |
 | `search_papers` | Structured metadata search over papers / authors / sources (set `collection`) |
 | `semantic_search` | Natural-language semantic chunk retrieval (for RAG) |
-| `read_content` | Byte-range read of a paper's original text |
+| `read_content` | Character-range read of a paper's original text (offset/limit in Unicode code points) |
 | `get_resource` | Fetch figure / table image bytes referenced inside `read_content` Markdown |
 
 See `SKILL.md` for full agent-facing documentation.

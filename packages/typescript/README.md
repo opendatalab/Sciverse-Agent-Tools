@@ -7,7 +7,7 @@ retrieval tools (`searchPapers`, `semanticSearch`, `readContent`, `listCatalog`,
 `getResource`) behind one fetch-based client + ready-to-use `OPENAI_TOOLS` /
 `ANTHROPIC_TOOLS` constants for direct tool-calling.
 
-> Tools: `searchPapers` (structured metadata) / `semanticSearch` (semantic retrieval) / `readContent` (text byte-range) / `listCatalog` (field introspection) / `getResource` (paper figure binary).
+> Tools: `searchPapers` (structured metadata) / `semanticSearch` (semantic retrieval) / `readContent` (text by Unicode code-point range) / `listCatalog` (field introspection) / `getResource` (paper figure binary).
 >
 > 工具：`searchPapers`（结构化元数据）/ `semanticSearch`（语义检索）/ `readContent`（原文切片）/ `listCatalog`（字段 introspection）/ `getResource`（论文图片二进制）
 
@@ -83,7 +83,7 @@ await c.searchPapers({
 // 2. Natural-language semantic search (vector + BM25 hybrid, returns chunks)
 await c.semanticSearch({ query: "How does attention work?", top_k: 10, mode: "balanced" });
 
-// 3. Byte-range read of original paper text
+// 3. Character-range (Unicode code point) read of original paper text
 await c.readContent({ doc_id: "p_xxx", offset: 0, limit: 8192 });
 
 // 4. Schema introspection — call once to discover field names + enum values
