@@ -1,7 +1,7 @@
 ---
 name: sciverse-academic-retrieval
 slug: academic-retrieval
-version: 0.14.1
+version: 0.14.2
 description: Sciverse academic paper retrieval: structured metadata search, semantic chunk retrieval for RAG, and character-range content reading (offsets in Unicode code points). For agent workflows that need citation-grade scientific literature.
 license: Apache-2.0
 homepage: https://sciverse.space
