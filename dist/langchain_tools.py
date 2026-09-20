@@ -25,7 +25,7 @@ _SYNC_UNSUPPORTED = (
 class SearchPapersArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
     collection: str = Field('papers', description='检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。')
-    query: str | None = Field(None, description='BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。')
+    query: str | None = Field(None, description='BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。\n普通关键词是宽松匹配（任一词命中、按相关性排序）。\n\n也支持布尔检索式：全大写 AND / OR / NOT、括号分组、引号短语；优先级\nNOT > AND > OR，相邻词隐式 AND。例如\n  (histopathology OR pathology) AND ("deep learning" OR "machine learning") AND (prognosis OR survival)\n布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。\n- query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。\n- 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 "OR"。\n- 引号需与运算符同时出现才生效：只写 "spread through air spaces" 不带运算符时\n  按普通关键词处理；写成 "spread through air spaces" AND lung 才是短语精确匹配。\n- 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。\n')
     title_contains: str | None = Field(None, description='标题中必须包含的词（仅匹配 title 字段）。')
     abstract_contains: str | None = Field(None, description='摘要中必须包含的词（仅匹配 abstract 字段）。')
     authors: list[str] | None = Field(None, description='作者名（任一命中即可）。SDK 内部映射到后端 `author` 字段（FILTER_OP_IN）。')

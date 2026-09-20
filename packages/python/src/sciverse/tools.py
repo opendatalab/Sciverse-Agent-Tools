@@ -26,7 +26,8 @@ OPENAI_TOOLS = json.loads(r"""
           },
           "query": {
             "type": "string",
-            "description": "BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。"
+            "description": "BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。\n普通关键词是宽松匹配（任一词命中、按相关性排序）。\n\n也支持布尔检索式：全大写 AND / OR / NOT、括号分组、引号短语；优先级\nNOT > AND > OR，相邻词隐式 AND。例如\n  (histopathology OR pathology) AND (\"deep learning\" OR \"machine learning\") AND (prognosis OR survival)\n布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。\n- query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。\n- 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 \"OR\"。\n- 引号需与运算符同时出现才生效：只写 \"spread through air spaces\" 不带运算符时\n  按普通关键词处理；写成 \"spread through air spaces\" AND lung 才是短语精确匹配。\n- 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。\n",
+            "x-en-description": "BM25 full-text keywords over title/abstract/venue/keywords; leave empty for\npure structured filtering. Plain keywords match loosely (any word, ranked by\nrelevance).\n\nBoolean syntax is also supported: UPPERCASE AND / OR / NOT, ( ) grouping and\n\"quoted phrases\"; precedence NOT > AND > OR, adjacent words are implicitly AND.\nExample:\n  (histopathology OR pathology) AND (\"deep learning\" OR \"machine learning\") AND (prognosis OR survival)\nIn boolean mode every term is a hard requirement and nothing is relaxed —\n0 hits means 0.\n- Put only search terms in query: labels or instructions such as\n  \"检索式1（预后预测）\" become required terms too.\n- Lowercase and/or are ordinary words; quote \"OR\" to search the literal\n  (e.g. odds ratio).\n- Quotes only take effect alongside an operator: a query that is just\n  \"spread through air spaces\" is treated as plain keywords, whereas\n  \"spread through air spaces\" AND lung is an exact phrase match.\n- Max 64 terms and 10 nesting levels (400 otherwise); split complex searches\n  into several calls.\n"
           },
           "title_contains": {
             "type": "string",
@@ -421,7 +422,8 @@ ANTHROPIC_TOOLS = json.loads(r"""
         },
         "query": {
           "type": "string",
-          "description": "BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。"
+          "description": "BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。\n普通关键词是宽松匹配（任一词命中、按相关性排序）。\n\n也支持布尔检索式：全大写 AND / OR / NOT、括号分组、引号短语；优先级\nNOT > AND > OR，相邻词隐式 AND。例如\n  (histopathology OR pathology) AND (\"deep learning\" OR \"machine learning\") AND (prognosis OR survival)\n布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。\n- query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。\n- 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 \"OR\"。\n- 引号需与运算符同时出现才生效：只写 \"spread through air spaces\" 不带运算符时\n  按普通关键词处理；写成 \"spread through air spaces\" AND lung 才是短语精确匹配。\n- 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。\n",
+          "x-en-description": "BM25 full-text keywords over title/abstract/venue/keywords; leave empty for\npure structured filtering. Plain keywords match loosely (any word, ranked by\nrelevance).\n\nBoolean syntax is also supported: UPPERCASE AND / OR / NOT, ( ) grouping and\n\"quoted phrases\"; precedence NOT > AND > OR, adjacent words are implicitly AND.\nExample:\n  (histopathology OR pathology) AND (\"deep learning\" OR \"machine learning\") AND (prognosis OR survival)\nIn boolean mode every term is a hard requirement and nothing is relaxed —\n0 hits means 0.\n- Put only search terms in query: labels or instructions such as\n  \"检索式1（预后预测）\" become required terms too.\n- Lowercase and/or are ordinary words; quote \"OR\" to search the literal\n  (e.g. odds ratio).\n- Quotes only take effect alongside an operator: a query that is just\n  \"spread through air spaces\" is treated as plain keywords, whereas\n  \"spread through air spaces\" AND lung is an exact phrase match.\n- Max 64 terms and 10 nesting levels (400 otherwise); split complex searches\n  into several calls.\n"
         },
         "title_contains": {
           "type": "string",
