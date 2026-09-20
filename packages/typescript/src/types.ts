@@ -103,6 +103,8 @@ export interface components {
        * 布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。
        * - query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。
        * - 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 "OR"。
+       * - 引号需与运算符同时出现才生效：只写 "spread through air spaces" 不带运算符时
+       *   按普通关键词处理；写成 "spread through air spaces" AND lung 才是短语精确匹配。
        * - 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。
        */
       query?: string;
