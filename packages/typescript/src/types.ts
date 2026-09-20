@@ -93,7 +93,18 @@ export interface components {
        * @enum {string}
        */
       collection?: "papers" | "authors" | "sources";
-      /** @description BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。 */
+      /**
+       * @description BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。
+       * 普通关键词是宽松匹配（任一词命中、按相关性排序）。
+       *
+       * 也支持布尔检索式：全大写 AND / OR / NOT、括号分组、引号短语；优先级
+       * NOT > AND > OR，相邻词隐式 AND。例如
+       *   (histopathology OR pathology) AND ("deep learning" OR "machine learning") AND (prognosis OR survival)
+       * 布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。
+       * - query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。
+       * - 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 "OR"。
+       * - 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。
+       */
       query?: string;
       /** @description 标题中必须包含的词（仅匹配 title 字段）。 */
       title_contains?: string;

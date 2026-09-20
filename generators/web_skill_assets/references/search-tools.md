@@ -40,7 +40,12 @@ Common arguments:
 - `collection`: entity set — `papers` (default) / `authors` / `sources`. The convenience
   fields below apply to papers only; for `authors` / `sources` use `filters_advanced` (and
   `sort_advanced`) with that collection's field names. See `## Collections: authors / sources`.
-- `query`: BM25-style keyword query over title/abstract/venue/keywords.
+- `query`: BM25-style keyword query over title/abstract/venue/keywords. Plain keywords
+  match loosely (any word, ranked by relevance). Boolean syntax is supported: UPPERCASE
+  `AND` / `OR` / `NOT`, `( )` grouping, `"quoted phrases"` (precedence NOT > AND > OR;
+  adjacent words are implicitly AND). In boolean mode every term is required and nothing
+  is relaxed — put only search terms in `query`, never labels or instructions. Lowercase
+  `and`/`or` are ordinary words; quote `"OR"` for the literal. Max 64 terms.
 - `title_contains`, `abstract_contains`: targeted text matching.
 - `authors`, `journals`, `subjects`: structured list filters.
 - `year_from`, `year_to`: inclusive publication year bounds.
