@@ -14,6 +14,8 @@ export type ContentBlock =
   | { type: "text"; text: string }
   | { type: "image"; data: string; mimeType: string };
 
+export type CredentialProvider = (method: string, path: string) => Promise<{ authorization: string; source: string }>;
+
 export interface ToolResult {
   isError: boolean;
   content: ContentBlock[];
@@ -113,6 +115,7 @@ async function call(
   method: "GET" | "POST",
   path: string,
   options: { body?: Record<string, unknown>; query?: Record<string, unknown> } = {},
+  credentialProvider?: CredentialProvider,
 ): Promise<ToolResult> {
   const url = new URL(`${config.baseUrl}${path}`);
   if (options.query) {
@@ -120,13 +123,15 @@ async function call(
       if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
     }
   }
+  const credential = await credentialProvider?.(method, path);
   const init: RequestInit = {
+    ...(credentialProvider ? { redirect: "error" as const } : {}),
     method,
     headers: {
-      authorization: `Bearer ${config.token}`,
+      authorization: credential?.authorization ?? `Bearer ${config.token}`,
       "content-type": "application/json",
       "x-request-id": randomUUID(),
-      "x-sciverse-source": `${PLATFORM}-${config.channel}`,
+      "x-sciverse-source": credential?.source ?? `${PLATFORM}-${config.channel}`,
     },
   };
   if (options.body !== undefined) {
@@ -165,18 +170,21 @@ async function callBinary(
   config: Config,
   path: string,
   query: Record<string, unknown>,
+  credentialProvider?: CredentialProvider,
 ): Promise<ToolResult> {
   const url = new URL(`${config.baseUrl}${path}`);
   for (const [k, v] of Object.entries(query)) {
     if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
   }
+  const credential = await credentialProvider?.("GET", path);
   const res = await fetch(url, {
+    ...(credentialProvider ? { redirect: "error" as const } : {}),
     method: "GET",
     headers: {
-      authorization: `Bearer ${config.token}`,
+      authorization: credential?.authorization ?? `Bearer ${config.token}`,
       accept: "image/*",
       "x-request-id": randomUUID(),
-      "x-sciverse-source": `${PLATFORM}-${config.channel}`,
+      "x-sciverse-source": credential?.source ?? `${PLATFORM}-${config.channel}`,
     },
   });
   if (!res.ok) {
@@ -205,6 +213,7 @@ export async function executeTool(
   config: Config,
   name: string,
   args: Record<string, unknown>,
+  credentialProvider?: CredentialProvider,
 ): Promise<ToolResult> {
   const endpoint = ENDPOINTS[name];
   if (!endpoint) {
@@ -216,7 +225,7 @@ export async function executeTool(
 
   switch (name) {
     case "search_papers":
-      return call(config, "POST", endpoint.path, { body: toBackendPayload(args) });
+      return call(config, "POST", endpoint.path, { body: toBackendPayload(args) }, credentialProvider);
     case "semantic_search": {
       let body: Record<string, unknown>;
       try {
@@ -227,7 +236,7 @@ export async function executeTool(
           content: [{ type: "text", text: JSON.stringify({ error: (e as Error).message }) }],
         };
       }
-      return call(config, "POST", endpoint.path, { body });
+      return call(config, "POST", endpoint.path, { body }, credentialProvider);
     }
     case "list_catalog": {
       const { include_sample_values, include_field_stats, collection } = args as {
@@ -240,7 +249,7 @@ export async function executeTool(
       };
       if (include_field_stats) query.include_field_stats = "true";
       if (collection) query.collection = collection;
-      return call(config, "GET", endpoint.path, { query });
+      return call(config, "GET", endpoint.path, { query }, credentialProvider);
     }
     case "read_content": {
       const { doc_id, offset, limit } = args as {
@@ -257,7 +266,7 @@ export async function executeTool(
       // 后端未传 offset 时返回整篇全文并忽略 limit；这里始终显式传两者，避免把整篇论文灌进模型上下文。
       return call(config, "GET", endpoint.path, {
         query: { doc_id, offset: offset ?? 0, limit: limit ?? 4096 },
-      });
+      }, credentialProvider);
     }
     case "get_resource": {
       const { file_name } = args as { file_name?: string };
@@ -267,7 +276,7 @@ export async function executeTool(
           content: [{ type: "text", text: JSON.stringify({ error: "file_name is required" }) }],
         };
       }
-      return callBinary(config, endpoint.path, { file_name });
+      return callBinary(config, endpoint.path, { file_name }, credentialProvider);
     }
     case "list_paper_relations": {
       const { unique_id, relation } = args as { unique_id?: string; relation?: string };
@@ -277,7 +286,7 @@ export async function executeTool(
           content: [{ type: "text", text: JSON.stringify({ error: "unique_id and relation are required" }) }],
         };
       }
-      return call(config, "POST", endpoint.path, { body: args });
+      return call(config, "POST", endpoint.path, { body: args }, credentialProvider);
     }
     default:
       return {

@@ -1,7 +1,7 @@
 // Token / endpoint 解析顺序：env → ~/.sciverse/credentials.json → 默认值。
 // BASE_URL 仅允许 *.sciverse.space 与 sciverse.space，防止 token 被泄漏到
 // 任意域名（与 ClawHub skill 的 _common.mjs 一致）。
-import { resolveEndpoint, resolveToken } from "./credentials.js";
+import { resolveEndpoint, resolveToken, DEFAULT_ENDPOINT } from "./credentials.js";
 
 export interface Config {
   token: string;
@@ -46,4 +46,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
   const channel = env.SCIVERSE_MCP_CHANNEL?.trim() || DEFAULT_CHANNEL;
   return { token, baseUrl, channel };
+}
+
+// HTTP 服务禁止隐式读取运维用户的个人凭据；Bearer 直连和 Hub 通道无需固定 token。
+export function loadHttpConfig(env: NodeJS.ProcessEnv = process.env): Config {
+  const config = loadConfig({ ...env, SCIVERSE_API_TOKEN: env.SCIVERSE_API_TOKEN?.trim() || "http-no-fixed-token",
+    SCIVERSE_BASE_URL: env.SCIVERSE_BASE_URL || DEFAULT_ENDPOINT });
+  const url = new URL(config.baseUrl);
+  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || url.pathname !== "/") {
+    throw new ConfigError("HTTP 服务的 API 地址必须是无路径、无凭据的 HTTPS 地址");
+  }
+  return { ...config, token: env.SCIVERSE_API_TOKEN?.trim() || "" };
 }

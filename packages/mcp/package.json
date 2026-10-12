@@ -47,7 +47,8 @@
     "codex"
   ],
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "jose": "^6.2.12"
   },
   "devDependencies": {
     "@types/node": "^20",

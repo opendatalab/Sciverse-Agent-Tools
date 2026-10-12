@@ -133,7 +133,7 @@ export function resolveLane(
     return { lane: "direct", token: m[1].trim(), channel: DIRECT_CHANNEL };
   }
   const ip = clientIp(req, opts);
-  if (ip && opts.trustedIps.has(ip)) {
+  if (config.token && ip && opts.trustedIps.has(ip)) {
     return { lane: "trusted", token: config.token, channel: config.channel };
   }
   return null;

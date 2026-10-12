@@ -9,9 +9,9 @@ import {
 
 import type { Config } from "./config.js";
 import { TOOLS, TOOLS_VERSION } from "./generated/tools.js";
-import { executeTool } from "./tools.js";
+import { executeTool, type CredentialProvider } from "./tools.js";
 
-export function createServer(config: Config): Server {
+export function createServer(config: Config, credentialProvider?: CredentialProvider): Server {
   const server = new Server(
     {
       name: "sciverse-mcp",
@@ -25,12 +25,12 @@ export function createServer(config: Config): Server {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: TOOLS,
+    tools: credentialProvider ? TOOLS.filter(tool => ["search_papers", "semantic_search", "list_catalog", "read_content", "get_resource"].includes(tool.name)) : TOOLS,
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
-    const result = await executeTool(config, name, (args ?? {}) as Record<string, unknown>);
+    const result = await executeTool(config, name, (args ?? {}) as Record<string, unknown>, credentialProvider);
     // SDK 的 CallTool 响应 schema 含可选 _meta / structuredContent 等字段，我们只用 content + isError。
     return result as unknown as { content: { type: "text"; text: string }[]; isError: boolean };
   });

@@ -21,9 +21,10 @@ import { createServer as createHttpServer, type IncomingMessage, type ServerResp
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 
-import { ConfigError, loadConfig, type Config } from "./config.js";
+import { ConfigError, loadHttpConfig, type Config } from "./config.js";
 import { loadAuthOptions, resolveLane, type AuthOptions, type Lane } from "./http-auth.js";
 import { createServer } from "./server.js";
+import type { HubConfig } from "./hub-jwt.js";
 
 const DEFAULT_PORT = 8080;
 const MCP_PATH = "/mcp";
@@ -103,11 +104,14 @@ function writeUnauthorized(res: ServerResponse): void {
 // 启动 HTTP server，返回句柄。导出供测试复用，避免 spawn 子进程。
 export async function startHttpServer(
   config: Config,
-  options: { port?: number; host?: string; auth?: AuthOptions } = {},
+  options: { port?: number; host?: string; auth?: AuthOptions; scp?: HubConfig } = {},
 ): Promise<HttpServerHandle> {
   const port = options.port ?? DEFAULT_PORT;
   const host = options.host ?? "0.0.0.0";
   const auth = options.auth ?? loadAuthOptions();
+
+  if (auth.trustedIps.size && !config.token) throw new ConfigError("可信 IP 通道需要显式 SCIVERSE_API_TOKEN");
+  const scpHandler = options.scp ? (await import("./http-scp.js")).handleScp : undefined;
 
   // session id → transport + 首次判定的凭据（lane/token 绑定，防 session id 被盗用）。
   const sessions = new Map<
@@ -218,7 +222,19 @@ export async function startHttpServer(
       res.end("ok");
       return;
     }
-    if (url === MCP_PATH || url.startsWith(`${MCP_PATH}?`) || url.startsWith(`${MCP_PATH}/`)) {
+    if (url === "/mcp/scp" || url.startsWith("/mcp/scp?")) {
+      if (!scpHandler || !options.scp) {
+        res.statusCode = 503;
+        res.setHeader("content-type", "application/json");
+        res.end(JSON.stringify({error:{code:"HUB_JWT_DISABLED"}}));
+      } else {
+        void scpHandler(req,res,config,options.scp).catch(() => {
+          if (!res.headersSent) writeJsonRpcError(res,500,"Internal server error"); else res.end();
+        });
+      }
+      return;
+    }
+    if (url === MCP_PATH || url.startsWith(`${MCP_PATH}?`)) {
       const startedAt = Date.now();
       const meta: ReqLogMeta = { lane: "anon", rpc: "-", session: "-" };
       // "close" 同时覆盖正常结束与客户端中断；一行 key=value 结构化日志（恒不含 token）。
@@ -279,7 +295,7 @@ async function main(): Promise<void> {
   }
   let config: Config;
   try {
-    config = loadConfig();
+    config = loadHttpConfig();
   } catch (err) {
     if (err instanceof ConfigError) {
       process.stderr.write(`[sciverse-mcp] ${err.message}\n`);
@@ -301,7 +317,9 @@ async function main(): Promise<void> {
       "[sciverse-mcp] SCIVERSE_MCP_TRUSTED_IPS 未配置：可信 IP 通道关闭，所有请求都需要 Authorization\n",
     );
   }
-  const handle = await startHttpServer(config, { port, auth });
+  const scp = process.env.SCIVERSE_MCP_HUB_JWT_ENABLED === "true"
+    ? await (await import("./hub-jwt.js")).loadHubConfig() : undefined;
+  const handle = await startHttpServer(config, { port, auth, scp });
   const proxyCount = auth.trustedProxies.v4.length + auth.trustedProxies.exact.size;
   process.stderr.write(
     `[sciverse-mcp] listening on :${handle.port}${MCP_PATH} ` +

@@ -260,3 +260,17 @@ npm install --registry https://registry.npmmirror.com
 - Python SDK + CLI：<https://pypi.org/project/sciverse>
 - TypeScript SDK：<https://www.npmjs.com/package/sciverse>
 - 协议：Apache-2.0
+
+### SCP Hub 逐用户 JWT 入口（默认关闭）
+
+新增 `POST /mcp/scp`：每次请求必须带 Hub 用户 JWT，无状态、JSON 响应，不发送 `Mcp-Session-Id`；不要求用户先登录 SciVerse。新入口校验 Hub 凭证后签发短期内部委托，由 SciVerse 后端查询权威 SSO 资料并自动建账。无效 JWT 不会回退旧 IP 白名单。`/mcp` 和 stdio 保留原行为。
+
+部署使用 Node 22。开启需配置 `SCIVERSE_MCP_HUB_JWT_ENABLED=true`、`SCIVERSE_MCP_HUB_JWT_ISSUER=scp-hub`、精确 `SCIVERSE_MCP_HUB_JWT_AUDIENCE`、`SCIVERSE_MCP_HUB_JWT_ALGORITHM`（RS256/ES256/EdDSA之一），并挂载 `SCIVERSE_MCP_HUB_JWT_PUBLIC_KEYS_FILE`（JSON：kid→SPKI PEM）。无 kid 仅可显式启用 `SCIVERSE_MCP_HUB_JWT_ALLOW_MISSING_KID=true` 且只配置一个公钥。拒绝对称算法、远端 key URL、多 aud 数组和超过 900 秒的有效期。
+
+MCP 自己的委托私钥使用独立 RS256 PKCS8 PEM：`SCIVERSE_MCP_DELEGATION_PRIVATE_KEY_FILE`、`SCIVERSE_MCP_DELEGATION_KEY_ID`。后端只持对应公钥；MCP 不需要 Hub 私钥。Hub 公钥与委托私钥加载于进程启动，轮换后滚动重启。不同环境独立密钥。
+
+`SCIVERSE_MCP_HUB_SYNC_SUBJECTS` 为逗号分隔的探活 UID，必须与后端相同；只能 initialize/list，不能业务调用。新通道仅开放五个原计划工具，不含 `list_paper_relations`。用户身份 `sub` 保留前导零，按可信 SSO UID 匹配。
+
+HTTP 服务仅使用显式环境变量，不会从运行用户的个人凭据文件取默认 token。仅 Hub/Bearer 模式不需要 `SCIVERSE_API_TOKEN`；保留旧 `SCIVERSE_MCP_TRUSTED_IPS` 时则仍需显式设置该 token。
+
+Hub 必须识别两类失败：入口 HTTP 401；以及业务工具 `isError=true`、文本 JSON `{status:401,body:{code:"HUB_CREDENTIAL_REVOKED"}}`。后者需重新签发并最多重试一次；解封时撤销边界覆盖 30 秒时钟偏差，新凭证可能需等待最多约 31 秒。403 封禁和 503 身份服务故障不得循环刷新。生产上线还需确认无状态协议、SSO状态/邮箱契约、数据库迁移、内部建账路径公网拒绝和三组密钥分发。

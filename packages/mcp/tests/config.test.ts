@@ -74,3 +74,11 @@ describe("loadConfig", () => {
     expect(cfg.channel).toBe("mcp");
   });
 });
+
+it('HTTP 不要求固定 token，且禁止带凭据或非 HTTPS 的 API 地址', async () => {
+  const {loadHttpConfig} = await import('../src/config.js');
+  expect(loadHttpConfig({}).token).toBe('');
+  for (const url of ['http://api.sciverse.space','https://u:p@api.sciverse.space','https://api.sciverse.space/other']) {
+    expect(() => loadHttpConfig({SCIVERSE_BASE_URL:url})).toThrow();
+  }
+});
