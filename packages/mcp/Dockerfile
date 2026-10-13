@@ -7,7 +7,7 @@
 # 同目录 .dockerignore（仓库根）已排除 node_modules / .venv / dist / .git 等大目录。
 
 # ---- builder ----
-FROM node:22-alpine AS builder
+FROM docker.shlab.tech/public/node:22-alpine@sha256:48a8b8be163989fc48f82d339d066f5d91eb4a4f9ce26a184461919dc8941126 AS builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ COPY openapi.yaml /openapi.yaml
 RUN npm run build
 
 # ---- runtime ----
-  FROM node:22-alpine AS runtime
+FROM docker.shlab.tech/public/node:22-alpine@sha256:48a8b8be163989fc48f82d339d066f5d91eb4a4f9ce26a184461919dc8941126 AS runtime
 
 WORKDIR /app
 
@@ -39,7 +39,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 # builder 产 dist/
 COPY --from=builder /app/dist ./dist
 
-# node:21-alpine 自带 node 用户（uid 1000），切到它
+# Node 22 Alpine 自带 node 用户（uid 1000），切到它
 USER node
 
 # 默认监听 8080，由 cli-http 入口读 PORT env
