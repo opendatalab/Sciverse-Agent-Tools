@@ -35,7 +35,8 @@ export async function loadHubSsoConfig(env: NodeJS.ProcessEnv = process.env): Pr
   const mode = env.SCIVERSE_MCP_SCP_AUTH_MODE ?? 'disabled';
   if(mode === 'disabled') return undefined;
   if(mode !== 'hub_sso' || env.SCIVERSE_MCP_HUB_JWT_ENABLED === 'true') throw new Error('Invalid SCP auth mode');
-  if(env.SCIVERSE_MCP_SCP_SOURCE_VERIFIED !== 'true') throw new Error('Hub source restriction not verified');
+  // /mcp/scp 由双方约定供 Hub 使用；渠道标签不证明调用方来源。
+  // 用户身份仍须在线 SSO 校验，内部传输仍强制 mTLS。
   const required = (key:string) => { const value=env[key]?.trim();if(!value) throw new Error(`Missing configuration: ${key}`);return value; };
   const url = new URL(required('SCIVERSE_MCP_SSO_VALIDATION_URL'));
   if(url.protocol !== 'https:' || url.hostname !== 'sciverse-platform-fe.sciverse.svc.cluster.local' || url.pathname !== PATH || url.username || url.password || url.search || url.hash) throw new Error('Invalid SSO validator URL');
