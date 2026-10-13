@@ -3,6 +3,11 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import type { Config } from './config.js';
 import { createServer } from './server.js';
 import { verifyHubJwt, delegationProvider, type HubConfig } from './hub-jwt.js';
+import { verifyHubSso, ssoDelegationProvider, SsoAuthError, type HubSsoConfig } from './hub-sso.js';
+
+function isSso(hub: HubConfig | HubSsoConfig): hub is HubSsoConfig {
+  return 'mode' in hub && hub.mode === 'hub_sso';
+}
 
 function reject(res: ServerResponse, status: number, code: string): void {
   res.statusCode = status;
@@ -11,7 +16,7 @@ function reject(res: ServerResponse, status: number, code: string): void {
   if (status === 401) res.setHeader('www-authenticate','Bearer');
   res.end(JSON.stringify({error:{code}}));
 }
-export async function handleScp(req: IncomingMessage, res: ServerResponse, config: Config, hub: HubConfig): Promise<void> {
+export async function handleScp(req: IncomingMessage, res: ServerResponse, config: Config, hub: HubConfig | HubSsoConfig): Promise<void> {
   const started = Date.now();
   let sub: string | undefined;
   let rpc: string | undefined;
@@ -19,8 +24,13 @@ export async function handleScp(req: IncomingMessage, res: ServerResponse, confi
     user_sso_uid:sub,rpc,status:res.statusCode,duration_ms:Date.now()-started})+'\n'));
   const bearer = req.headers.authorization?.match(/^Bearer ([^\s]+)$/i)?.[1];
   let identity;
-  try { identity = await verifyHubJwt(bearer ?? '',hub); }
-  catch { reject(res,401,'INVALID_HUB_JWT'); return; }
+  const sso = isSso(hub);
+  try { identity = sso ? await verifyHubSso(bearer ?? '',hub) : await verifyHubJwt(bearer ?? '',hub); }
+  catch (e) {
+    if (sso && e instanceof SsoAuthError) reject(res,e.status,e.code);
+    else reject(res,401,sso ? 'INVALID_SSO_TOKEN' : 'INVALID_HUB_JWT');
+    return;
+  }
   sub = identity.sub;
   if (req.method !== 'POST') { res.setHeader('allow','POST'); reject(res,405,'METHOD_NOT_ALLOWED'); return; }
   // Hub 通道逐请求鉴权，不接收跨请求 session。
@@ -42,7 +52,7 @@ export async function handleScp(req: IncomingMessage, res: ServerResponse, confi
     reject(res,403,'SYNC_SUBJECT_FORBIDDEN'); return;
   }
   const transport = new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
-  const server = createServer(config, delegationProvider(identity,hub));
+  const server = createServer(config, sso ? ssoDelegationProvider(identity,hub) : delegationProvider(identity,hub));
   const cleanup = () => { void server.close().catch(() => undefined); };
   res.once('close',cleanup);
   try { await server.connect(transport); await transport.handleRequest(req,res,body); }

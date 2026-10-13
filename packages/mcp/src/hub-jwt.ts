@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
-import { decodeProtectedHeader, importSPKI, importPKCS8, jwtVerify, SignJWT } from 'jose';
+import { decodeProtectedHeader, importSPKI, importPKCS8, jwtVerify } from 'jose';
 import type { CredentialProvider } from './tools.js';
 
 type CryptoKey = Awaited<ReturnType<typeof importSPKI>>;
@@ -18,7 +17,7 @@ export interface HubConfig {
 }
 export interface HubIdentity { sub: string; iat: number; exp: number }
 const ALGORITHMS = new Set(['RS256', 'ES256', 'EdDSA']);
-const ROUTES = new Set(['POST /meta-search','POST /agentic-search','GET /meta-catalog','GET /content','GET /resource']);
+import { createDelegationProvider } from './delegation.js';
 
 export async function loadHubConfig(env: NodeJS.ProcessEnv = process.env): Promise<HubConfig | undefined> {
   if (env.SCIVERSE_MCP_HUB_JWT_ENABLED !== 'true') return undefined;
@@ -67,16 +66,5 @@ export async function verifyHubJwt(token: string, config: HubConfig): Promise<Hu
 }
 
 export function delegationProvider(identity: HubIdentity, config: HubConfig): CredentialProvider {
-  return async (method, path) => {
-    const now = Math.floor(Date.now()/1000);
-    if (identity.exp <= now || config.syncSubjects.has(identity.sub) || !ROUTES.has(`${method} ${path}`)) {
-      throw new Error('Delegation not allowed');
-    }
-    const token = await new SignJWT({ auth_method:'scp_hub_jwt', auth_source:'scp',
-      hub_iat:identity.iat, hub_exp:identity.exp, http_method:method, http_path:path })
-      .setProtectedHeader({alg:'RS256',kid:config.signingKeyId}).setIssuer('sciverse-mcp')
-      .setAudience('sciverse-api').setSubject(identity.sub).setIssuedAt(now)
-      .setExpirationTime(Math.min(now+60,identity.exp)).setJti(randomUUID()).sign(config.signingKey);
-    return {authorization:`Bearer ${token}`,source:'scp'};
-  };
+  return createDelegationProvider(identity, config, {auth_method:'scp_hub_jwt',hub_iat:identity.iat,hub_exp:identity.exp});
 }

@@ -25,6 +25,7 @@ import { ConfigError, loadHttpConfig, type Config } from "./config.js";
 import { loadAuthOptions, resolveLane, type AuthOptions, type Lane } from "./http-auth.js";
 import { createServer } from "./server.js";
 import type { HubConfig } from "./hub-jwt.js";
+import { loadHubSsoConfig, type HubSsoConfig } from "./hub-sso.js";
 
 const DEFAULT_PORT = 8080;
 const MCP_PATH = "/mcp";
@@ -104,7 +105,7 @@ function writeUnauthorized(res: ServerResponse): void {
 // 启动 HTTP server，返回句柄。导出供测试复用，避免 spawn 子进程。
 export async function startHttpServer(
   config: Config,
-  options: { port?: number; host?: string; auth?: AuthOptions; scp?: HubConfig } = {},
+  options: { port?: number; host?: string; auth?: AuthOptions; scp?: HubConfig | HubSsoConfig } = {},
 ): Promise<HttpServerHandle> {
   const port = options.port ?? DEFAULT_PORT;
   const host = options.host ?? "0.0.0.0";
@@ -226,7 +227,7 @@ export async function startHttpServer(
       if (!scpHandler || !options.scp) {
         res.statusCode = 503;
         res.setHeader("content-type", "application/json");
-        res.end(JSON.stringify({error:{code:"HUB_JWT_DISABLED"}}));
+        res.end(JSON.stringify({error:{code:"SCP_AUTH_DISABLED"}}));
       } else {
         void scpHandler(req,res,config,options.scp).catch(() => {
           if (!res.headersSent) writeJsonRpcError(res,500,"Internal server error"); else res.end();
@@ -317,8 +318,9 @@ async function main(): Promise<void> {
       "[sciverse-mcp] SCIVERSE_MCP_TRUSTED_IPS 未配置：可信 IP 通道关闭，所有请求都需要 Authorization\n",
     );
   }
-  const scp = process.env.SCIVERSE_MCP_HUB_JWT_ENABLED === "true"
-    ? await (await import("./hub-jwt.js")).loadHubConfig() : undefined;
+  const sso = await loadHubSsoConfig();
+  const scp = sso ?? (process.env.SCIVERSE_MCP_HUB_JWT_ENABLED === "true"
+    ? await (await import("./hub-jwt.js")).loadHubConfig() : undefined);
   const handle = await startHttpServer(config, { port, auth, scp });
   const proxyCount = auth.trustedProxies.v4.length + auth.trustedProxies.exact.size;
   process.stderr.write(
