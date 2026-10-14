@@ -261,16 +261,16 @@ npm install --registry https://registry.npmmirror.com
 - TypeScript SDK：<https://www.npmjs.com/package/sciverse>
 - 协议：Apache-2.0
 
-### SCP Hub 逐用户 JWT 入口（默认关闭）
+### SCP 渠道逐用户 SSO 入口（默认关闭）
 
-新增 `POST /mcp/scp`：每次请求必须带 Hub 用户 JWT，无状态、JSON 响应，不发送 `Mcp-Session-Id`；不要求用户先登录 SciVerse。新入口校验 Hub 凭证后签发短期内部委托，由 SciVerse 后端查询权威 SSO 资料并自动建账。无效 JWT 不会回退旧 IP 白名单。`/mcp` 和 stdio 保留原行为。
+`POST /mcp/scp` 接收 Hub 逐用户转发的 SSO Token，以 `Authorization: Bearer <token>` 传入。每次请求在线验证身份，并签发短期内部委派；SciVerse 后端按 SSO UID 区分用户，JIT 是否开启由后端配置决定。不要求用户预先登录 SciVerse。
 
-部署使用 Node 22。开启需配置 `SCIVERSE_MCP_HUB_JWT_ENABLED=true`、`SCIVERSE_MCP_HUB_JWT_ISSUER=scp-hub`、精确 `SCIVERSE_MCP_HUB_JWT_AUDIENCE`、`SCIVERSE_MCP_HUB_JWT_ALGORITHM`（RS256/ES256/EdDSA之一），并挂载 `SCIVERSE_MCP_HUB_JWT_PUBLIC_KEYS_FILE`（JSON：kid→SPKI PEM）。无 kid 仅可显式启用 `SCIVERSE_MCP_HUB_JWT_ALLOW_MISSING_KID=true` 且只配置一个公钥。拒绝对称算法、远端 key URL、多 aud 数组和超过 900 秒的有效期。
+入口默认 `SCIVERSE_MCP_SCP_AUTH_MODE=disabled`。生产启用使用 `hub_sso`，配置 `SCIVERSE_MCP_SSO_VALIDATION_URL`、`SCIVERSE_MCP_SSO_CLIENT_ID`、`SCIVERSE_MCP_SSO_MAX_TTL_SECONDS`，以及验证服务的 CA、客户端证书和私钥文件。验证通道使用 mTLS；内部委派另需独立的 `SCIVERSE_MCP_DELEGATION_PRIVATE_KEY_FILE` 和 `SCIVERSE_MCP_DELEGATION_KEY_ID`。各环境独立密钥，不记录外部 Token。
 
-MCP 自己的委托私钥使用独立 RS256 PKCS8 PEM：`SCIVERSE_MCP_DELEGATION_PRIVATE_KEY_FILE`、`SCIVERSE_MCP_DELEGATION_KEY_ID`。后端只持对应公钥；MCP 不需要 Hub 私钥。Hub 公钥与委托私钥加载于进程启动，轮换后滚动重启。不同环境独立密钥。
+`/mcp/scp` 仅按约定标记 SCP 渠道，不限制请求来源，也不凭路由证明来自 Hub。无效凭证不回退旧 IP 固定身份。`/mcp` 和 stdio 保留原行为；保留旧 IP 通道时仍需其显式固定凭证。
 
-`SCIVERSE_MCP_HUB_SYNC_SUBJECTS` 为逗号分隔的探活 UID，必须与后端相同；只能 initialize/list，不能业务调用。新通道仅开放五个原计划工具，不含 `list_paper_relations`。用户身份 `sub` 保留前导零，按可信 SSO UID 匹配。
+入口无状态、JSON 响应，不发送 `Mcp-Session-Id`；仅开放五个原计划工具，不含 `list_paper_relations`。探活 UID 可通过 `SCIVERSE_MCP_HUB_SYNC_SUBJECTS` 配置，不能执行业务工具。用户 UID 保留前导零。
 
-HTTP 服务仅使用显式环境变量，不会从运行用户的个人凭据文件取默认 token。仅 Hub/Bearer 模式不需要 `SCIVERSE_API_TOKEN`；保留旧 `SCIVERSE_MCP_TRUSTED_IPS` 时则仍需显式设置该 token。
+Hub 应同时处理入口 HTTP 401 和工具 `isError=true` 的业务失败；只对可刷新凭证的401进行一次刷新重试，不对403/503循环刷新。生产上线需核对在线校验/撤销契约、内部路径公网阻断、密钥挂载和逐用户用量/配额。
 
-Hub 必须识别两类失败：入口 HTTP 401；以及业务工具 `isError=true`、文本 JSON `{status:401,body:{code:"HUB_CREDENTIAL_REVOKED"}}`。后者需重新签发并最多重试一次；解封时撤销边界覆盖 30 秒时钟偏差，新凭证可能需等待最多约 31 秒。403 封禁和 503 身份服务故障不得循环刷新。生产上线还需确认无状态协议、SSO状态/邮箱契约、数据库迁移、内部建账路径公网拒绝和三组密钥分发。
+旧 `hub_jwt` 模式代码保留用于兼容；SSO 方案不使用 Hub JWT 公钥，也不需要打开 `SCIVERSE_MCP_HUB_JWT_ENABLED`。部署运行时使用 Node 22。
