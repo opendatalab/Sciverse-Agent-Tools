@@ -31,9 +31,17 @@ describe('Hub 身份及委托隔离', () => {
     expect(a.authorization).not.toBe(b.authorization);
     expect(a.source).toBe('scp');
   });
-  it.each([{aud:'other'},{iss:'sso'},{sub:''},{sub:123},{iat:1},{exp:1},
-    {exp:Math.floor(Date.now()/1000)+901},{nbf:Math.floor(Date.now()/1000)+120}])('拒绝错误声明 %j', async claims => {
+  it.each([{aud:'other'},{iss:'sso'},{sub:''},{sub:123},{iat:1},{exp:1}])('拒绝错误声明 %j', async claims => {
     await expect(verifyHubJwt(await token(claims), config)).rejects.toThrow();
+  });
+  it('拒绝超过最大寿命一秒的凭证，边界不受密钥生成耗时影响', async () => {
+    const now = Math.floor(Date.now()/1000);
+    await expect(verifyHubJwt(await token({iat:now,exp:now+901}),config)).rejects.toThrow();
+    await expect(verifyHubJwt(await token({iat:now,exp:now+900}),config)).resolves.toMatchObject({sub:'00123'});
+  });
+  it('拒绝尚未生效的凭证', async () => {
+    const now = Math.floor(Date.now()/1000);
+    await expect(verifyHubJwt(await token({iat:now,exp:now+300,nbf:now+120}),config)).rejects.toThrow();
   });
   it('拒绝未知 kid、非法路径与探活身份业务调用', async () => {
     await expect(verifyHubJwt(await token({},'unknown'),config)).rejects.toThrow();
