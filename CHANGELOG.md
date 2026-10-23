@@ -1,3 +1,9 @@
+## [0.14.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.14.3...v0.14.4) (2026-10-23)
+
+### Bug Fixes
+
+* **claude-plugin:** 补齐插件清单与 MCP 定义，skill 移到标准布局 ([#34](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/34)) ([ef165ae](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/ef165ae2f2e756dd7085bf61722913c1e6e1886f))
+
 ## [0.14.3](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.14.2...v0.14.3) (2026-09-20)
 
 ## [0.14.2](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.14.1...v0.14.2) (2026-09-11)
