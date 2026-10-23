@@ -11,3 +11,5 @@ packages/mcp/dist/
 packages/mcp/src/generated/
 dist/web-skill/
 dist/web-skill.tgz
+packages/gpt-researcher/dist/
+packages/gpt-researcher/build/
