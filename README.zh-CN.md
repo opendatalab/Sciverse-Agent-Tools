@@ -25,7 +25,7 @@
 | **Claude Code skill** | Claude Code / VS Code 用户 | 通过 Plugin Marketplace 一行装（见下） |
 | **MCP server** | 任意 MCP-capable coding agent（Cursor / Codex CLI / Windsurf...） | 写到 `.mcp.json` —— [接入指南](./docs/integrations/) |
 | **Python / TypeScript SDK** | 自定义 agent（OpenAI / Anthropic / LangChain / LlamaIndex...） | `pip install sciverse` 或 `npm install sciverse` |
-| **GPT Researcher 插件（本地预览）** | 科学文献片段检索 | [从源码安装](packages/gpt-researcher/README.md) |
+| **GPT Researcher 插件** | 科学文献片段检索 | `pip install gpt-researcher-sciverse` — [配置说明](packages/gpt-researcher/README.md) |
 | **CLI** | shell 脚本 / 快速试用 / 无 agent loop | 随 Python SDK 一起装 —— `sciverse auth login` |
 | **Web well-known URL** | 通过 well-known URI 约定自动发现 skill 的 agent host | 把 agent host 指向 <https://sciverse.space/.well-known/agent-skills/> |
 
