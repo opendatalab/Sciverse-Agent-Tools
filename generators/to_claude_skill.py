@@ -120,8 +120,7 @@ def generate_skill_md(openapi_path: Path) -> str:
         '     "mcpServers": {',
         '       "sciverse": {',
         '         "command": "npx",',
-        '         "args": ["-y", "sciverse-mcp-server"],',
-        '         "env": { "SCIVERSE_API_TOKEN": "${SCIVERSE_API_TOKEN}" }',
+        '         "args": ["-y", "sciverse-mcp-server"]',
         "       }",
         "     }",
         "   }",
@@ -274,7 +273,7 @@ def generate_skill_md(openapi_path: Path) -> str:
         "Set `collection` to `authors` or `sources` (default `papers`) to search",
         "those entities instead of papers. Each collection has its own fields —",
         "call `list_catalog(collection=\"authors\")` first. Use `filters_advanced` +",
-        "`sort_advanced`; the papers convenience fields (`authors`/`year_from`/...) ",
+        "`sort_advanced`; the papers convenience fields (`authors`/`year_from`/...)",
         "apply to papers only.",
         "",
         "```",
@@ -393,7 +392,7 @@ def main() -> None:
     skill_dir.mkdir(parents=True, exist_ok=True)
     skill_md = generate_skill_md(openapi)
     skill_md_path = skill_dir / "SKILL.md"
-    skill_md_path.write_text(skill_md, encoding="utf-8")
+    skill_md_path.write_text(skill_md, encoding="utf-8", newline="\n")
     print(f"wrote {skill_md_path.relative_to(root)}")
 
     # 2. 生成插件清单 + 自带 MCP server 定义
@@ -403,6 +402,7 @@ def main() -> None:
     plugin_path.write_text(
         json.dumps(generate_plugin_json(openapi), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     print(f"wrote {plugin_path.relative_to(root)}")
 
@@ -410,6 +410,7 @@ def main() -> None:
     mcp_path.write_text(
         json.dumps(generate_mcp_json(), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     print(f"wrote {mcp_path.relative_to(root)}")
 
@@ -421,6 +422,7 @@ def main() -> None:
     marketplace_path.write_text(
         json.dumps(marketplace, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     print(f"wrote {marketplace_path.relative_to(root)}")
 

@@ -52,8 +52,7 @@ Before invoking any tool, ensure the server is reachable:
      "mcpServers": {
        "sciverse": {
          "command": "npx",
-         "args": ["-y", "sciverse-mcp-server"],
-         "env": { "SCIVERSE_API_TOKEN": "${SCIVERSE_API_TOKEN}" }
+         "args": ["-y", "sciverse-mcp-server"]
        }
      }
    }
@@ -276,7 +275,7 @@ read_content(doc_id, offset) → markdown with ![Figure 3](dt=xxx/p_yyy/f3.png)
 Set `collection` to `authors` or `sources` (default `papers`) to search
 those entities instead of papers. Each collection has its own fields —
 call `list_catalog(collection="authors")` first. Use `filters_advanced` +
-`sort_advanced`; the papers convenience fields (`authors`/`year_from`/...) 
+`sort_advanced`; the papers convenience fields (`authors`/`year_from`/...)
 apply to papers only.
 
 ```
