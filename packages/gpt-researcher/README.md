@@ -4,12 +4,13 @@ An independently versioned plugin maintained in Sciverse-Agent-Tools. It searche
 scientific literature via Sciverse and returns citable passages. It does not
 modify GPT Researcher's built-in retriever registry.
 
-## Local installation (not published)
+## Installation
 
-Python 3.12+ is required. From the Sciverse-Agent-Tools repository root:
+Python 3.12+ and GPT Researcher 0.16.1+ are required. Install the published
+[PyPI package](https://pypi.org/project/gpt-researcher-sciverse/):
 
 ```bash
-python -m pip install ./packages/gpt-researcher
+python -m pip install gpt-researcher-sciverse
 export RETRIEVER=sciverse
 export SCIVERSE_API_TOKEN="your-token"
 ```
@@ -55,6 +56,14 @@ Search defaults to seven passages and caps requests at 100. Results with no
 usable content or HTTP(S) citation URL are skipped. Nonpositive limits return
 an empty list. Citation URLs prefer an open-access URL, then DOI, then a hit's
 web source URL. Direct calls may select `mode` as a keyword-only argument.
+
+## Install from source
+
+For development, from the Sciverse-Agent-Tools repository root:
+
+```bash
+python -m pip install ./packages/gpt-researcher
+```
 
 ## Build and verify without publishing
 
