@@ -1,3 +1,9 @@
+## [0.15.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.14.4...v0.15.0) (2026-10-23)
+
+### Features
+
+* 新增 GPT Researcher 独立插件（暂不发布） ([#36](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/36)) ([c2d33ee](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/c2d33ee74a55ea90140bfe180af918ab3455878d))
+
 ## [0.14.4](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.14.3...v0.14.4) (2026-10-23)
 
 ### Bug Fixes
