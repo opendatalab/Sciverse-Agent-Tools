@@ -32,6 +32,41 @@ jobs:
         working-directory: packages/python
         run: uv run pytest tests/ -v --ignore tests/test_contract.py
 
+  gpt-researcher-plugin:
+    name: GPT Researcher plugin (installed wheel)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        upstream: [minimum, latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - name: Create clean environment
+        run: |
+          uv venv --python 3.12 /tmp/gptr-test
+          uv pip install --python /tmp/gptr-test/bin/python build pytest ruff
+      - name: Lint and build plugin
+        working-directory: packages/gpt-researcher
+        run: |
+          /tmp/gptr-test/bin/ruff check src tests
+          /tmp/gptr-test/bin/ruff format --check src tests
+          /tmp/gptr-test/bin/python -m build
+      - name: Install built wheel
+        working-directory: packages/gpt-researcher
+        env:
+          UPSTREAM: ${{ matrix.upstream }}
+        run: |
+          if [ "$UPSTREAM" = "minimum" ]; then
+            uv pip install --python /tmp/gptr-test/bin/python dist/*.whl 'gpt-researcher==0.16.1'
+          else
+            uv pip install --python /tmp/gptr-test/bin/python dist/*.whl
+          fi
+      - name: Test installed plugin and upstream consumer
+        working-directory: packages/gpt-researcher
+        env:
+          LITELLM_LOCAL_MODEL_COST_MAP: "True"
+        run: /tmp/gptr-test/bin/python -m pytest tests -q
+
   typescript:
     name: TypeScript SDK
     runs-on: ubuntu-latest
