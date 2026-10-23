@@ -45,14 +45,17 @@ claude /plugin marketplace add https://github.com/opendatalab/Sciverse-Agent-Too
 claude /plugin install sciverse
 ```
 
-The skill depends on `sciverse-mcp-server`; install it once:
+That installs both the retrieval skill and the bundled `sciverse` MCP server —
+no separate `npm install` step. The server needs an API token, which it reads
+from (in order) the `SCIVERSE_API_TOKEN` environment variable, then
+`~/.sciverse/credentials.json`:
 
 ```bash
-npm install -g sciverse-mcp-server
 export SCIVERSE_API_TOKEN=sv-...     # get one from https://sciverse.space
 ```
 
-Or declare the MCP server per-project — see [`skill-claude-code/SKILL.md`](./skill-claude-code/SKILL.md).
+Or skip the plugin and declare the MCP server per-project — see
+[`skill-claude-code/skills/sciverse/SKILL.md`](./skill-claude-code/skills/sciverse/SKILL.md).
 
 ## Quickstart — other MCP-capable agents
 

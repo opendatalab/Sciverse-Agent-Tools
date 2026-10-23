@@ -3,15 +3,22 @@
 与 `to_clawhub_skill.py` 平行的另一种 skill 形态：
 
 - 输出目录：`skill-claude-code/`（与 ClawHub 的 `clawhub/` 区分开）
+- 该目录是一个完整 Claude Code 插件：
+  - `skills/sciverse/SKILL.md` —— 标准布局的 skill
+  - `.claude-plugin/plugin.json` —— 插件清单
+  - `.mcp.json` —— 插件自带的 MCP server
 - frontmatter 严格只含 `name` 和 `description` 两个字段（Claude Code 官方 spec）
 - description 是 model-facing trigger，须明确何时该调用此 skill
 - 正文为 markdown，描述前置条件、能力、典型 composition pattern
-- 同时输出 Plugin Marketplace 入口：`.claude-plugin/marketplace.json`
+- 同时输出 Marketplace 入口 `.claude-plugin/marketplace.json`
 - 依赖另一个并行 agent 维护的 `sciverse-mcp-server` npm 包
 
-Claude Code 官方 spec 参考：
-- 路径：`~/.claude/skills/<skill-name>/SKILL.md`（用户级）/ `.claude/skills/...`（项目级）
-- 通过 Plugin Marketplace 也可分发（`claude /plugin install`）
+Claude Code 官方 spec 参考（插件形态）：
+- skill 放 `skills/<name>/SKILL.md`；`SKILL.md` 在插件根目录也能加载，但那是
+  较新版本才支持的行为，标准位置兼容性最好
+- 插件根目录的 `.mcp.json` 会被自动发现并在 plugin 启用时启动 server
+- `.claude-plugin/marketplace.json` 只描述 marketplace 与插件条目；
+  plugin 自身的组件（skills / mcpServers）必须在插件目录里，不能只写进条目
 """
 from __future__ import annotations
 
@@ -35,6 +42,13 @@ SKILL_DESCRIPTION = (
 PLUGIN_CATEGORY = "research"
 PLUGIN_HOMEPAGE = "https://sciverse.space"
 PLUGIN_OWNER_NAME = "Sciverse Platform Team"
+PLUGIN_REPOSITORY = "https://github.com/opendatalab/Sciverse-Agent-Tools"
+PLUGIN_LICENSE = "Apache-2.0"
+PLUGIN_KEYWORDS = ["research", "academic", "papers", "literature", "retrieval", "mcp"]
+MARKETPLACE_DESCRIPTION = (
+    "Sciverse academic retrieval tools for Claude Code: a retrieval skill plus "
+    "the sciverse-mcp-server MCP server, installed together."
+)
 
 
 def _en_description(node: dict) -> str:
@@ -81,11 +95,23 @@ def generate_skill_md(openapi_path: Path) -> str:
         "This skill is a thin wrapper around the `sciverse-mcp-server` MCP server.",
         "Before invoking any tool, ensure the server is reachable:",
         "",
-        "1. Install the MCP server:",
+        "1. Obtain an API token from https://sciverse.space and export it",
+        "   (or run `sciverse auth login`, which saves it to",
+        "   `~/.sciverse/credentials.json`):",
+        "",
+        "   ```bash",
+        "   export SCIVERSE_API_TOKEN=sv-...",
+        "   ```",
+        "",
+        "2. Install the MCP server:",
         "",
         "   ```bash",
         "   npm install -g sciverse-mcp-server",
         "   ```",
+        "",
+        "   When installed as a Claude Code plugin, the bundle already ships",
+        "   `.mcp.json`, so the server starts with the plugin and step 2 is",
+        "   optional — only the token has to be provided.",
         "",
         "   Or add it to your project `.mcp.json`:",
         "",
@@ -99,12 +125,6 @@ def generate_skill_md(openapi_path: Path) -> str:
         "       }",
         "     }",
         "   }",
-        "   ```",
-        "",
-        "2. Obtain an API token from https://sciverse.space and export it:",
-        "",
-        "   ```bash",
-        "   export SCIVERSE_API_TOKEN=sv-...",
         "   ```",
         "",
         "Optional: set `SCIVERSE_BASE_URL` to override the default API base URL",
@@ -291,12 +311,54 @@ def generate_skill_md(openapi_path: Path) -> str:
     return "\n".join(lines)
 
 
+def generate_plugin_json(openapi_path: Path) -> dict:
+    """生成插件清单 (`skill-claude-code/.claude-plugin/plugin.json`)。
+
+    Claude Code 以插件目录里的这份清单为准来发现组件；marketplace 条目
+    只负责"从哪里取"，不承载 skills / mcpServers。
+    """
+    spec = load_openapi(openapi_path)
+    version = spec["info"].get("x-sciverse-tools-version", spec["info"]["version"])
+
+    return {
+        "name": SKILL_NAME,
+        "displayName": "Sciverse",
+        "version": version,
+        "description": SKILL_DESCRIPTION,
+        "author": {
+            "name": PLUGIN_OWNER_NAME,
+            "url": PLUGIN_HOMEPAGE,
+        },
+        "homepage": PLUGIN_HOMEPAGE,
+        "repository": PLUGIN_REPOSITORY,
+        "license": PLUGIN_LICENSE,
+        "keywords": PLUGIN_KEYWORDS,
+    }
+
+
+def generate_mcp_json() -> dict:
+    """生成插件自带的 MCP server 定义 (`skill-claude-code/.mcp.json`)。
+
+    不写 `env`：Claude Code 启动 plugin MCP server 时会继承父进程环境，
+    `SCIVERSE_API_TOKEN` / `SCIVERSE_BASE_URL` 直接透传；未设置时 server
+    回落到 `~/.sciverse/credentials.json`。写空 env 反而会覆盖掉继承值。
+    """
+    return {
+        "mcpServers": {
+            SKILL_NAME: {
+                "command": "npx",
+                "args": ["-y", "sciverse-mcp-server"],
+            }
+        }
+    }
+
+
 def generate_marketplace_json(openapi_path: Path) -> dict:
     """生成 Plugin Marketplace 入口 (`.claude-plugin/marketplace.json`)。
 
-    Marketplace schema 目前为社区惯例，最小可用字段：
-    - name / owner / plugins[]
-    - 每个 plugin: name / description / version / source / category
+    字段以 Claude Code marketplace schema 为准：
+    - name / owner{name,url} / description / plugins[]
+    - 每个 plugin: name / description / version / source / category / homepage
     """
     spec = load_openapi(openapi_path)
     version = spec["info"].get("x-sciverse-tools-version", spec["info"]["version"])
@@ -305,8 +367,9 @@ def generate_marketplace_json(openapi_path: Path) -> dict:
         "name": SKILL_NAME,
         "owner": {
             "name": PLUGIN_OWNER_NAME,
-            "homepage": PLUGIN_HOMEPAGE,
+            "url": PLUGIN_HOMEPAGE,
         },
+        "description": MARKETPLACE_DESCRIPTION,
         "plugins": [
             {
                 "name": SKILL_NAME,
@@ -324,15 +387,33 @@ def main() -> None:
     root = Path(__file__).resolve().parent.parent
     openapi = root / "openapi.yaml"
 
-    # 1. 生成 SKILL.md
-    skill_dir = root / "skill-claude-code"
+    # 1. 生成 SKILL.md（标准布局 skills/<name>/SKILL.md）
+    plugin_root = root / "skill-claude-code"
+    skill_dir = plugin_root / "skills" / SKILL_NAME
     skill_dir.mkdir(parents=True, exist_ok=True)
     skill_md = generate_skill_md(openapi)
     skill_md_path = skill_dir / "SKILL.md"
     skill_md_path.write_text(skill_md, encoding="utf-8")
     print(f"wrote {skill_md_path.relative_to(root)}")
 
-    # 2. 生成 plugin marketplace 入口
+    # 2. 生成插件清单 + 自带 MCP server 定义
+    plugin_dir = plugin_root / ".claude-plugin"
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+    plugin_path = plugin_dir / "plugin.json"
+    plugin_path.write_text(
+        json.dumps(generate_plugin_json(openapi), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"wrote {plugin_path.relative_to(root)}")
+
+    mcp_path = plugin_root / ".mcp.json"
+    mcp_path.write_text(
+        json.dumps(generate_mcp_json(), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"wrote {mcp_path.relative_to(root)}")
+
+    # 3. 生成 plugin marketplace 入口
     marketplace_dir = root / ".claude-plugin"
     marketplace_dir.mkdir(parents=True, exist_ok=True)
     marketplace = generate_marketplace_json(openapi)

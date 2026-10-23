@@ -43,17 +43,20 @@ claude mcp add sciverse --env SCIVERSE_API_TOKEN=sv-xxx -- npx -y sciverse-mcp-s
 }
 ```
 
-## 接入方式 B：官方 Agent Skill（额外提供 prompt 编排）
+## 接入方式 B：Plugin（skill + MCP server 一起装）
 
-仓库已派生 Claude Code 官方 skill 形态（[`skill-claude-code/`](../../skill-claude-code/)），它假设 MCP server 已通过方式 A 安装。
+`skill-claude-code/` 是一个完整的 Claude Code 插件目录：`skills/sciverse/SKILL.md`
+是 skill，`.mcp.json` 声明 `sciverse` MCP server，`.claude-plugin/plugin.json`
+是插件清单。
 
 ```bash
-# 用户级
-cp -r path/to/Sciverse-Agent-Tools/skill-claude-code ~/.claude/skills/sciverse
-
-# 或 Plugin Marketplace 一键安装
+# Plugin Marketplace 一键安装（skill 与 MCP server 都装好，无需再做方式 A）
 claude /plugin marketplace add https://github.com/opendatalab/Sciverse-Agent-Tools
 claude /plugin install sciverse
+
+# 或手动拷进 skills 目录：带 .claude-plugin/plugin.json，同样按插件加载，
+# MCP server 也会一并生效（只需配 token）
+cp -r path/to/Sciverse-Agent-Tools/skill-claude-code ~/.claude/skills/sciverse
 ```
 
 ## 验证
@@ -64,7 +67,10 @@ claude /plugin install sciverse
 /mcp
 ```
 
-应能看到 `sciverse` 列出四个 tool：`list_catalog`、`search_papers`、`semantic_search`、`read_content`。
+插件安装的情况下应能看到 `sciverse`（来源标注 `plugin:sciverse`）已连接，
+并提供 `list_catalog`、`search_papers`、`semantic_search`、`list_paper_relations`、
+`read_content`、`get_resource` 六个 tool。用 `claude plugin details sciverse`
+可确认组件清单里 Skills 1 个、MCP servers 1 个。
 
 Hello-world prompt（RAG 流程）：
 

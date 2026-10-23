@@ -2,8 +2,9 @@
   "name": "sciverse",
   "owner": {
     "name": "Sciverse Platform Team",
-    "homepage": "https://sciverse.space"
+    "url": "https://sciverse.space"
   },
+  "description": "Sciverse academic retrieval tools for Claude Code: a retrieval skill plus the sciverse-mcp-server MCP server, installed together.",
   "plugins": [
     {
       "name": "sciverse",
