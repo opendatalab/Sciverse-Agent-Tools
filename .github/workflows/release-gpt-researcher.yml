@@ -1,0 +1,84 @@
+name: Release GPT Researcher plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version (must match packages/gpt-researcher/pyproject.toml)
+        required: true
+        type: string
+      publish:
+        description: Upload to PyPI (false only builds and tests)
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gpt-researcher-plugin
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+    defaults:
+      run:
+        working-directory: packages/gpt-researcher
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - name: Check release version and branch
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          if [ "$PUBLISH" = "true" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "PyPI uploads must run from main."
+            exit 1
+          fi
+          uv python install 3.12
+          uv venv --python 3.12 /tmp/gptr-release
+          /tmp/gptr-release/bin/python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          if version != os.environ["EXPECTED_VERSION"]:
+              raise SystemExit("Requested version does not match pyproject.toml")
+          print(f"Validated version: {version}")
+          PY
+      - name: Install build tools
+        run: uv pip install --python /tmp/gptr-release/bin/python build twine pytest ruff
+      - name: Lint, build and check distributions
+        run: |
+          /tmp/gptr-release/bin/ruff check src tests
+          /tmp/gptr-release/bin/ruff format --check src tests
+          /tmp/gptr-release/bin/python -m build
+          /tmp/gptr-release/bin/python -m twine check --strict dist/*
+      - name: Test the installed wheel
+        run: |
+          uv pip install --python /tmp/gptr-release/bin/python dist/*.whl
+          uv pip check --python /tmp/gptr-release/bin/python
+          /tmp/gptr-release/bin/python -m pytest tests -q
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gpt-researcher-sciverse-dist
+          path: packages/gpt-researcher/dist/*
+          if-no-files-found: error
+      - name: Upload to PyPI
+        if: ${{ inputs.publish }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_NON_INTERACTIVE: "1"
+          TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
+        run: |
+          if [ -z "$TWINE_PASSWORD" ]; then
+            echo "PYPI_API_TOKEN is not configured."
+            exit 1
+          fi
+          /tmp/gptr-release/bin/python -m twine upload --skip-existing dist/*

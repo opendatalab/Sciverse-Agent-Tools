@@ -72,5 +72,24 @@ uv pip install --python .venv/bin/python dist/gpt_researcher_sciverse-0.1.0-py3-
 
 Tests mock only Sciverse HTTP requests; discovery, configuration and upstream
 content routing use the installed GPT Researcher. No API token or LLM call is
-needed for tests. This package is not connected to the repository's automated
+needed for tests. This package is not connected to the repository's automatic main-branch
 publishing workflow; building and installing it locally does not publish it.
+
+## Manual release
+
+The **Release GPT Researcher plugin** GitHub Actions workflow reuses the existing
+`PYPI_API_TOKEN` repository secret and the `sciverse` package's build/twine upload
+approach. It does not publish the SDK, MCP server or ClawHub package.
+
+1. Update this package's version and merge the reviewed changes.
+2. Run the workflow on `main`, enter the exact package version, and leave
+   `publish=false` for a build/test-only run with downloadable distributions.
+3. When ready to release, run with `publish=true`. This uploads only after lint,
+   distribution checks and installed-wheel tests pass. No tag is created.
+
+The PyPI token must permit creating/uploading `gpt-researcher-sciverse`; a token
+scoped only to the existing `sciverse` project cannot publish this new project.
+The workflow reuses the secret, but its project scope cannot be verified without
+PyPI account access. `SCIVERSE_API_TOKEN` is a separate, local Sciverse API token
+used for optional live acceptance testing; it is not used for PyPI uploads and
+is not required by the offline CI suite.
