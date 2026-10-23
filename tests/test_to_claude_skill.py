@@ -3,13 +3,15 @@
 与 test_to_clawhub_skill 平行，但断言点不同：
 - frontmatter 严格只允许 `name` 和 `description`（不含 ClawHub 那些字段）
 - description 须包含明确的 trigger 关键词
-- marketplace.json 结构正确
+- plugin.json / .mcp.json / marketplace.json 结构正确（三者缺一即装不上）
 """
 from pathlib import Path
 
 from generators.to_claude_skill import (
     SKILL_NAME,
     generate_marketplace_json,
+    generate_mcp_json,
+    generate_plugin_json,
     generate_skill_md,
 )
 
@@ -89,12 +91,42 @@ def test_marketplace_json_structure():
     m = generate_marketplace_json(REAL_OPENAPI)
     assert m["name"] == SKILL_NAME
     assert "owner" in m and isinstance(m["owner"], dict)
+    # 缺 description 会被 `claude plugin validate --strict` 判为 warning
+    assert m.get("description"), "marketplace must carry a description"
     assert "plugins" in m and isinstance(m["plugins"], list)
     assert len(m["plugins"]) >= 1
     plugin = m["plugins"][0]
     for key in ("name", "description", "version", "source"):
         assert key in plugin, f"plugin entry missing key: {key}"
+    # 相对 source 必须以 ./ 开头，否则 Claude Code 拒绝安装
+    assert plugin["source"].startswith("./")
     assert plugin["source"].endswith("skill-claude-code")
+
+
+def test_marketplace_owner_uses_url_not_homepage():
+    """marketplace schema 的 owner 用 url；homepage 是未知字段。"""
+    m = generate_marketplace_json(REAL_OPENAPI)
+    assert "url" in m["owner"]
+    assert "homepage" not in m["owner"]
+
+
+def test_plugin_json_structure():
+    """插件目录必须有 .claude-plugin/plugin.json，否则 skill 与 MCP 都不被发现。"""
+    p = generate_plugin_json(REAL_OPENAPI)
+    assert p["name"] == SKILL_NAME
+    for key in ("version", "description", "author", "license"):
+        assert p.get(key), f"plugin.json missing {key}"
+    assert p["author"]["name"]
+
+
+def test_mcp_json_declares_sciverse_server():
+    """插件自带的 .mcp.json 让 server 随插件启动，无需用户手写配置。"""
+    m = generate_mcp_json()
+    server = m["mcpServers"][SKILL_NAME]
+    assert server["command"] == "npx"
+    assert "sciverse-mcp-server" in server["args"]
+    # 不写 env：写空值会覆盖继承来的 SCIVERSE_API_TOKEN
+    assert "env" not in server
 
 
 def test_marketplace_version_pulled_from_openapi():

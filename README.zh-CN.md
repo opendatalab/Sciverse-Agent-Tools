@@ -45,14 +45,16 @@ claude /plugin marketplace add https://github.com/opendatalab/Sciverse-Agent-Too
 claude /plugin install sciverse
 ```
 
-skill 依赖 `sciverse-mcp-server`，装一次即可：
+这一步同时装上检索 skill 和插件自带的 `sciverse` MCP server，不需要再单独
+`npm install`。server 启动时按顺序读取 token：先看 `SCIVERSE_API_TOKEN`
+环境变量，再回落到 `~/.sciverse/credentials.json`：
 
 ```bash
-npm install -g sciverse-mcp-server
 export SCIVERSE_API_TOKEN=sv-...     # 从 https://sciverse.space 控制台申请
 ```
 
-或在项目 `.mcp.json` 里声明 MCP server —— 详见 [`skill-claude-code/SKILL.md`](./skill-claude-code/SKILL.md)。
+或者不用插件，在项目 `.mcp.json` 里自行声明 MCP server —— 详见
+[`skill-claude-code/skills/sciverse/SKILL.md`](./skill-claude-code/skills/sciverse/SKILL.md)。
 
 ## 5 分钟接入 —— 其他 MCP-capable agent
 

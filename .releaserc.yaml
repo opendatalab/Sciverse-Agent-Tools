@@ -57,7 +57,9 @@ plugins:
         - packages/mcp/package-lock.json
         - clawhub/manifest.json
         - clawhub/SKILL.md
-        - skill-claude-code/SKILL.md
+        - skill-claude-code/skills/sciverse/SKILL.md
+        - skill-claude-code/.claude-plugin/plugin.json
+        - skill-claude-code/.mcp.json
         - .claude-plugin/marketplace.json
         # dist/* 只列需要 commit 进 git 的派生产物：
         # web-skill.tgz / web-skill/ 仅作为 GitHub Release 资产 + build 中间产物，

@@ -27,11 +27,23 @@ the underlying index only covers peer-reviewed and preprint scientific literatur
 This skill is a thin wrapper around the `sciverse-mcp-server` MCP server.
 Before invoking any tool, ensure the server is reachable:
 
-1. Install the MCP server:
+1. Obtain an API token from https://sciverse.space and export it
+   (or run `sciverse auth login`, which saves it to
+   `~/.sciverse/credentials.json`):
+
+   ```bash
+   export SCIVERSE_API_TOKEN=sv-...
+   ```
+
+2. Install the MCP server:
 
    ```bash
    npm install -g sciverse-mcp-server
    ```
+
+   When installed as a Claude Code plugin, the bundle already ships
+   `.mcp.json`, so the server starts with the plugin and step 2 is
+   optional — only the token has to be provided.
 
    Or add it to your project `.mcp.json`:
 
@@ -40,17 +52,10 @@ Before invoking any tool, ensure the server is reachable:
      "mcpServers": {
        "sciverse": {
          "command": "npx",
-         "args": ["-y", "sciverse-mcp-server"],
-         "env": { "SCIVERSE_API_TOKEN": "${SCIVERSE_API_TOKEN}" }
+         "args": ["-y", "sciverse-mcp-server"]
        }
      }
    }
-   ```
-
-2. Obtain an API token from https://sciverse.space and export it:
-
-   ```bash
-   export SCIVERSE_API_TOKEN=sv-...
    ```
 
 Optional: set `SCIVERSE_BASE_URL` to override the default API base URL
@@ -270,7 +275,7 @@ read_content(doc_id, offset) → markdown with ![Figure 3](dt=xxx/p_yyy/f3.png)
 Set `collection` to `authors` or `sources` (default `papers`) to search
 those entities instead of papers. Each collection has its own fields —
 call `list_catalog(collection="authors")` first. Use `filters_advanced` +
-`sort_advanced`; the papers convenience fields (`authors`/`year_from`/...) 
+`sort_advanced`; the papers convenience fields (`authors`/`year_from`/...)
 apply to papers only.
 
 ```

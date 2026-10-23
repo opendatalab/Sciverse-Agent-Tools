@@ -119,7 +119,9 @@ jobs:
                packages/python/pyproject.toml \
                clawhub/SKILL.md \
                clawhub/manifest.json \
-               skill-claude-code/SKILL.md \
+               skill-claude-code/skills/sciverse/SKILL.md \
+               skill-claude-code/.claude-plugin/plugin.json \
+               skill-claude-code/.mcp.json \
                .claude-plugin/marketplace.json; then
             echo ""
             echo "派生产物未同步 — 请本地跑 bash scripts/build.sh 后提交"

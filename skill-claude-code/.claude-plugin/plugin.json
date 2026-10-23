@@ -1,0 +1,21 @@
+{
+  "name": "sciverse",
+  "displayName": "Sciverse",
+  "version": "0.14.3",
+  "description": "Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides six Sciverse tools (search_papers, semantic_search, list_catalog, list_paper_relations, read_content, get_resource) via the sciverse-mcp-server MCP server.",
+  "author": {
+    "name": "Sciverse Platform Team",
+    "url": "https://sciverse.space"
+  },
+  "homepage": "https://sciverse.space",
+  "repository": "https://github.com/opendatalab/Sciverse-Agent-Tools",
+  "license": "Apache-2.0",
+  "keywords": [
+    "research",
+    "academic",
+    "papers",
+    "literature",
+    "retrieval",
+    "mcp"
+  ]
+}

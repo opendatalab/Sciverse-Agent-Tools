@@ -10,5 +10,7 @@ packages/typescript/src/types.ts -merge
 packages/typescript/src/tools.ts -merge
 clawhub/SKILL.md -merge
 clawhub/manifest.json -merge
-skill-claude-code/SKILL.md -merge
-.claude-plugin/marketplace.json -merge
+skill-claude-code/skills/sciverse/SKILL.md -merge text eol=lf
+skill-claude-code/.claude-plugin/plugin.json -merge text eol=lf
+skill-claude-code/.mcp.json -merge text eol=lf
+.claude-plugin/marketplace.json -merge text eol=lf
