@@ -134,13 +134,13 @@ def _cmd_search(args: argparse.Namespace) -> int:
     async def _do(client):
         kwargs = {}
         if args.query: kwargs["query"] = args.query
-        if args.authors: kwargs["authors"] = args.authors
+        if args.authors is not None: kwargs["authors"] = args.authors
         if args.year_from is not None: kwargs["year_from"] = args.year_from
         if args.year_to is not None: kwargs["year_to"] = args.year_to
-        if args.journals: kwargs["journals"] = args.journals
-        if args.subjects: kwargs["subjects"] = args.subjects
-        if args.title_contains: kwargs["title_contains"] = args.title_contains
-        if args.abstract_contains: kwargs["abstract_contains"] = args.abstract_contains
+        if args.journals is not None: kwargs["journals"] = args.journals
+        if args.subjects is not None: kwargs["subjects"] = args.subjects
+        if args.title_contains is not None: kwargs["title_contains"] = args.title_contains
+        if args.abstract_contains is not None: kwargs["abstract_contains"] = args.abstract_contains
         kwargs["sort_by_year"] = args.sort_by_year  # auto/none 的语义由 client 统一解析
         if getattr(args, "collection", "papers") != "papers": kwargs["collection"] = args.collection
         if args.freshness_boost != "NONE": kwargs["freshness_boost"] = args.freshness_boost
@@ -150,6 +150,18 @@ def _cmd_search(args: argparse.Namespace) -> int:
         kwargs["page_size"] = args.page_size
         r = await client.search_papers(**kwargs)
         _print_json(r)
+
+    return _run_with_client(_do)
+
+
+def _cmd_search_metadata(args: argparse.Namespace) -> int:
+    async def _do(client):
+        fields = (
+            "query", "collection", "filters", "sort", "fields", "page", "page_size",
+            "cursor", "facets", "freshness_boost", "impact_boost", "language_affinity",
+        )
+        kwargs = {field: getattr(args, field) for field in fields if getattr(args, field) is not None}
+        _print_json(await client.search_metadata(**kwargs))
 
     return _run_with_client(_do)
 
@@ -178,7 +190,7 @@ def _cmd_paper_relations(args: argparse.Namespace) -> int:
 def _cmd_content(args: argparse.Namespace) -> int:
     async def _do(client):
         r = await client.read_content(
-            doc_id=args.doc_id, offset=args.offset, limit=args.limit,
+            doc_id=args.doc_id, collection=args.collection, offset=args.offset, limit=args.limit,
         )
         _print_json(r)
 
@@ -258,22 +270,22 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     search.add_argument("query", nargs="?", default="", help="全文 BM25 关键词（可选）")
-    search.add_argument("--collection", choices=["papers", "authors", "sources"], default="papers",
-                        help="实体集合（默认 papers）。authors/sources 的高级字段过滤请用 SDK 的 "
+    search.add_argument("--collection", choices=["papers", "authors", "sources", "patents"], default="papers",
+                        help="实体集合（默认 papers）。authors/sources/patents 的高级字段过滤请用 SDK 的 "
                              "filters_advanced / sort_advanced；CLI 主要支持 query 与 catalog 自省")
-    search.add_argument("--author", "--authors", action="append", default=[], dest="authors",
+    search.add_argument("--author", "--authors", action="append", default=None, dest="authors",
                         help="作者名（可多次传，任一命中即可）")
     search.add_argument("--year-from", type=int, dest="year_from", help="起始年（含）")
     search.add_argument("--year-to", type=int, dest="year_to", help="结束年（含）")
-    search.add_argument("--journal", "--journals", action="append", default=[], dest="journals",
+    search.add_argument("--journal", "--journals", action="append", default=None, dest="journals",
                         help="期刊名（可多次传）")
-    search.add_argument("--subject", "--subjects", action="append", default=[], dest="subjects",
+    search.add_argument("--subject", "--subjects", action="append", default=None, dest="subjects",
                         help="学科分类（可多次传）")
     search.add_argument("--title-contains", dest="title_contains", help="标题包含关键词")
     search.add_argument("--abstract-contains", dest="abstract_contains", help="摘要包含关键词")
     search.add_argument("--sort-by-year", choices=["auto", "desc", "asc", "none"], default="auto",
                         dest="sort_by_year",
-                        help="按年份排序，默认 auto（有 query 走相关性、纯筛选按年降序）；"
+                        help="按年份排序，默认 auto（有 query 走相关性、papers 纯筛选按年降序）；"
                              "query+desc 会让相关性失效，求「相关且新」用 --freshness-boost")
     search.add_argument("--freshness-boost", choices=["NONE", "MILD", "STRONG"], default="NONE",
                         dest="freshness_boost",
@@ -288,6 +300,20 @@ def _build_parser() -> argparse.ArgumentParser:
     search.add_argument("--page-size", type=int, default=10, dest="page_size",
                         help="每页数量，默认 10，上限 50")
     search.set_defaults(func=_cmd_search)
+
+    metadata = sub.add_parser(
+        "search-metadata", help="多实体 canonical 元数据检索（不添加默认排序）", allow_abbrev=False,
+    )
+    metadata.add_argument("query", nargs="?", help="全文关键词（可选）")
+    metadata.add_argument("--collection", choices=["papers", "authors", "sources", "patents"], default="papers")
+    for field in ("filters", "sort", "fields", "facets"):
+        metadata.add_argument(f"--{field}", type=json.loads, help=f"canonical {field} JSON 数组")
+    metadata.add_argument("--page", type=int)
+    metadata.add_argument("--page-size", type=int, help="每页数量（省略使用服务端默认值）")
+    metadata.add_argument("--cursor", help="上页返回的 next_cursor")
+    for field in ("freshness-boost", "impact-boost", "language-affinity"):
+        metadata.add_argument(f"--{field}", choices=["NONE", "MILD", "STRONG"])
+    metadata.set_defaults(func=_cmd_search_metadata)
 
     sem = sub.add_parser(
         "semantic-search",
@@ -315,6 +341,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     content = sub.add_parser("content", help="读文献原文 Unicode 码点区间（GET /content）")
     content.add_argument("doc_id", help="文献 ID（来自 search / semantic-search hits）")
+    content.add_argument("--collection", choices=["papers", "patents"], default="papers")
     content.add_argument("--offset", type=int, default=0, help="起始 Unicode 码点偏移，默认 0")
     content.add_argument("--limit", type=int, default=4096,
                          help="读取的 Unicode 码点数，默认 4096，服务端上限 524288")
@@ -324,7 +351,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "catalog",
         help="字段 introspection（GET /meta-catalog），第一次接入时建议先调",
     )
-    cat.add_argument("--collection", choices=["papers", "authors", "sources"], default="papers",
+    cat.add_argument("--collection", choices=["papers", "authors", "sources", "patents"], default="papers",
                      help="字段目录所属实体集合（默认 papers）")
     cat.add_argument("--samples", action="store_true",
                      help="拉枚举字段的取值样本（首次 OpenSearch terms agg，~几百 ms；之后 24h 缓存）")

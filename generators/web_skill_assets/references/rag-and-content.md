@@ -34,7 +34,7 @@ Common arguments:
   hard guarantee. Exception: `doc_id` (64-char lowercase sha256, value or
   list) is the one HARD filter — hits never leave the given set, an explicit
   empty list returns empty hits, up to 1000 deduped ids per request
-  (400 `SCOPE_TOO_LARGE` beyond). Build the set from `search_papers` results
+  (400 `SCOPE_TOO_LARGE` beyond). Build the set from `search_metadata` results
   to scope semantic search to a candidate corpus. Example:
 
   ```bash
@@ -51,7 +51,7 @@ expand the original source text.
 
 ## read_content
 
-Use to read source text around a `doc_id` and byte `offset`, usually from a
+Use to read source text around a `doc_id` and Unicode code-point `offset`, usually from a
 `semantic_search` hit.
 
 ```bash
@@ -65,7 +65,7 @@ node scripts/read_content.mjs '{
 Common arguments:
 
 - `doc_id`: required.
-- `offset`: Unicode code-point offset (pass a `semantic_search` hit's `offset` as-is); default 0. Always send it — the backend returns the whole document when it is omitted.
+- `offset`: Unicode code-point offset (pass a `semantic_search` hit's `offset` as-is); default 0. The script sends this default explicitly.
 - `limit`: number of Unicode code points; default 4096, server cap 524288 (silently clamped). Keep it at or below 16384 in LLM contexts.
 
 When `more` is true, continue with `next_offset` only if the user needs more
@@ -87,3 +87,12 @@ node scripts/get_resource.mjs '{
 
 The script returns base64 image data. If the host agent can display images,
 decode and show it; otherwise summarize the returned MIME type and file source.
+
+## Collection boundaries
+
+`semantic_search` remains paper-only. `read_content` accepts `collection` of
+`papers` or `patents` (default `papers`), with default `offset=0`, `limit=4096`.
+Offsets and limits count Unicode code points. Pass `collection="patents"`
+explicitly when reading a patent; page using `next_offset`.
+`get_resource` primarily retrieves paper figure/table images; it does not add
+ZIP download support.

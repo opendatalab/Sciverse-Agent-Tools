@@ -42,7 +42,7 @@ codex
 搜索 Hinton 在 2020-2023 年发表的论文，按年份倒序。
 ```
 
-Codex 应当调用 `search_papers` 完成结构化检索。
+Codex 应当调用 `search_metadata` 完成结构化检索。
 
 或测试 RAG 链路：
 
@@ -58,7 +58,7 @@ Codex 应当调用 `search_papers` 完成结构化检索。
 列出 Sciverse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA 的 Nature 期刊论文。
 ```
 
-会先调 `list_catalog` 学 schema，再构造 `search_papers` filter。
+会先调 `list_catalog` 学 schema，再构造 `search_metadata` filter。
 
 ## 常见问题
 
@@ -68,7 +68,7 @@ Codex 应当调用 `search_papers` 完成结构化检索。
 | 第一次启动卡很久 | `npx -y` 在拉包，正常；之后会走缓存，或预装 `npm install -g sciverse-mcp-server` 改 command 为 `sciverse-mcp` |
 | 401 / `INVALID_API_KEY` | Token 失效或没正确传到 env |
 | TOML 解析报错 | TOML 对引号敏感，env 必须是 `{ KEY = "value" }`，不是 JSON 风格的 `{"KEY":"value"}` |
-| 看不到 sciverse 工具被调 | 把 prompt 写明确："use the sciverse search_papers tool to ..." |
+| 看不到 sciverse 工具被调 | 把 prompt 写明确："use the sciverse search_metadata tool to ..." |
 
 ## 进阶
 

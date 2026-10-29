@@ -24,6 +24,7 @@ uv run datamodel-codegen \
     --target-python-version 3.10 \
     --use-schema-description \
     --field-constraints \
+    --set-default-enum-member \
     --use-double-quotes \
     --disable-timestamp
 echo "wrote packages/python/src/sciverse/types.py"

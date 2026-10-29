@@ -66,19 +66,10 @@ def test_index_json_lists_all_skill_files_sorted(tmp_path):
     assert files == sorted(files), f"files not sorted: {files}"
 
 
-def test_skill_description_matches_legacy_source():
-    """C1 regression：SKILL_DESCRIPTION 必须与 platform-console source 真值字符串相等。
-
-    Phase B 完成后 platform-console fork 会被删除，本测试随之 skip。
-    """
-    if not LEGACY_SOURCE_INDEX.exists():
-        pytest.skip("legacy source removed after Phase B")
-    source = json.loads(LEGACY_SOURCE_INDEX.read_text(encoding="utf-8"))
-    expected = source["skills"][0]["description"]
-    assert SKILL_DESCRIPTION == expected, (
-        "SKILL_DESCRIPTION drifted from platform-console source; "
-        "若 source 真的改了，请同步更新 to_web_skill.SKILL_DESCRIPTION。"
-    )
+def test_skill_description_matches_generated_frontmatter(tmp_path):
+    generate(FIXTURE, tmp_path)
+    skill = tmp_path / ".well-known/agent-skills/sciverse/SKILL.md"
+    assert f"description: {SKILL_DESCRIPTION}\n" in skill.read_text()
 
 
 def test_generate_is_idempotent_with_stale_files(tmp_path):
@@ -144,7 +135,7 @@ def test_scripts_count_matches_source(tmp_path):
     scripts = out / ".well-known" / "agent-skills" / "sciverse" / "scripts"
     mjs_files = sorted(p.name for p in scripts.glob("*.mjs"))
     assert mjs_files == sorted([
-        "_common.mjs", "search_papers.mjs", "semantic_search.mjs",
+        "_common.mjs", "search_papers.mjs", "search_metadata.mjs", "semantic_search.mjs",
         "read_content.mjs", "get_resource.mjs", "list_catalog.mjs",
         "list_paper_relations.mjs",
     ])

@@ -51,6 +51,8 @@ function enDescription(op) {
 
 const tools = [];
 const endpoints = {};
+const legacyTools = [];
+const legacyEndpoints = {};
 for (const [path, methods] of Object.entries(spec.paths)) {
   for (const [method, op] of Object.entries(methods)) {
     if (method !== "get" && method !== "post") continue;
@@ -61,6 +63,11 @@ for (const [path, methods] of Object.entries(spec.paths)) {
       inputSchema: getRequestSchema(op),
     });
     endpoints[id] = { method: method.toUpperCase(), path };
+    const legacy = op["x-legacy-operation"];
+    if (legacy) {
+      legacyTools.push({ name: legacy.operationId, description: enDescription(legacy), inputSchema: getRequestSchema(legacy) });
+      legacyEndpoints[legacy.operationId] = { method: method.toUpperCase(), path };
+    }
   }
 }
 
@@ -77,6 +84,9 @@ export interface ToolDef {
   description: string;
   inputSchema: Record<string, unknown>;
 }
+
+export const LEGACY_TOOLS: ToolDef[] = ${JSON.stringify(legacyTools, null, 2)};
+export const LEGACY_ENDPOINTS: Record<string, { method: "GET" | "POST"; path: string }> = ${JSON.stringify(legacyEndpoints, null, 2)};
 
 export const TOOLS: ToolDef[] = ${JSON.stringify(tools, null, 2)};
 

@@ -153,6 +153,8 @@ jobs:
                packages/typescript/package.json \
                packages/python/pyproject.toml \
                clawhub/SKILL.md \
+               clawhub/scripts \
+               skill-claude-code/skills/sciverse/scripts \
                clawhub/manifest.json \
                skill-claude-code/skills/sciverse/SKILL.md \
                skill-claude-code/.claude-plugin/plugin.json \

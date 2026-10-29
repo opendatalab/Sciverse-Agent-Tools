@@ -9,7 +9,7 @@ With these tools, you can easily empower your AI agents to search for academic p
 | Tool | Use case |
 |---|---|
 | `list_catalog` | Discover available fields, filter operators, and enum sample values (per `collection`) |
-| `search_papers` | Structured metadata search over papers / authors / sources (set `collection`) |
+| `search_metadata` | Structured metadata search over papers / authors / sources / patents (set `collection`) |
 | `semantic_search` | Natural-language semantic search over passages (RAG) |
 | `list_paper_relations` | Paginate a paper's full citations / references / related works (by `unique_id`) |
 | `read_content` | Fetch a character-range slice of the source document (offsets in Unicode code points; extend RAG context) |
@@ -240,7 +240,7 @@ sciverse auth status                                 # show resolved token sourc
 sciverse auth logout                                 # delete credentials file
 
 sciverse catalog --samples                           # list_catalog with enum samples
-sciverse search --author Hinton --year-from 2020     # search_papers
+sciverse search-metadata --collection papers --filters '[{"field":"author","operator":"FILTER_OP_IN","value":["Hinton"]},{"field":"publication_published_year","operator":"FILTER_OP_GTE","value":2020}]'      # search_metadata
 sciverse semantic-search "attention mechanism"       # semantic_search
 sciverse paper-relations <unique_id> --relation CITATIONS   # list_paper_relations
 sciverse content <doc_id> --offset 0 --limit 4096    # read_content
@@ -258,7 +258,7 @@ async with AgentToolsClient() as c:           # token from env / credentials fil
     # 1. Field discovery — call once when first integrating
     await c.list_catalog(include_sample_values=True)
     # 2. Structured search
-    await c.search_papers(query=..., authors=[...], year_from=2020, page_size=10)
+    await c.search_metadata(query="transformer", filters=[{"field": "author", "operator": "FILTER_OP_IN", "value": ["Hinton"]}, {"field": "publication_published_year", "operator": "FILTER_OP_GTE", "value": 2020}], page_size=10)
     # 3. Semantic search (mode: fast / balanced / quality)
     await c.semantic_search(query=..., top_k=10, mode="balanced")
     # 4. A paper's full citations / references / related works
@@ -289,7 +289,7 @@ finally:
 ```ts
 const c = new AgentToolsClient();   // token from env
 await c.listCatalog({ include_sample_values: true });
-await c.searchPapers({ query, authors, year_from, page_size });
+await c.searchMetadata({ query, collection: "papers", filters: [{ field: "author", operator: "FILTER_OP_IN", value: ["Hinton"] }, { field: "publication_published_year", operator: "FILTER_OP_GTE", value: 2020 }], page_size });
 await c.semanticSearch({ query, top_k, mode });
 await c.listPaperRelations({ unique_id, relation: "CITATIONS", page_size: 25 });
 await c.readContent({ doc_id, offset, limit });
@@ -311,7 +311,7 @@ const r = await c.semanticSearch({ query: "x" }) as SemanticSearchResp;
 ```python
 import httpx
 try:
-    await c.search_papers(query="x")
+    await c.search_metadata(query="x")
 except httpx.HTTPStatusError as e:
     print(e.response.status_code, e.response.text)
 ```
@@ -320,7 +320,7 @@ except httpx.HTTPStatusError as e:
 
 ```ts
 try {
-  await c.searchPapers({ query: "x" });
+  await c.searchMetadata({ query: "x" });
 } catch (e) {
   console.error(e);  // "Sciverse API 401: {...}"
 }
@@ -347,10 +347,10 @@ semantic_search(query="...")
 
 ```
 list_catalog(include_sample_values=true)         # first time only — learn fields + enum values
-    └─▶ search_papers(filters_advanced=[...])    # construct precise filters
+    └─▶ search_metadata(filters=[...])    # construct precise filters
 ```
 
-> Each `search_papers` hit carries **`is_content_accessible`** (bool): `true` only when the paper has fulltext **and** you're authorized — check it before `read_content(doc_id, …)`. Filterable fields keep growing (topic hierarchy, MeSH, identifier lookups, …); call `list_catalog` for the authoritative field list instead of hardcoding.
+> Each `search_metadata(collection="papers")` hit carries **`is_content_accessible`** (bool): `true` only when the paper has fulltext **and** you're authorized — check it before `read_content(doc_id, …)`. Filterable fields keep growing (topic hierarchy, MeSH, identifier lookups, …); call `list_catalog` for the authoritative field list instead of hardcoding.
 
 **3. Scoped semantic search (constrained corpus):**
 
@@ -366,7 +366,7 @@ For a hard guarantee, or meta-only constraints (fwci, citation graph, complex
 hit-sets), scope by `doc_id` — a hard recall-time filter:
 
 ```
-search_papers(..., fields=["doc_id","title"])    # only fulltext papers carry doc_id
+search_metadata(..., fields=["doc_id","title"])    # only fulltext papers carry doc_id
     └─▶ semantic_search(query="...", filters={"doc_id": [...]})
             # hits never leave the set; empty list → empty hits (never global);
             # up to 1000 deduped ids (400 SCOPE_TOO_LARGE beyond)
@@ -406,3 +406,5 @@ See [`clawhub/README.md`](./clawhub/README.md) for details.
 ## License
 
 Apache-2.0
+
+Multi-entity upgrade and compatibility: see the [migration guide](docs/migration-multi-entity.md).

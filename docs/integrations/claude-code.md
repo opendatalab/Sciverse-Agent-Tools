@@ -68,7 +68,7 @@ cp -r path/to/Sciverse-Agent-Tools/skill-claude-code ~/.claude/skills/sciverse
 ```
 
 插件安装的情况下应能看到 `sciverse`（来源标注 `plugin:sciverse`）已连接，
-并提供 `list_catalog`、`search_papers`、`semantic_search`、`list_paper_relations`、
+并提供 `list_catalog`、`search_metadata`、`semantic_search`、`list_paper_relations`、
 `read_content`、`get_resource` 六个 tool。用 `claude plugin details sciverse`
 可确认组件清单里 Skills 1 个、MCP servers 1 个。
 
@@ -84,7 +84,7 @@ Hello-world prompt（RAG 流程）：
 先列出 Sciverse 有哪些字段、access_oa_status 有哪些可能值，然后帮我找 2024 年以来 gold OA 状态的 Nature 期刊论文。
 ```
 
-Claude 会先调 `list_catalog(include_sample_values=true)` 拿到字段表 + 枚举值样本，再用 `search_papers` 精确构造 filter。
+Claude 会先调 `list_catalog(include_sample_values=true)` 拿到字段表 + 枚举值样本，再用 `search_metadata` 精确构造 filter。
 
 Claude 会依次调用 `semantic_search` → `read_content` 完成 RAG 回答。
 

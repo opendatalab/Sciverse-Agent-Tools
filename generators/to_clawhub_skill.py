@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 from ._common import get_request_schema, iter_operations, load_openapi
+from .to_web_skill import copy_scripts
 
 
 # ClawHub 命名约定（2026-05 迁到 @sciverse 组织后）：
@@ -21,7 +22,7 @@ from ._common import get_request_schema, iter_operations, load_openapi
 SKILL_NAME = "sciverse-academic-retrieval"
 SKILL_SLUG = "academic-retrieval"
 SKILL_DESCRIPTION_EN = (
-    "Sciverse academic paper retrieval: structured metadata search, semantic "
+    "Sciverse academic paper retrieval: metadata search across papers, authors, sources and patents, semantic "
     "chunk retrieval for RAG, and character-range content reading (offsets in "
     "Unicode code points). For agent "
     "workflows that need citation-grade scientific literature."
@@ -151,6 +152,12 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
         "    └─▶ fields[].name + sample_values  →  precise filter construction",
         "```",
         "",
+        "`search_metadata` uses canonical `filters` / `sort`; no convenience parameters.",
+        "`semantic_search` remains paper-only. `read_content` supports papers/patents",
+        "(default papers), offset=0 and limit=4096. Pass patents explicitly for patent text.",
+        "`get_resource` primarily fetches paper images; ZIP downloads are not supported.",
+        "MCP: set SCIVERSE_ENABLE_LEGACY_TOOLS=true and restart to restore the legacy tool list.",
+        "",
         "## Recipes",
         "",
         "**RAG flow (natural-language Q&A):**",
@@ -163,15 +170,14 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
         "**Lookup by DOI:**",
         "",
         "```",
-        "search_papers(filters_advanced=[{field: \"doi\", value: \"10.1038/...\"}])",
+        "search_metadata(filters=[{field: \"doi\", operator: \"FILTER_OP_EQ\", value: \"10.1038/...\"}])",
         "```",
         "",
         "**OA + year filter:**",
         "",
         "```",
-        "search_papers(",
-        "    year_from=2024,",
-        "    filters_advanced=[{field: \"access_is_oa\", value: \"true\"}]",
+        "search_metadata(",
+        "    filters=[{field: \"publication_published_year\", operator: \"FILTER_OP_GTE\", value: 2024}, {field: \"access_is_oa\", operator: \"FILTER_OP_EQ\", value: true}]",
         ")",
         "```",
         "",
@@ -190,7 +196,7 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
         "complex hit-sets), scope by doc_id — a HARD recall-time filter:",
         "",
         "```",
-        "search_papers(..., fields=[\"doc_id\",\"title\"]) → collect doc_id",
+        "search_metadata(..., fields=[\"doc_id\",\"title\"]) → collect doc_id",
         "semantic_search(query=..., filters={\"doc_id\": [...]})",
         "    # hits never leave the set; empty list → empty hits (never global);",
         "    # up to 1000 deduped ids (400 SCOPE_TOO_LARGE beyond)",
@@ -202,32 +208,30 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
         "`language_affinity`, each NONE/MILD/STRONG) reorder fuzzy-search",
         "results while keeping relevance. Only effective when `query` is",
         "non-empty; ignored when any sort is set; shallow paging while active.",
-        "`sort_by_year` defaults to `auto` (relevance with `query`, newest-first",
-        "for pure filters); `query`+`desc` is an anti-pattern — it degrades the",
-        "query to a match filter and disables all boosts; use `freshness_boost`.",
+        "No implicit year sort is added. Explicit sort disables soft boosts.",
         "",
         "```",
-        "search_papers(query=\"large language model\", freshness_boost=\"STRONG\")",
+        "search_metadata(query=\"large language model\", freshness_boost=\"STRONG\")",
         "    # recent first: STRONG=3-year decay, MILD=10-year",
-        "search_papers(query=\"protein folding\", impact_boost=\"MILD\")",
+        "search_metadata(query=\"protein folding\", impact_boost=\"MILD\")",
         "    # highly-cited float up (bounded; zero-citation stays neutral)",
-        "search_papers(query=\"深度学习\", language_affinity=\"MILD\")",
+        "search_metadata(query=\"深度学习\", language_affinity=\"MILD\")",
         "    # demote (never exclude) results not in the query's language;",
         "    # unknown-language papers stay neutral; hard-exclude via",
-        "    # filters_advanced=[{\"field\":\"language\",\"value\":\"zh\"}]",
+        "    # filters=[{\"field\":\"language\",\"operator\":\"FILTER_OP_EQ\",\"value\":\"zh\"}]",
         "```",
         "",
         "**Search authors or journals (collection):**",
         "",
-        "Set `collection` to `authors` or `sources` (default `papers`) to search",
+        "Set `collection` to `authors`, `sources`, or `patents` (default `papers`) to search",
         "those entities. Each has its own fields — call",
-        "list_catalog(collection=\"authors\") first; use filters_advanced +",
-        "sort_advanced (papers convenience fields apply to papers only).",
+        "list_catalog(collection=\"authors\") first; use filters +",
+        "sort with the selected collection fields.",
         "",
         "```",
-        "search_papers(collection=\"authors\",",
-        "    filters_advanced=[{field: \"summary_stats.h_index\", operator: \"FILTER_OP_GTE\", value: 50}],",
-        "    sort_advanced=[{field: \"cited_by_count\", order: \"SORT_ORDER_DESC\"}])",
+        "search_metadata(collection=\"authors\",",
+        "    filters=[{field: \"summary_stats.h_index\", operator: \"FILTER_OP_GTE\", value: 50}],",
+        "    sort=[{field: \"cited_by_count\", order: \"SORT_ORDER_DESC\"}])",
         "```",
         "",
         "**Fetch a paper figure / image:**",
@@ -242,7 +246,7 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
         "",
         "**Reading fulltext (check first):**",
         "",
-        "Each search_papers hit carries `is_content_accessible` (bool): `true` only when",
+        "Each papers result from search_metadata carries `is_content_accessible` (bool): `true` only when",
         "the paper has fulltext AND the caller is authorized. Check it before",
         "`read_content(doc_id, ...)` — `false` means no fulltext or no read permission.",
         "",
@@ -260,6 +264,7 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
 def main() -> None:
     root = Path(__file__).resolve().parent.parent
     openapi = root / "openapi.yaml"
+    copy_scripts(root / "clawhub" / "scripts", channel="openclaw")
     manifest_path = root / "clawhub" / "manifest.json"
     skill_md_path = root / "clawhub" / "SKILL.md"
 

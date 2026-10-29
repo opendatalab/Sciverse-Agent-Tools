@@ -9,10 +9,10 @@
 | 工具 | 适用场景 |
 |---|---|
 | `list_catalog` | 字段 introspection：按 `collection` 返回可用字段、过滤算子、enum 取值样本 |
-| `search_papers` | 按结构化条件查 papers / authors / sources（用 `collection` 切换实体集合） |
+| `search_metadata` | 按结构化条件查 papers / authors / sources / patents（用 `collection` 切换实体集合） |
 | `semantic_search` | 自然语言语义检索片段（RAG 用） |
 | `list_paper_relations` | 分页取某篇论文完整的 citations / references / related works（按 `unique_id`） |
-| `read_content` | 取原文字节切片（扩展 RAG 上下文） |
+| `read_content` | 读取 papers / patents 原文字符切片（默认 papers，offset=0、limit=4096） |
 | `get_resource` | 取 `read_content` Markdown 中引用的图片/表格字节流 |
 
 六个工具共用同一套 Bearer Token 鉴权，并在 Python SDK / TypeScript SDK / MCP server / Claude Code skill / ClawHub skill 中以一致接口暴露。canonical schema 见 [`openapi.yaml`](./openapi.yaml)。
@@ -237,7 +237,7 @@ sciverse auth status                                 # 显示当前 token 来源
 sciverse auth logout                                 # 删凭据文件
 
 sciverse catalog --samples                           # list_catalog 带 enum 样本
-sciverse search --author Hinton --year-from 2020     # search_papers
+sciverse search-metadata --collection papers --filters '[{"field":"author","operator":"FILTER_OP_IN","value":["Hinton"]},{"field":"publication_published_year","operator":"FILTER_OP_GTE","value":2020}]'      # search_metadata
 sciverse semantic-search "注意力机制"                  # semantic_search
 sciverse paper-relations <unique_id> --relation CITATIONS   # list_paper_relations
 sciverse content <doc_id> --offset 0 --limit 4096    # read_content
@@ -255,7 +255,7 @@ async with AgentToolsClient() as c:           # token 从 env / 凭据文件读
     # 1. 字段 introspection —— 首次接入调一次
     await c.list_catalog(include_sample_values=True)
     # 2. 结构化检索
-    await c.search_papers(query=..., authors=[...], year_from=2020, page_size=10)
+    await c.search_metadata(query="transformer", filters=[{"field": "author", "operator": "FILTER_OP_IN", "value": ["Hinton"]}, {"field": "publication_published_year", "operator": "FILTER_OP_GTE", "value": 2020}], page_size=10)
     # 3. 语义检索（mode: fast / balanced / quality）
     await c.semantic_search(query=..., top_k=10, mode="balanced")
     # 4. 某篇论文完整的 citations / references / related works
@@ -286,7 +286,7 @@ finally:
 ```ts
 const c = new AgentToolsClient();   // 自动读 SCIVERSE_API_TOKEN
 await c.listCatalog({ include_sample_values: true });
-await c.searchPapers({ query, authors, year_from, page_size });
+await c.searchMetadata({ query, collection: "papers", filters: [{ field: "author", operator: "FILTER_OP_IN", value: ["Hinton"] }, { field: "publication_published_year", operator: "FILTER_OP_GTE", value: 2020 }], page_size });
 await c.semanticSearch({ query, top_k, mode });
 await c.readContent({ doc_id, offset, limit });
 const { bytes, mimeType } = await c.getResource({ file_name });
@@ -307,7 +307,7 @@ const r = await c.semanticSearch({ query: "x" }) as SemanticSearchResp;
 ```python
 import httpx
 try:
-    await c.search_papers(query="x")
+    await c.search_metadata(query="x")
 except httpx.HTTPStatusError as e:
     print(e.response.status_code, e.response.text)
 ```
@@ -316,7 +316,7 @@ except httpx.HTTPStatusError as e:
 
 ```ts
 try {
-  await c.searchPapers({ query: "x" });
+  await c.searchMetadata({ query: "x" });
 } catch (e) {
   console.error(e);  // "Sciverse API 401: {...}"
 }
@@ -343,15 +343,15 @@ semantic_search(query="...")
 
 ```
 list_catalog(include_sample_values=true)         # 首次接入调一次 —— 学习字段名和 enum 取值
-    └─▶ search_papers(filters_advanced=[...])    # 构造精确过滤条件
+    └─▶ search_metadata(filters=[...])    # 构造精确过滤条件
 ```
 
-> 每条 `search_papers` 结果都带 **`is_content_accessible`**（bool）：仅当论文有全文**且**调用方有读权限时为 `true`——调 `read_content(doc_id, …)` 前先看它。可过滤字段持续增加（主题层级、MeSH、标识符互查……），字段清单以 `list_catalog` 为准，勿硬编码。
+> 每条 `search_metadata(collection="papers")` 结果都带 **`is_content_accessible`**（bool）：仅当论文有全文**且**调用方有读权限时为 `true`——调 `read_content(doc_id, …)` 前先看它。可过滤字段持续增加（主题层级、MeSH、标识符互查……），字段清单以 `list_catalog` 为准，勿硬编码。
 
 **3. 结构化预筛 + 语义精化（hybrid）：**
 
 ```
-search_papers(authors=[...], year_from=2020)     # 先按结构化条件缩窄
+search_metadata(filters=[{"field":"author","operator":"FILTER_OP_IN","value":["Hinton"]},{"field":"publication_published_year","operator":"FILTER_OP_GTE","value":2020}])     # 先按结构化条件缩窄
     └─▶ hits[].doc_id 列表
             └─▶ semantic_search(query="...")     # 在缩窄结果里语义检索
                                                  # （需自行二次过滤 ——
@@ -392,3 +392,5 @@ clawhub install sciverse
 ## License
 
 Apache-2.0
+
+多实体升级与兼容说明：见 [迁移指南](docs/migration-multi-entity.md)。

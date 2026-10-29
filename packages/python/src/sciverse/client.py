@@ -17,6 +17,9 @@ _PASSTHROUGH = (
     "query", "page", "page_size", "fields", "collection",
     "freshness_boost", "impact_boost", "language_affinity",
 )
+_COLLECTIONS = ("papers", "authors", "sources", "patents")
+_METADATA_FIELDS = frozenset((*_PASSTHROUGH, "filters", "sort", "cursor", "facets"))
+_PAPER_FILTERS = ("title_contains", "abstract_contains", "authors", "year_from", "year_to", "journals", "subjects")
 # 三个软加权档位共用同一枚举值域（NONE/MILD/STRONG）。
 _BOOST_FIELDS = ("freshness_boost", "impact_boost", "language_affinity")
 _BOOST_VALUES = frozenset({"NONE", "MILD", "STRONG"})
@@ -34,6 +37,15 @@ _SEMANTIC_MODE_MAP: dict[str, dict[str, Any]] = {
 def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
     """把 search_papers 高级参数映射为 platform-console MetaSearchBody 接受的
     canonical 格式（query/filters/sort/fields/page/page_size）。"""
+    collection = kwargs.get("collection", "papers")
+    if not isinstance(collection, str) or collection not in _COLLECTIONS:
+        raise ValueError(f"collection must be one of {_COLLECTIONS}")
+    if collection != "papers":
+        paper_args = [key for key in _PAPER_FILTERS if kwargs.get(key) is not None]
+        if kwargs.get("sort_by_year") in ("asc", "desc"):
+            paper_args.append("sort_by_year")
+        if paper_args:
+            raise ValueError(f"{', '.join(paper_args)} only supported for collection papers")
     out: dict[str, Any] = {}
     filters: list[dict[str, Any]] = []
     sort: list[dict[str, str]] = []
@@ -75,14 +87,14 @@ def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
 
     # sort_by_year 默认 auto：有 query（或 sort_advanced）时不加年份排序——保 BM25
     # 相关性且软加权可用（显式排序会让 query 退化为命中过滤、boost 全失效）；
-    # 纯结构化筛选时按年份降序（后端默认序是 unique_id，实质乱序）。
+    # papers 纯结构化筛选时按年份降序（后端默认序是 unique_id，实质乱序）。
     sort_by_year = kwargs.get("sort_by_year") or "auto"
     if sort_by_year not in _SORT_BY_YEAR_VALUES:
         raise ValueError(
             f"sort_by_year must be one of {sorted(_SORT_BY_YEAR_VALUES)}, got {sort_by_year!r}"
         )
     if sort_by_year == "auto":
-        sort_by_year = "none" if (out.get("query") or kwargs.get("sort_advanced")) else "desc"
+        sort_by_year = "none" if (collection != "papers" or out.get("query") or kwargs.get("sort_advanced")) else "desc"
     if sort_by_year != "none":
         sort.append({
             "field": "publication_published_year",
@@ -152,6 +164,48 @@ class AgentToolsClient:
     async def aclose(self) -> None:
         await self._client.aclose()
 
+    async def search_metadata(self, **kwargs: Any) -> dict[str, Any]:
+        """POST /meta-search：canonical 多实体检索，默认 papers，不注入排序。
+
+        接受 query、collection、filters、sort、fields、page、page_size、cursor、
+        facets 及三个 boost 参数；字段能力以对应 collection 的 catalog 为准。
+        分页默认值由服务端决定；filters / sort 原样传递，不补操作符或排序方向。
+        """
+        unknown = kwargs.keys() - _METADATA_FIELDS
+        if unknown:
+            raise ValueError(f"Unknown search_metadata parameters: {', '.join(sorted(unknown))}")
+        body = {key: value for key, value in kwargs.items() if value is not None}
+        body.setdefault("collection", "papers")
+        if body["collection"] not in _COLLECTIONS:
+            raise ValueError(f"collection must be one of {_COLLECTIONS}")
+        for field in _BOOST_FIELDS:
+            if field in body and (not isinstance(body[field], str) or body[field] not in _BOOST_VALUES):
+                raise ValueError(f"{field} must be one of {sorted(_BOOST_VALUES)}")
+        for field, allowed_keys in (
+            ("filters", {"field", "operator", "value"}),
+            ("sort", {"field", "order"}),
+            ("facets", {"field", "size"}),
+        ):
+            if field not in body:
+                continue
+            entries = body[field]
+            if not isinstance(entries, list):
+                raise ValueError(f"{field} must be an array")
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    raise ValueError(f"{field} entries must be objects")
+                unknown_keys = entry.keys() - allowed_keys
+                if unknown_keys:
+                    names = ", ".join(sorted(str(key) for key in unknown_keys))
+                    raise ValueError(f"Unknown {field} entry parameters: {names}")
+                if field == "facets":
+                    size = entry.get("size", 10)
+                    if type(size) is not int or not 1 <= size <= 50:
+                        raise ValueError("facets size must be an integer between 1 and 50")
+        resp = await self._client.post("/meta-search", json=body)
+        resp.raise_for_status()
+        return resp.json()
+
     async def search_papers(self, **kwargs: Any) -> dict[str, Any]:
         """对应 POST /meta-search。
 
@@ -164,7 +218,8 @@ class AgentToolsClient:
         - subjects  → filter subjects IN
         - filters_advanced  → 直接拼到 filters 列表
         - sort_by_year  → 按年份排序（auto/desc/asc/none，默认 auto）。auto = 有 query
-          时不排序（保 BM25 相关性与软加权）、纯结构化筛选时年份降序。
+          时不排序（保 BM25 相关性与软加权）、papers 纯结构化筛选时年份降序。
+          非 papers 不自动按年份排序，且不接受论文便捷筛选及显式 asc/desc。
           勿用 query+desc 求「相关且新」——那会退化为命中过滤，应改用 freshness_boost。
         - freshness_boost  → 模糊搜索新鲜度加权（NONE/MILD/STRONG，默认 NONE）。
           仅 query 非空时生效；传排序时被忽略（硬排优先）。
@@ -231,7 +286,7 @@ class AgentToolsClient:
 
         返回字段 catalog：每个字段的名称 / 类型 / filterable / sortable / default_returned /
         描述 / 适用 FilterOperator，外加 enum-like 字段的样本值（include_sample_values=True 时）。
-        collection 指定实体集合（papers 默认 / authors / sources），各 collection 字段集不同。
+        collection 指定实体集合（papers 默认 / authors / sources / patents），各 collection 字段集不同。
         Agent 第一次接触 Sciverse 或碰到字段不确定时建议先调一次再构造 search_papers。
         """
         params: dict[str, str] = {"include_sample_values": str(include_sample_values).lower()}
@@ -243,9 +298,11 @@ class AgentToolsClient:
         resp.raise_for_status()
         return resp.json()
 
-    async def read_content(self, *, doc_id: str, offset: int = 0, limit: int = 4096) -> dict[str, Any]:
-        """对应 GET /content。"""
-        params = {"doc_id": doc_id, "offset": offset, "limit": limit}
+    async def read_content(self, *, doc_id: str, collection: str = "papers", offset: int = 0, limit: int = 4096) -> dict[str, Any]:
+        """对应 GET /content，支持 papers（默认）和 patents。"""
+        if collection not in ("papers", "patents"):
+            raise ValueError("collection must be papers or patents")
+        params = {"doc_id": doc_id, "collection": collection, "offset": offset, "limit": limit}
         resp = await self._client.get("/content", params=params)
         resp.raise_for_status()
         return resp.json()

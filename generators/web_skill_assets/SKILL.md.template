@@ -1,6 +1,6 @@
 ---
 name: sciverse
-description: Retrieve citation-grade academic literature from Sciverse. Use when an agent needs structured paper metadata search, semantic paper chunk retrieval for RAG, source text expansion around a paper offset, or figure/table image fetching from scientific papers. Prefer this skill for peer-reviewed and preprint literature tasks that require doc_id/title citations and reproducible retrieval steps.
+description: Retrieve academic paper, author, source, and patent metadata from Sciverse. Use search_metadata with canonical filters and sort, semantic_search for paper chunks, read_content for papers or patents, and get_resource for paper images.
 ---
 
 # Sciverse
@@ -14,7 +14,7 @@ tool protocol. Keep answers grounded in returned `doc_id`, title, and excerpts.
 - Need setup, environment variables, script invocation rules, or exit codes:
   read [references/runtime.md](references/runtime.md).
 - Need author/year/journal/DOI/field filtering, schema discovery, metadata
-  search, or author / journal (source) entity search via `collection`: read
+  search, or author / journal (source) / patent entity search via `collection`: read
   [references/search-tools.md](references/search-tools.md).
 - Need RAG chunks, source text expansion, or paper figures/tables: read
   [references/rag-and-content.md](references/rag-and-content.md).
@@ -24,8 +24,8 @@ tool protocol. Keep answers grounded in returned `doc_id`, title, and excerpts.
 ## Default Workflow
 
 1. For ambiguous field names or enum values, call `list_catalog` first.
-2. For natural-language research questions, start with `semantic_search`.
-3. For structured discovery, use `search_papers`.
+2. For natural-language paper research questions, start with `semantic_search`.
+3. For structured discovery, use `search_metadata`.
 4. For promising chunks, expand context with `read_content`.
 5. For figures or tables referenced by Markdown image placeholders, use
    `get_resource`.
@@ -38,3 +38,6 @@ tool protocol. Keep answers grounded in returned `doc_id`, title, and excerpts.
   uncertain.
 - Run bundled scripts from this skill directory, or use absolute paths to the
   scripts.
+
+`read_content` supports papers/patents (default papers), offset=0, limit=4096.
+Always set collection explicitly for patent reading. Semantic search remains paper-only.

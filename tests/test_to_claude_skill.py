@@ -67,7 +67,7 @@ def test_description_has_trigger_keywords():
 
 def test_skill_md_lists_all_three_tools():
     md = generate_skill_md(REAL_OPENAPI)
-    for op_id in ("search_papers", "semantic_search", "read_content"):
+    for op_id in ("search_metadata", "semantic_search", "read_content"):
         assert f"### {op_id}" in md, f"missing tool section {op_id}"
 
 

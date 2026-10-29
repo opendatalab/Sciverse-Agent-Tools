@@ -48,7 +48,7 @@ Cascade 会调用 `semantic_search` → `read_content` 完成 RAG 回答。
 列出 Sciverse 有哪些字段、access_oa_status 取值，然后找 2024 年以来 gold OA 的 Nature 期刊论文。
 ```
 
-agent 会先调 `list_catalog` 学 schema 再构造 `search_papers` filter。
+agent 会先调 `list_catalog` 学 schema 再构造 `search_metadata` filter。
 
 ## 常见问题
 

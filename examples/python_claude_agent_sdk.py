@@ -35,7 +35,7 @@ async def main() -> None:
         # 显式允许 sciverse 暴露的 3 个 tool；默认 Claude Code 会请求确认，
         # agent 场景下用 allowed_tools 跳过 prompt。
         allowed_tools=[
-            "mcp__sciverse__search_papers",
+            "mcp__sciverse__search_metadata",
             "mcp__sciverse__semantic_search",
             "mcp__sciverse__read_content",
         ],

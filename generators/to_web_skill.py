@@ -21,13 +21,7 @@ from pathlib import Path
 
 ASSETS = Path(__file__).parent / "web_skill_assets"
 SKILL_DIR_RELATIVE = Path(".well-known/agent-skills/sciverse")
-SKILL_DESCRIPTION = (
-    "Retrieve citation-grade academic literature from Sciverse. "
-    "Use when an agent needs structured paper metadata search, semantic paper chunk retrieval "
-    "for RAG, source text expansion around a paper offset, or figure/table image fetching "
-    "from scientific papers. Prefer this skill for peer-reviewed and preprint literature tasks "
-    "that require doc_id/title citations and reproducible retrieval steps."
-)
+SKILL_DESCRIPTION = 'Retrieve academic paper, author, source, and patent metadata from Sciverse. Use search_metadata with canonical filters and sort, semantic_search for paper chunks, read_content for papers or patents, and get_resource for paper images.'
 
 
 def _copy_static(out_root: Path) -> None:
@@ -58,10 +52,21 @@ def _copy_static(out_root: Path) -> None:
         shutil.copy(tmpl, agents_dst / tmpl.name.removesuffix(".template"))
 
     # scripts/ 字节级 copy（source 已是 web brand 的成品：callSciverse / fetchSciverseResource / CHANNEL="skills" 等）
-    scripts_dst = skill_root / "scripts"
-    scripts_dst.mkdir(exist_ok=True)
-    for mjs in sorted((ASSETS / "scripts").glob("*.mjs")):
-        shutil.copy(mjs, scripts_dst / mjs.name)
+    copy_scripts(skill_root / "scripts")
+
+
+def copy_scripts(scripts_dst: Path, *, channel: str = "skills") -> None:
+    """打包共享脚本；ClawHub 旧入口保留 canonical 透传，不套用 web 便捷转换。"""
+    scripts_dst.mkdir(parents=True, exist_ok=True)
+    for source in sorted((ASSETS / "scripts").glob("*.mjs")):
+        if channel == "openclaw" and source.name == "search_papers.mjs":
+            source = ASSETS / "compat" / "openclaw" / "search_papers.mjs.template"
+        content = source.read_text(encoding="utf-8")
+        if source.name == "_common.mjs":
+            content = content.replace('const CHANNEL = "skills";', f'const CHANNEL = {json.dumps(channel)};')
+        target = scripts_dst / source.name.removesuffix(".template")
+        target.write_text(content, encoding="utf-8")
+        shutil.copymode(source, target)
 
 
 def _write_index(out_root: Path) -> None:
