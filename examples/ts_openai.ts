@@ -19,7 +19,7 @@ const openai = new OpenAI();
 
 const dispatch: Record<string, (args: any) => Promise<any>> = {
   list_catalog: (a) => sv.listCatalog(a),
-  search_papers: (a) => sv.searchPapers(a),
+  search_metadata: (a) => sv.searchMetadata(a),
   semantic_search: (a) => sv.semanticSearch(a),
   read_content: (a) => sv.readContent(a),
   get_resource: async (a) => {

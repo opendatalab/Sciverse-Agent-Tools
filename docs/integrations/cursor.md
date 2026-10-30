@@ -55,7 +55,7 @@ Hello-world prompt（Composer agent mode）：
 先列出 Sciverse 有哪些字段、access_oa_status 有哪些可能值，然后帮我找 2024 年以来 gold OA 状态的 Nature 期刊论文。
 ```
 
-agent 会先调 `list_catalog(include_sample_values=true)` 拿到字段表 + 枚举值样本，再用 `search_papers` 精确构造 filter。
+agent 会先调 `list_catalog(include_sample_values=true)` 拿到字段表 + 枚举值样本，再用 `search_metadata` 精确构造 filter。
 
 Cursor 应当连续调用 `semantic_search` → `read_content`，把结果整合成答复。
 

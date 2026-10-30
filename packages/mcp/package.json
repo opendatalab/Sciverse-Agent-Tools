@@ -1,7 +1,7 @@
 {
   "name": "sciverse-mcp-server",
   "version": "0.15.1",
-  "description": "Sciverse MCP server — exposes academic paper retrieval (search_papers / semantic_search / read_content) to MCP-compatible coding agents (Claude Code, Cursor, Codex CLI, Windsurf, ...).",
+  "description": "Sciverse MCP server — metadata search across papers, patents, authors and sources, paper semantic retrieval and document content reading.",
   "license": "Apache-2.0",
   "homepage": "https://github.com/opendatalab/Sciverse-Agent-Tools/tree/main/packages/mcp",
   "repository": {

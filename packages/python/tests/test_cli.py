@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+import respx
 
 from sciverse.cli import main
 
@@ -146,7 +147,7 @@ def test_content(logged_in, capsys):
         code = main(["content", "p_xxx", "--offset", "100", "--limit", "1024"])
     assert code == 0
     kw = inst.read_content.call_args.kwargs
-    assert kw == {"doc_id": "p_xxx", "offset": 100, "limit": 1024}
+    assert kw == {"doc_id": "p_xxx", "offset": 100, "limit": 1024, "collection": "papers"}
 
 
 def test_catalog_without_samples(logged_in, capsys):
@@ -185,3 +186,80 @@ def test_search_without_login_returns_2(tmp_home, capsys):
     assert code == 2
     err = capsys.readouterr().err
     assert "未找到 Sciverse API Token" in err
+
+
+@pytest.fixture
+def api_env(monkeypatch):
+    monkeypatch.setenv("SCIVERSE_API_TOKEN", "t")
+    monkeypatch.setenv("SCIVERSE_BASE_URL", "https://api.example")
+
+
+@respx.mock
+@pytest.mark.parametrize("collection", ["papers", "authors", "sources", "patents"])
+def test_metadata_cli_canonical_request(api_env, capsys, collection):
+    route = respx.post("https://api.example/meta-search").respond(200, json={"hits": []})
+    assert main([
+        "search-metadata", "x", "--collection", collection,
+        "--filters", '[{"field":"unique_id","operator":"FILTER_OP_EQ","value":"x"}]',
+        "--sort", '[{"field":"unique_id","order":"SORT_ORDER_ASC"}]',
+        "--fields", '["unique_id"]', "--facets", '[{"field":"language","size":50}]',
+        "--cursor", "opaque", "--page", "1", "--page-size", "5",
+        "--freshness-boost", "MILD", "--impact-boost", "STRONG", "--language-affinity", "NONE",
+    ]) == 0
+    assert json.loads(route.calls.last.request.content) == {
+        "query": "x", "collection": collection,
+        "filters": [{"field": "unique_id", "operator": "FILTER_OP_EQ", "value": "x"}],
+        "sort": [{"field": "unique_id", "order": "SORT_ORDER_ASC"}],
+        "fields": ["unique_id"], "facets": [{"field": "language", "size": 50}], "cursor": "opaque",
+        "page": 1, "page_size": 5,
+        "freshness_boost": "MILD", "impact_boost": "STRONG", "language_affinity": "NONE",
+    }
+    assert json.loads(capsys.readouterr().out) == {"hits": []}
+
+
+@respx.mock
+def test_metadata_cli_defaults_no_sort(api_env):
+    route = respx.post("https://api.example/meta-search").respond(200, json={})
+    assert main(["search-metadata"]) == 0
+    body = json.loads(route.calls.last.request.content)
+    assert body == {"collection": "papers"}
+
+
+@pytest.mark.parametrize("args", [["--typo", "x"], ["--year-from", "2020"], ["--filters", "bad-json"]])
+def test_metadata_cli_rejects_invalid_arguments(args):
+    with pytest.raises(SystemExit) as exc:
+        main(["search-metadata", *args])
+    assert exc.value.code == 2
+
+
+@respx.mock
+@pytest.mark.parametrize("collection", ["authors", "sources", "patents"])
+def test_legacy_cli_nonpapers_no_year_sort(api_env, collection):
+    route = respx.post("https://api.example/meta-search").respond(200, json={})
+    assert main(["search", "--collection", collection]) == 0
+    assert "sort" not in json.loads(route.calls.last.request.content)
+
+
+@respx.mock
+@pytest.mark.parametrize("option, value", [("--year-from", "2020"), ("--title-contains", ""), ("--sort-by-year", "desc")])
+def test_legacy_cli_nonpapers_rejects_conveniences(api_env, capsys, option, value):
+    assert main(["search", "--collection", "authors", option, value]) == 1
+    assert option[2:].replace("-", "_") in capsys.readouterr().err
+    assert not respx.calls
+
+
+@respx.mock
+@pytest.mark.parametrize("collection", ["papers", "patents"])
+def test_content_cli_collection_defaults(api_env, collection):
+    route = respx.get("https://api.example/content").respond(200, json={})
+    assert main(["content", "x", "--collection", collection]) == 0
+    assert dict(route.calls.last.request.url.params) == {
+        "doc_id": "x", "collection": collection, "offset": "0", "limit": "4096",
+    }
+
+
+@respx.mock
+def test_catalog_cli_patents(api_env):
+    route = respx.get("https://api.example/meta-catalog").respond(200, json={"fields": []})
+    assert main(["catalog", "--collection", "patents", "--samples"]) == 0
+    assert dict(route.calls.last.request.url.params) == {"collection": "patents", "include_sample_values": "true"}

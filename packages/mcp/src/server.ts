@@ -8,7 +8,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import type { Config } from "./config.js";
-import { TOOLS, TOOLS_VERSION } from "./generated/tools.js";
+import { TOOLS, LEGACY_TOOLS, TOOLS_VERSION } from "./generated/tools.js";
 import { executeTool } from "./tools.js";
 
 export function createServer(config: Config): Server {
@@ -24,9 +24,10 @@ export function createServer(config: Config): Server {
     },
   );
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: TOOLS,
-  }));
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const tools = process.env.SCIVERSE_ENABLE_LEGACY_TOOLS === "true" ? [...TOOLS, ...LEGACY_TOOLS] : TOOLS;
+    return { tools };
+  });
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;

@@ -1,6 +1,6 @@
 """端到端示例：使用 Anthropic + Sciverse 五个 tool 跑一次 RAG。
 
-`ANTHROPIC_TOOLS` 包含全部 5 个 schema（list_catalog / search_papers /
+`ANTHROPIC_TOOLS` 包含全部 5 个 schema（list_catalog / search_metadata /
 semantic_search / read_content / get_resource），dispatch 表必须覆盖
 全部，否则模型一调没接的 tool 就会 fall through。
 
@@ -25,8 +25,8 @@ TOKEN = os.environ["SCIVERSE_API_TOKEN"]
 async def call_tool(client: AgentToolsClient, name: str, args: dict) -> dict:
     if name == "list_catalog":
         return await client.list_catalog(**args)
-    if name == "search_papers":
-        return await client.search_papers(**args)
+    if name == "search_metadata":
+        return await client.search_metadata(**args)
     if name == "semantic_search":
         return await client.semantic_search(**args)
     if name == "read_content":

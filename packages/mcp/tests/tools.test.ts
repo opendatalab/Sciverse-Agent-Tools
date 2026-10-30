@@ -27,10 +27,12 @@ function mockFetch(status: number, body: unknown): Captured[] {
 describe("executeTool", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", "true");
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("search_papers: 转换 agent-友好参数为 backend canonical filters", async () => {

@@ -7,20 +7,17 @@
 export interface paths {
   "/meta-search": {
     /**
-     * 按结构化条件检索学术文献元数据
-     * @description 按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。
-     * 适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。
-     * 不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。
-     * 返回：论文元数据列表，每条含 unique_id（始终存在）、doc_id（仅当有全文）、title、author、abstract、publication_venue_name_unified、publication_published_year 等。
+     * 检索论文、专利、作者与来源的元数据
+     * @description 按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、游标分页和 facets；默认不加隐式排序。论文正文与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。
      */
-    post: operations["search_papers"];
+    post: operations["search_metadata"];
   };
   "/agentic-search": {
     /**
      * 自然语言语义检索（RAG 用）
      * @description 自然语言语义检索，返回相关文献片段（chunk）用于 RAG 回答。
      * 适用：「Transformer 注意力机制如何工作？」「最新的蛋白质折叠预测方法有哪些？」
-     * 不适用：精确字段过滤 → search_papers；取完整原文 → read_content。
+     * 不适用：精确字段过滤 → search_metadata；取完整原文 → read_content。
      * 返回：相关 chunk 列表，每条含 chunk_id/doc_id/abstract/chunk/score/title/offset。
      * 典型链路：semantic_search → 选取 chunk → read_content(doc_id, offset)。
      */
@@ -29,13 +26,13 @@ export interface paths {
   "/meta-catalog": {
     /**
      * 列出所有可用字段、能否过滤/排序、枚举值样本
-     * @description 返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、
+     * @description 返回 search_metadata 所有可用字段的 catalog：字段名、类型、能否过滤/排序、
      * 是否默认返回、字段说明、FilterOperator 清单等。
      * 适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」
      * 「`metadata_type` 的合法取值是？」
-     * 不适用：实际查询文献，那是 search_papers / semantic_search 的事。
+     * 不适用：实际查询文献，那是 search_metadata / semantic_search 的事。
      * 典型用法：Agent 第一次接触 Sciverse 或碰到模糊字段需求时先调一次本接口，
-     * 把 schema 装进 working memory，后续精确构造 search_papers 的 filters。
+     * 把 schema 装进 working memory，后续精确构造 search_metadata 的 filters。
      * include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
      */
     get: operations["list_catalog"];
@@ -44,14 +41,14 @@ export interface paths {
     /**
      * 分页查一篇论文的引用/被引/相关工作列表
      * @description 分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
-     * （单篇最大 34 万条），在 search_papers 中**不可投影**，取这些列表只能用本接口。
+     * （单篇最大 34 万条），在 search_metadata 中**不可投影**，取这些列表只能用本接口。
      * 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
      * （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
      * 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
-     * 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+     * 典型链路：先 search_metadata / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
      * 两个上限（仅 CITATIONS 可能触发；REFERENCES/RELATED_WORKS 实测最大 11833/20 条）：
      * 关系数超 10000 返回 429；page×page_size 超 10000 返回 400。两种情况都改用
-     * search_papers 的 filters_advanced 传 references_unique_id 反查——可深翻页并任意排序。
+     * search_metadata 的 filters 传 references_unique_id 反查——可深翻页并任意排序。
      * total_count 为库内命中数（不含指向库外论文的边），与论文自身 citation_count 可能有 ±1% 差异。
      */
     post: operations["list_paper_relations"];
@@ -86,13 +83,110 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    SearchMetadataRequest: {
+      /** @description 返回字段，须为当前collection已授权且可投影字段；省略返回默认字段集与授权交集。 */
+      fields?: string[];
+      /**
+       * @description 实体集合；用 list_catalog 查看对应字段权限和能力。
+       * @default papers
+       * @enum {string}
+       */
+      collection?: "papers" | "authors" | "sources" | "patents";
+      /**
+       * @description BM25 关键词，匹配当前实体已授权的可检索字段；专利包含 invention_title、abstract、claims.claim_text。留空则纯靠结构化过滤。
+       * 普通关键词是宽松匹配（任一词命中、按相关性排序）。
+       *
+       * 也支持布尔检索式：全大写 AND / OR / NOT、括号分组、引号短语；优先级
+       * NOT > AND > OR，相邻词隐式 AND。例如
+       *   (histopathology OR pathology) AND ("deep learning" OR "machine learning") AND (prognosis OR survival)
+       * 布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。
+       * - query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。
+       * - 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 "OR"。
+       * - 引号需与运算符同时出现才生效：只写 "spread through air spaces" 不带运算符时
+       *   按普通关键词处理；写成 "spread through air spaces" AND lung 才是短语精确匹配。
+       * - 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。
+       */
+      query?: string;
+      /** @default 1 */
+      page?: number;
+      /**
+       * @description 每页条数。省略时为服务端默认 25（SDK / MCP 不注入默认值）；工具层上限 50。
+       * @default 25
+       */
+      page_size?: number;
+      /**
+       * @description 模糊搜索新鲜度加权：结果偏向新文献（仅 query 非空时生效；传排序
+       * （sort_by_year 非 none / sort_advanced）时被忽略，硬排优先）。
+       * MILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪
+       * 研究方向 / 追最新进展。与 impact_boost / language_affinity 可叠加
+       * （均为乘法因子）。boost 生效时为浅翻页：不产 next_cursor、不支持
+       * cursor 深翻页。
+       *
+       * @default NONE
+       * @enum {string}
+       */
+      freshness_boost?: "NONE" | "MILD" | "STRONG";
+      /**
+       * @description 模糊搜索影响力加权：高被引文献在保留相关性的前提下上浮（仅 query
+       * 非空时生效；传排序时被忽略）。MILD: 轻度上浮，相关性仍主导；
+       * STRONG: 明显偏向高被引。引用因子有界、零被引中性（不会归零）。
+       * 与 freshness_boost / language_affinity 可叠加；boost 生效时为浅翻页。
+       *
+       * @default NONE
+       * @enum {string}
+       */
+      impact_boost?: "NONE" | "MILD" | "STRONG";
+      /**
+       * @description 模糊搜索语言亲和加权：非 query 语言的结果降序、但不排除（仅 query
+       * 非空时生效；传排序时被忽略）。目标语言由服务端从 query 文本判定
+       * （假名→ja / 谚文→ko / 汉字→zh / 拉丁→en，其他书写系统不生效）；
+       * 语言未知的文献保持中性不降权。MILD: 非目标语言 ×0.5，跨语言强相关
+       * 结果仍可上浮；STRONG: ×0.2，几乎只看目标语言。与 freshness_boost /
+       * impact_boost 可叠加；boost 生效时为浅翻页。要硬排除某语言请改用
+       * filters_advanced 的 language 字段（如 {"field":"language","value":"en"}，
+       * 软硬两层语义不同：本参数只调序，filter 直接排除）。
+       *
+       * @default NONE
+       * @enum {string}
+       */
+      language_affinity?: "NONE" | "MILD" | "STRONG";
+      /** @description 按当前实体 catalog 的字段能力填写。 */
+      filters?: ({
+          field: string;
+          /**
+           * @description 过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
+           * @default FILTER_OP_EQ
+           * @enum {string}
+           */
+          operator: "FILTER_OP_EQ" | "FILTER_OP_NE" | "FILTER_OP_GT" | "FILTER_OP_GTE" | "FILTER_OP_LT" | "FILTER_OP_LTE" | "FILTER_OP_IN" | "FILTER_OP_NIN" | "FILTER_OP_CONTAINS" | "FILTER_OP_MATCH" | "FILTER_OP_MATCH_PHRASE";
+          value: unknown;
+        })[];
+      /** @description 按当前实体 catalog 的字段能力填写。 */
+      sort?: ({
+          field: string;
+          /**
+           * @default SORT_ORDER_DESC
+           * @enum {string}
+           */
+          order: "SORT_ORDER_DESC" | "SORT_ORDER_ASC";
+        })[];
+      /** @description 使用上页 next_cursor 原样续查，保持查询条件不变；不与 page>1 共用。 */
+      cursor?: string;
+      facets?: {
+          field: string;
+          /** @default 10 */
+          size?: number;
+        }[];
+    };
     SearchPapersRequest: {
+      /** @description 返回字段，须为当前collection已授权且可投影字段；省略返回默认字段集与授权交集。 */
+      fields?: string[];
       /**
        * @description 检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
        * @default papers
        * @enum {string}
        */
-      collection?: "papers" | "authors" | "sources";
+      collection?: "papers" | "authors" | "sources" | "patents";
       /**
        * @description BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。
        * 普通关键词是宽松匹配（任一词命中、按相关性排序）。
@@ -207,6 +301,32 @@ export interface components {
        * @default 25
        */
       page_size?: number;
+    };
+    SearchMetadataResponse: {
+      /** @description 实体元数据，字段受collection、投影和授权影响。专利无 is_content_accessible；作者/来源无正文句柄。 */
+      results: {
+          [key: string]: unknown;
+        }[];
+      /** @description 命中数，protobuf JSON 可能返回数字字符串；不是通过分页精确计数的保证。 */
+      total_count: number | string;
+      page: number;
+      page_size: number;
+      /** @description 总页数。 */
+      total_pages?: number;
+      /** @description 深翻页游标，为空表示无更多。page*page_size>10000 时必须改用 cursor（把此值回填到请求的 cursor）。 */
+      next_cursor?: string;
+      /**
+       * Format: float
+       * @description 检索耗时（毫秒）。
+       */
+      search_time_ms?: number;
+      /** @description 输入 query 的 token 数。 */
+      request_tokens?: number;
+      /** @description 输出结果文本字段的 token 数。 */
+      response_tokens?: number;
+      facets?: {
+          [key: string]: unknown;
+        }[];
     };
     SearchPapersResponse: {
       /** @description 命中论文列表（后端字段名为 results，非 hits）。 */
@@ -422,23 +542,20 @@ export type external = Record<string, never>;
 export interface operations {
 
   /**
-   * 按结构化条件检索学术文献元数据
-   * @description 按结构化条件检索学术文献元数据（标题、作者、期刊、年份、摘要等）。
-   * 适用：「查找 Hinton 在 2020-2023 年发表的论文」「找 Nature 上关于 CRISPR 的近期文献」。
-   * 不适用：自然语言问答检索 → 用 semantic_search；查全文片段 → 用 read_content。
-   * 返回：论文元数据列表，每条含 unique_id（始终存在）、doc_id（仅当有全文）、title、author、abstract、publication_venue_name_unified、publication_published_year 等。
+   * 检索论文、专利、作者与来源的元数据
+   * @description 按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、游标分页和 facets；默认不加隐式排序。论文正文与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。
    */
-  search_papers: {
+  search_metadata: {
     requestBody: {
       content: {
-        "application/json": components["schemas"]["SearchPapersRequest"];
+        "application/json": components["schemas"]["SearchMetadataRequest"];
       };
     };
     responses: {
       /** @description 检索结果 */
       200: {
         content: {
-          "application/json": components["schemas"]["SearchPapersResponse"];
+          "application/json": components["schemas"]["SearchMetadataResponse"];
         };
       };
       400: components["responses"]["BadRequest"];
@@ -450,7 +567,7 @@ export interface operations {
    * 自然语言语义检索（RAG 用）
    * @description 自然语言语义检索，返回相关文献片段（chunk）用于 RAG 回答。
    * 适用：「Transformer 注意力机制如何工作？」「最新的蛋白质折叠预测方法有哪些？」
-   * 不适用：精确字段过滤 → search_papers；取完整原文 → read_content。
+   * 不适用：精确字段过滤 → search_metadata；取完整原文 → read_content。
    * 返回：相关 chunk 列表，每条含 chunk_id/doc_id/abstract/chunk/score/title/offset。
    * 典型链路：semantic_search → 选取 chunk → read_content(doc_id, offset)。
    */
@@ -480,20 +597,20 @@ export interface operations {
   };
   /**
    * 列出所有可用字段、能否过滤/排序、枚举值样本
-   * @description 返回 search_papers 所有可用字段的 catalog：字段名、类型、能否过滤/排序、
+   * @description 返回 search_metadata 所有可用字段的 catalog：字段名、类型、能否过滤/排序、
    * 是否默认返回、字段说明、FilterOperator 清单等。
    * 适用：「我该用哪个字段过滤 DOI?」「access_oa_status 有哪些可能值？」
    * 「`metadata_type` 的合法取值是？」
-   * 不适用：实际查询文献，那是 search_papers / semantic_search 的事。
+   * 不适用：实际查询文献，那是 search_metadata / semantic_search 的事。
    * 典型用法：Agent 第一次接触 Sciverse 或碰到模糊字段需求时先调一次本接口，
-   * 把 schema 装进 working memory，后续精确构造 search_papers 的 filters。
+   * 把 schema 装进 working memory，后续精确构造 search_metadata 的 filters。
    * include_sample_values=true 时返回枚举值样本（OpenSearch terms agg，缓存 24h）。
    */
   list_catalog: {
     parameters: {
       query?: {
         /** @description 字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。 */
-        collection?: "papers" | "authors" | "sources";
+        collection?: "papers" | "authors" | "sources" | "patents";
         /** @description 是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。 */
         include_sample_values?: boolean;
         /** @description 是否返回字段统计（keyword 字段基数 + 数值字段 min/max/avg/p50/p95）。触发 OpenSearch 聚合，缓存 24h。 */
@@ -514,21 +631,21 @@ export interface operations {
   /**
    * 分页查一篇论文的引用/被引/相关工作列表
    * @description 分页返回某篇论文的引用关系完整列表。citations/references/related_works 是无界数组
-   * （单篇最大 34 万条），在 search_papers 中**不可投影**，取这些列表只能用本接口。
+   * （单篇最大 34 万条），在 search_metadata 中**不可投影**，取这些列表只能用本接口。
    * 适用：「论文 X 引用了哪些文献」（relation=REFERENCES）、「哪些文献引用了论文 X」
    * （relation=CITATIONS）、「与论文 X 相关的工作」（relation=RELATED_WORKS）。
    * 注意：CITATIONS（被引：谁引用了我）与 REFERENCES（参考文献：我引用了谁）方向相反。
-   * 典型链路：先 search_papers / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
+   * 典型链路：先 search_metadata / semantic_search 拿到 unique_id，再用本接口按 relation 分页。
    * 两个上限（仅 CITATIONS 可能触发；REFERENCES/RELATED_WORKS 实测最大 11833/20 条）：
    * 关系数超 10000 返回 429；page×page_size 超 10000 返回 400。两种情况都改用
-   * search_papers 的 filters_advanced 传 references_unique_id 反查——可深翻页并任意排序。
+   * search_metadata 的 filters 传 references_unique_id 反查——可深翻页并任意排序。
    * total_count 为库内命中数（不含指向库外论文的边），与论文自身 citation_count 可能有 ±1% 差异。
    */
   list_paper_relations: {
     requestBody: {
       content: {
         "application/json": {
-          /** @description 目标论文 unique_id（如 paper:10.1038/xxx），来自 search_papers / semantic_search；勿传 doc_id。 */
+          /** @description 目标论文 unique_id（如 paper:10.1038/xxx），来自 search_metadata / semantic_search；勿传 doc_id。 */
           unique_id: string;
           /**
            * @description 关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。
@@ -582,7 +699,9 @@ export interface operations {
   read_content: {
     parameters: {
       query: {
-        /** @description 文献 ID（来自 search_papers / semantic_search）。 */
+        /** @description 正文实体；专利必须传 patents，doc_id 来自元数据查询，不能用公开号。 */
+        collection?: "papers" | "patents";
+        /** @description 文献 ID（来自 search_metadata / semantic_search）。 */
         doc_id: string;
         /** @description 起始 Unicode 码点偏移，直接使用 semantic_search 返回的 offset。默认 0。 */
         offset?: number;

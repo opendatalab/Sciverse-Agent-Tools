@@ -27,7 +27,7 @@ async def call_tool(sv: AgentToolsClient, name: str, args: dict):
         return {"data": base64.b64encode(img_bytes).decode(), "mime_type": mime}
     handler = {
         "list_catalog": sv.list_catalog,
-        "search_papers": sv.search_papers,
+        "search_metadata": sv.search_metadata,
         "semantic_search": sv.semantic_search,
         "read_content": sv.read_content,
     }[name]

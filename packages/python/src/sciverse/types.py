@@ -6,71 +6,18 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
 class Collection(Enum):
     """
-    检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
+    实体集合；用 list_catalog 查看对应字段权限和能力。
     """
 
     papers = "papers"
     authors = "authors"
     sources = "sources"
-
-
-class Operator(Enum):
-    """
-    过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
-    """
-
-    FILTER_OP_EQ = "FILTER_OP_EQ"
-    FILTER_OP_NE = "FILTER_OP_NE"
-    FILTER_OP_GT = "FILTER_OP_GT"
-    FILTER_OP_GTE = "FILTER_OP_GTE"
-    FILTER_OP_LT = "FILTER_OP_LT"
-    FILTER_OP_LTE = "FILTER_OP_LTE"
-    FILTER_OP_IN = "FILTER_OP_IN"
-    FILTER_OP_NIN = "FILTER_OP_NIN"
-    FILTER_OP_CONTAINS = "FILTER_OP_CONTAINS"
-    FILTER_OP_MATCH = "FILTER_OP_MATCH"
-    FILTER_OP_MATCH_PHRASE = "FILTER_OP_MATCH_PHRASE"
-
-
-class FiltersAdvancedItem(BaseModel):
-    field: str
-    operator: Operator | None = Field(
-        "FILTER_OP_EQ",
-        description='过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。',
-    )
-    value: Any
-
-
-class Order(Enum):
-    SORT_ORDER_DESC = "SORT_ORDER_DESC"
-    SORT_ORDER_ASC = "SORT_ORDER_ASC"
-
-
-class SortAdvancedItem(BaseModel):
-    field: str
-    order: Order
-
-
-class SortByYear(Enum):
-    """
-    按发表年份排序。默认 auto：传了 query（或 sort_advanced）时不加年份排序
-    ——保留 BM25 相关性排序，且 freshness/impact/language_affinity 软加权可用；
-    纯结构化筛选（无 query）时按年份降序（否则后端默认序是 unique_id，实质乱序）。
-    ⚠️ 不要用 query + desc 求「最相关且最新」：显式排序会让 query 退化为命中
-    过滤（OR 语义、无相关性排序）、三个软加权全部失效——返回的是「含任一关键词
-    的最新文档」。要「相关且偏新」请用 freshness_boost。
-
-    """
-
-    auto = "auto"
-    desc = "desc"
-    asc = "asc"
-    none = "none"
+    patents = "patents"
 
 
 class FreshnessBoost(Enum):
@@ -121,9 +68,157 @@ class LanguageAffinity(Enum):
     STRONG = "STRONG"
 
 
-class SearchPapersRequest(BaseModel):
+class Operator(Enum):
+    """
+    过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。
+    """
+
+    FILTER_OP_EQ = "FILTER_OP_EQ"
+    FILTER_OP_NE = "FILTER_OP_NE"
+    FILTER_OP_GT = "FILTER_OP_GT"
+    FILTER_OP_GTE = "FILTER_OP_GTE"
+    FILTER_OP_LT = "FILTER_OP_LT"
+    FILTER_OP_LTE = "FILTER_OP_LTE"
+    FILTER_OP_IN = "FILTER_OP_IN"
+    FILTER_OP_NIN = "FILTER_OP_NIN"
+    FILTER_OP_CONTAINS = "FILTER_OP_CONTAINS"
+    FILTER_OP_MATCH = "FILTER_OP_MATCH"
+    FILTER_OP_MATCH_PHRASE = "FILTER_OP_MATCH_PHRASE"
+
+
+class Filter(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    field: str
+    operator: Operator = Field(
+        ...,
+        description='过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。',
+    )
+    value: Any
+
+
+class Order(Enum):
+    SORT_ORDER_DESC = "SORT_ORDER_DESC"
+    SORT_ORDER_ASC = "SORT_ORDER_ASC"
+
+
+class SortItem(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    field: str
+    order: Order
+
+
+class Facet(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    field: str
+    size: int | None = Field(10, ge=1, le=50)
+
+
+class SearchMetadataRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    fields: list[str] | None = Field(
+        None,
+        description="返回字段，须为当前collection已授权且可投影字段；省略返回默认字段集与授权交集。",
+        max_length=128,
+    )
     collection: Collection | None = Field(
-        "papers",
+        Collection.papers,
+        description="实体集合；用 list_catalog 查看对应字段权限和能力。",
+    )
+    query: str | None = Field(
+        None,
+        description='BM25 关键词，匹配当前实体已授权的可检索字段；专利包含 invention_title、abstract、claims.claim_text。留空则纯靠结构化过滤。\n普通关键词是宽松匹配（任一词命中、按相关性排序）。\n\n也支持布尔检索式：全大写 AND / OR / NOT、括号分组、引号短语；优先级\nNOT > AND > OR，相邻词隐式 AND。例如\n  (histopathology OR pathology) AND ("deep learning" OR "machine learning") AND (prognosis OR survival)\n布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。\n- query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。\n- 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 "OR"。\n- 引号需与运算符同时出现才生效：只写 "spread through air spaces" 不带运算符时\n  按普通关键词处理；写成 "spread through air spaces" AND lung 才是短语精确匹配。\n- 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。\n',
+        max_length=2048,
+    )
+    page: int | None = Field(1, ge=1)
+    page_size: int | None = Field(
+        25,
+        description="每页条数。省略时为服务端默认 25（SDK / MCP 不注入默认值）；工具层上限 50。",
+        ge=1,
+        le=50,
+    )
+    freshness_boost: FreshnessBoost | None = Field(
+        FreshnessBoost.NONE,
+        description="模糊搜索新鲜度加权：结果偏向新文献（仅 query 非空时生效；传排序\n（sort_by_year 非 none / sort_advanced）时被忽略，硬排优先）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。与 impact_boost / language_affinity 可叠加\n（均为乘法因子）。boost 生效时为浅翻页：不产 next_cursor、不支持\ncursor 深翻页。\n",
+    )
+    impact_boost: ImpactBoost | None = Field(
+        ImpactBoost.NONE,
+        description="模糊搜索影响力加权：高被引文献在保留相关性的前提下上浮（仅 query\n非空时生效；传排序时被忽略）。MILD: 轻度上浮，相关性仍主导；\nSTRONG: 明显偏向高被引。引用因子有界、零被引中性（不会归零）。\n与 freshness_boost / language_affinity 可叠加；boost 生效时为浅翻页。\n",
+    )
+    language_affinity: LanguageAffinity | None = Field(
+        LanguageAffinity.NONE,
+        description='模糊搜索语言亲和加权：非 query 语言的结果降序、但不排除（仅 query\n非空时生效；传排序时被忽略）。目标语言由服务端从 query 文本判定\n（假名→ja / 谚文→ko / 汉字→zh / 拉丁→en，其他书写系统不生效）；\n语言未知的文献保持中性不降权。MILD: 非目标语言 ×0.5，跨语言强相关\n结果仍可上浮；STRONG: ×0.2，几乎只看目标语言。与 freshness_boost /\nimpact_boost 可叠加；boost 生效时为浅翻页。要硬排除某语言请改用\nfilters_advanced 的 language 字段（如 {"field":"language","value":"en"}，\n软硬两层语义不同：本参数只调序，filter 直接排除）。\n',
+    )
+    filters: list[Filter] | None = Field(
+        None, description="按当前实体 catalog 的字段能力填写。", max_length=128
+    )
+    sort: list[SortItem] | None = Field(
+        None, description="按当前实体 catalog 的字段能力填写。", max_length=32
+    )
+    cursor: str | None = Field(
+        None,
+        description="使用上页 next_cursor 原样续查，保持查询条件不变；不与 page>1 共用。",
+    )
+    facets: list[Facet] | None = Field(None, max_length=5)
+
+
+class Collection1(Enum):
+    """
+    检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
+    """
+
+    papers = "papers"
+    authors = "authors"
+    sources = "sources"
+    patents = "patents"
+
+
+class FiltersAdvancedItem(BaseModel):
+    field: str
+    operator: Operator | None = Field(
+        Operator.FILTER_OP_EQ,
+        description='过滤操作符。MATCH（分词模糊）适用于 author、keywords（输入 "Hinton" 命中 "Geoffrey Hinton"）； MATCH_PHRASE（短语模糊）适用于 publication_venue_name_unified，整词连续匹配（"Nature" 命中 "Nature Communications"；非前缀匹配，"Nature Comm" 不会命中）； doi 用 EQ，服务端归一化（去 doi.org 前缀+转小写）后精确匹配。MATCH/MATCH_PHRASE 仅对配了 text 子字段的字段有效。',
+    )
+    value: Any
+
+
+class SortAdvancedItem(BaseModel):
+    field: str
+    order: Order
+
+
+class SortByYear(Enum):
+    """
+    按发表年份排序。默认 auto：传了 query（或 sort_advanced）时不加年份排序
+    ——保留 BM25 相关性排序，且 freshness/impact/language_affinity 软加权可用；
+    纯结构化筛选（无 query）时按年份降序（否则后端默认序是 unique_id，实质乱序）。
+    ⚠️ 不要用 query + desc 求「最相关且最新」：显式排序会让 query 退化为命中
+    过滤（OR 语义、无相关性排序）、三个软加权全部失效——返回的是「含任一关键词
+    的最新文档」。要「相关且偏新」请用 freshness_boost。
+
+    """
+
+    auto = "auto"
+    desc = "desc"
+    asc = "asc"
+    none = "none"
+
+
+class SearchPapersRequest(BaseModel):
+    fields: list[str] | None = Field(
+        None,
+        description="返回字段，须为当前collection已授权且可投影字段；省略返回默认字段集与授权交集。",
+        max_length=128,
+    )
+    collection: Collection1 | None = Field(
+        Collection1.papers,
         description="检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。",
     )
     query: str | None = Field(
@@ -158,19 +253,19 @@ class SearchPapersRequest(BaseModel):
         description="高级排序逃生舱（按任意可排序字段）。papers 用 sort_by_year 即可； authors/sources 想按 h-index / 被引 / works_count 排序时用本字段。 与 query 互斥（query 走相关性排序）。",
     )
     sort_by_year: SortByYear | None = Field(
-        "auto",
+        SortByYear.auto,
         description="按发表年份排序。默认 auto：传了 query（或 sort_advanced）时不加年份排序\n——保留 BM25 相关性排序，且 freshness/impact/language_affinity 软加权可用；\n纯结构化筛选（无 query）时按年份降序（否则后端默认序是 unique_id，实质乱序）。\n⚠️ 不要用 query + desc 求「最相关且最新」：显式排序会让 query 退化为命中\n过滤（OR 语义、无相关性排序）、三个软加权全部失效——返回的是「含任一关键词\n的最新文档」。要「相关且偏新」请用 freshness_boost。\n",
     )
     freshness_boost: FreshnessBoost | None = Field(
-        "NONE",
+        FreshnessBoost.NONE,
         description="模糊搜索新鲜度加权：结果偏向新文献（仅 query 非空时生效；传排序\n（sort_by_year 非 none / sort_advanced）时被忽略，硬排优先）。\nMILD: 近 10 年加权，适合日常查文献；STRONG: 近 3 年加权，适合跟踪\n研究方向 / 追最新进展。与 impact_boost / language_affinity 可叠加\n（均为乘法因子）。boost 生效时为浅翻页：不产 next_cursor、不支持\ncursor 深翻页。\n",
     )
     impact_boost: ImpactBoost | None = Field(
-        "NONE",
+        ImpactBoost.NONE,
         description="模糊搜索影响力加权：高被引文献在保留相关性的前提下上浮（仅 query\n非空时生效；传排序时被忽略）。MILD: 轻度上浮，相关性仍主导；\nSTRONG: 明显偏向高被引。引用因子有界、零被引中性（不会归零）。\n与 freshness_boost / language_affinity 可叠加；boost 生效时为浅翻页。\n",
     )
     language_affinity: LanguageAffinity | None = Field(
-        "NONE",
+        LanguageAffinity.NONE,
         description='模糊搜索语言亲和加权：非 query 语言的结果降序、但不排除（仅 query\n非空时生效；传排序时被忽略）。目标语言由服务端从 query 文本判定\n（假名→ja / 谚文→ko / 汉字→zh / 拉丁→en，其他书写系统不生效）；\n语言未知的文献保持中性不降权。MILD: 非目标语言 ×0.5，跨语言强相关\n结果仍可上浮；STRONG: ×0.2，几乎只看目标语言。与 freshness_boost /\nimpact_boost 可叠加；boost 生效时为浅翻页。要硬排除某语言请改用\nfilters_advanced 的 language 字段（如 {"field":"language","value":"en"}，\n软硬两层语义不同：本参数只调序，filter 直接排除）。\n',
     )
     page: int | None = Field(1, ge=1)
@@ -180,6 +275,38 @@ class SearchPapersRequest(BaseModel):
         ge=1,
         le=50,
     )
+
+
+class TotalCount(RootModel[str]):
+    root: str = Field(
+        ...,
+        description="命中数，protobuf JSON 可能返回数字字符串；不是通过分页精确计数的保证。",
+        pattern="^[0-9]+$",
+    )
+
+
+class SearchMetadataResponse(BaseModel):
+    results: list[dict[str, Any]] = Field(
+        ...,
+        description="实体元数据，字段受collection、投影和授权影响。专利无 is_content_accessible；作者/来源无正文句柄。",
+    )
+    total_count: int | TotalCount = Field(
+        ...,
+        description="命中数，protobuf JSON 可能返回数字字符串；不是通过分页精确计数的保证。",
+    )
+    page: int
+    page_size: int
+    total_pages: int | None = Field(None, description="总页数。")
+    next_cursor: str | None = Field(
+        None,
+        description="深翻页游标，为空表示无更多。page*page_size>10000 时必须改用 cursor（把此值回填到请求的 cursor）。",
+    )
+    search_time_ms: float | None = Field(None, description="检索耗时（毫秒）。")
+    request_tokens: int | None = Field(None, description="输入 query 的 token 数。")
+    response_tokens: int | None = Field(
+        None, description="输出结果文本字段的 token 数。"
+    )
+    facets: list[dict[str, Any]] | None = None
 
 
 class AuthorItem(BaseModel):
@@ -315,7 +442,7 @@ class SemanticSearchRequest(BaseModel):
         description='结构化过滤（可选）。在召回阶段与语义检索同时生效（ES+Milvus 双引擎下推，\n不是结果后过滤）；多个字段之间 AND，同一字段传数组时数组内 OR。\n⚠️ 宽松（软）语义：chunk 侧元数据缺失的文档不会被排除——例如按年份过滤时，\n缺年份信息的 chunk 仍可能返回。需要严格范围保证时勿当硬约束使用，\n表述结论时注明范围为"近似过滤"。\n数值/日期字段支持区间：{"gte":2020,"lte":2025} 或 [min,max]（null 表示一侧不限）；\n日期接受 YYYY / YYYY-MM / YYYY-MM-DD。\n实际可用字段受账号字段权限约束；未知字段服务端返回 400。\n例：{"author":["Hinton"],"publication_published_year":{"gte":2023},\n    "topics":{"dimensions":{"primary_topic_domain":"Health Sciences"}}}\n',
     )
     mode: Mode | None = Field(
-        "balanced",
+        Mode.balanced,
         description="fast = 仅关键词召回 (~200ms)；balanced = 混合检索 (~600ms)；quality = LLM 改写 + 混合 (~2-4s)。\n",
     )
 

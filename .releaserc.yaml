@@ -57,6 +57,8 @@ plugins:
         - packages/mcp/package-lock.json
         - clawhub/manifest.json
         - clawhub/SKILL.md
+        - clawhub/scripts/
+        - skill-claude-code/skills/sciverse/scripts/
         - skill-claude-code/skills/sciverse/SKILL.md
         - skill-claude-code/.claude-plugin/plugin.json
         - skill-claude-code/.mcp.json

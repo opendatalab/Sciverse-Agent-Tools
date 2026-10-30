@@ -1,13 +1,13 @@
 ---
 name: sciverse
-description: Use when the user needs academic paper retrieval — searching scientific literature by author/year/journal, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides six Sciverse tools (search_papers, semantic_search, list_catalog, list_paper_relations, read_content, get_resource) via the sciverse-mcp-server MCP server.
+description: Use when the user needs academic paper retrieval — searching scientific literature and patent/author/source metadata, finding paper chunks for RAG-style citations, or expanding original text around a known paper offset. Provides six Sciverse tools (search_metadata, semantic_search, list_catalog, list_paper_relations, read_content, get_resource) via the sciverse-mcp-server MCP server.
 ---
 
 # Sciverse — Academic Paper Retrieval
 
 Retrieval skill for the Sciverse open platform. Exposes six tools
 for working with scientific literature: field introspection,
-structured metadata search, semantic chunk retrieval for RAG,
+metadata search across papers, authors, sources and patents, semantic chunk retrieval for RAG,
 citation / reference pagination, character-range content reading, and
 figure / table image fetching.
 
@@ -20,7 +20,7 @@ Trigger this skill when the user's request involves any of:
 - Expanding the original text around a known doc_id (more text before/after a chunk)
 
 Do NOT use this skill for general web search, news, or non-scientific content —
-the underlying index only covers peer-reviewed and preprint scientific literature.
+the supported collections are papers, authors, sources, and patents.
 
 ## Prerequisites
 
@@ -61,22 +61,17 @@ Before invoking any tool, ensure the server is reachable:
 Optional: set `SCIVERSE_BASE_URL` to override the default API base URL
 (for dev / self-hosted gateways; must remain on `*.sciverse.space`).
 
+Portable fallback: run `node scripts/search_metadata.mjs '<JSON args>'` from this skill directory.
+The bundled scripts require SCIVERSE_API_TOKEN and Node.js 18 or newer.
+
 ## Tools
 
 All six tools are exposed by the MCP server. Claude Code will surface
 them automatically when this skill is active.
 
-### search_papers
+### search_metadata
 
-Search academic papers by structured filters (title, authors, journal,
-year, subjects, etc.).
-Use when: "find Hinton's papers from 2020-2023", "Nature papers on
-CRISPR".
-Not for: natural-language Q&A retrieval (use semantic_search) or
-full-text snippets (use read_content).
-Returns: list of papers; each entry has unique_id (always present),
-doc_id (only when full text exists), title, author, abstract,
-publication_venue_name_unified, publication_published_year.
+Search metadata in one collection: papers, patents, authors or sources. Use list_catalog to discover authorized fields before choosing filters, sort and fields. Supports keywords, cursor pagination and facets; no implicit field sorting. Returns results, total_count and next_cursor with collection-specific fields. Use read_content for paper/patent text and semantic_search for paper semantic retrieval. Author/source IDs cannot be used to read content.
 
 ### semantic_search
 
@@ -84,7 +79,7 @@ Natural-language semantic search returning relevant paper chunks for
 RAG-style answering.
 Use when: "How does Transformer attention work?", "What are recent
 methods for protein structure prediction?".
-Not for: precise field filtering (use search_papers) or fetching full
+Not for: precise field filtering (use search_metadata) or fetching full
 original text (use read_content).
 Returns: list of chunks; each entry has chunk_id, doc_id, abstract,
 chunk, score, title, offset.
@@ -93,14 +88,14 @@ offset).
 
 ### list_catalog
 
-Returns the schema catalog for search_papers: every field name, type,
+Returns the schema catalog for search_metadata: every field name, type,
 whether it's filterable / sortable, default-return status, human
 description, and applicable FilterOperators.
 Use when: "Which field do I filter by DOI?", "What values can
 access_oa_status take?", "What's the right enum for metadata_type?".
-Not for: actually searching papers (use search_papers / semantic_search).
+Not for: actually searching papers (use search_metadata / semantic_search).
 Typical pattern: call once when first encountering Sciverse or facing
-an ambiguous field need, then construct precise search_papers filters
+an ambiguous field need, then construct precise search_metadata filters
 from the returned schema.
 Pass include_sample_values=true to also fetch top-20 values for
 enum-like fields (OpenSearch terms aggregation, 24h cached).
@@ -109,23 +104,23 @@ enum-like fields (OpenSearch terms aggregation, 24h cached).
 
 Paginate the full relation list of a paper. citations/references/related_works
 are unbounded arrays (up to 340k entries for a single paper) and are NOT
-projectable in search_papers, so this endpoint is the only way to read them.
+projectable in search_metadata, so this endpoint is the only way to read them.
 Use when: "What does paper X cite?" (relation=REFERENCES), "Which papers cite
 paper X?" (relation=CITATIONS), "Works related to paper X" (relation=RELATED_WORKS).
 Note: CITATIONS (incoming: who cites me) and REFERENCES (outgoing: who I cite)
 are opposite directions.
-Typical chain: get unique_id from search_papers / semantic_search, then paginate
+Typical chain: get unique_id from search_metadata / semantic_search, then paginate
 here by relation.
 Two limits (CITATIONS only; REFERENCES/RELATED_WORKS max out at 11833/20 in practice):
 more than 10000 relations returns 429; page*page_size above 10000 returns 400.
-In both cases switch to search_papers with filters_advanced on
+In both cases switch to search_metadata with filters on
 references_unique_id — it supports deep paging and arbitrary sorting.
 total_count counts in-corpus matches only, so it can differ from the paper's own
 citation_count by about 1%.
 
 ### read_content
 
-Read a range of a paper's original text addressed in Unicode code
+Read a range of a paper or patent’s original text addressed in Unicode code
 points (offset/limit count characters like Python len(), not bytes).
 Typically used with a doc_id/offset returned by semantic_search to
 expand context (read more text before or after a chunk).
@@ -156,13 +151,19 @@ If you don't yet know which fields exist or what values they take
 call `list_catalog` once at the start of the conversation. The result
 includes every field name, type, filterability, default-return status,
 and — for enum-like fields — sample values. Cache the catalog in your
-working memory; subsequent `search_papers` filters become precise
+working memory; subsequent `search_metadata` filters become precise
 instead of guessed.
 
 ```
 list_catalog(include_sample_values=true)
     └─▶ fields[].name + sample_values  →  pick the right filter field
 ```
+
+`search_metadata` uses canonical `filters` / `sort`; no convenience parameters.
+`semantic_search` remains paper-only. `read_content` supports papers/patents
+(default papers), offset=0 and limit=4096. Pass patents explicitly for patent text.
+`get_resource` primarily fetches paper images; ZIP downloads are not supported.
+MCP: set SCIVERSE_ENABLE_LEGACY_TOOLS=true and restart to restore the legacy tool list.
 
 ## Recipes
 
@@ -177,7 +178,7 @@ semantic_search(query="How does Transformer attention work?", top_k=5)
 **2. Look up a paper by DOI / doc_id:**
 
 ```
-search_papers(filters_advanced=[
+search_metadata(filters=[
     {field: "doi", operator: "FILTER_OP_EQ", value: "10.1038/..."}
 ])
 ```
@@ -185,13 +186,13 @@ search_papers(filters_advanced=[
 **3. Find OA papers in a year range:**
 
 ```
-search_papers(
-    filters_advanced=[
-        {field: "access_is_oa", value: "true"},
+search_metadata(
+    filters=[
+        {field: "publication_published_year", operator: "FILTER_OP_GTE", value: 2024},
+        {field: "access_is_oa", operator: "FILTER_OP_EQ", value: true},
         {field: "access_oa_status", operator: "FILTER_OP_IN",
          value: ["gold", "green", "hybrid"]}
-    ],
-    year_from=2024
+    ]
 )
 ```
 
@@ -200,11 +201,11 @@ search_papers(
 ```
 # First check the enum: list_catalog(include_sample_values=true)
 # Then filter precisely:
-search_papers(
+search_metadata(
     query="transformer",
-    filters_advanced=[
-        {field: "language", value: "en"},
-        {field: "metadata_type", value: "paper"}
+    filters=[
+        {field: "language", operator: "FILTER_OP_EQ", value: "en"},
+        {field: "metadata_type", operator: "FILTER_OP_EQ", value: "paper"}
     ]
 )
 ```
@@ -225,7 +226,7 @@ For a hard guarantee, or meta-only constraints (fwci, citation graph,
 complex hit-sets), scope by doc_id — a HARD recall-time filter:
 
 ```
-search_papers(..., fields=["doc_id","title"])
+search_metadata(..., fields=["doc_id","title"])
     └─▶ collect hits[].doc_id (only fulltext papers carry one)
 semantic_search(query="attention", filters={"doc_id": [...]})
     # hits never leave the set; empty list → empty hits (never global);
@@ -237,23 +238,19 @@ semantic_search(query="attention", filters={"doc_id": [...]})
 Three multiplicative boosts reorder fuzzy-search results while keeping
 relevance. Only effective when `query` is non-empty; ignored when any
 sort is set; shallow paging while active (no `next_cursor`).
-`sort_by_year` defaults to `auto`: relevance when `query` is set,
-newest-first for pure filters. Never combine `query` with
-`sort_by_year=desc` expecting "relevant and recent" — explicit sort
-degrades the query to a match filter (OR, no ranking) and disables
-all boosts; use `freshness_boost` instead.
+No implicit year sort is added. Explicit sort disables soft boosts.
 
 ```
-search_papers(query="large language model", freshness_boost="STRONG")
+search_metadata(query="large language model", freshness_boost="STRONG")
     # recent first: STRONG=3-year decay, MILD=10-year
-search_papers(query="protein folding", impact_boost="MILD")
+search_metadata(query="protein folding", impact_boost="MILD")
     # highly-cited float up (bounded; zero-citation stays neutral)
-search_papers(query="深度学习", language_affinity="MILD")
+search_metadata(query="深度学习", language_affinity="MILD")
     # demote (never exclude) results not in the query's language;
     # target detected from query text (kana→ja/hangul→ko/Han→zh/Latin→en);
     # unknown-language papers stay neutral. Hard-exclude instead:
-    # filters_advanced=[{"field":"language","value":"zh"}]
-search_papers(query="...", freshness_boost="MILD", impact_boost="MILD",
+    # filters=[{"field":"language","operator":"FILTER_OP_EQ","value":"zh"}]
+search_metadata(query="...", freshness_boost="MILD", impact_boost="MILD",
               language_affinity="MILD")   # stack: relevant+recent+cited+same-lang
 ```
 
@@ -272,32 +269,31 @@ read_content(doc_id, offset) → markdown with ![Figure 3](dt=xxx/p_yyy/f3.png)
 
 **8. Search authors or journals (collection):**
 
-Set `collection` to `authors` or `sources` (default `papers`) to search
+Set `collection` to `authors`, `sources`, or `patents` (default `papers`) to search
 those entities instead of papers. Each collection has its own fields —
-call `list_catalog(collection="authors")` first. Use `filters_advanced` +
-`sort_advanced`; the papers convenience fields (`authors`/`year_from`/...)
-apply to papers only.
+call `list_catalog(collection="authors")` first. Use `filters` +
+`sort` with the selected collection fields.
 
 ```
 # Top authors by h-index, sorted by citations
-search_papers(
+search_metadata(
     collection="authors",
-    filters_advanced=[{field: "summary_stats.h_index", operator: "FILTER_OP_GTE", value: 50}],
-    sort_advanced=[{field: "cited_by_count", order: "SORT_ORDER_DESC"}]
+    filters=[{field: "summary_stats.h_index", operator: "FILTER_OP_GTE", value: 50}],
+    sort=[{field: "cited_by_count", order: "SORT_ORDER_DESC"}]
 )
 # Enrich a paper result: take an author orcid / venue issn, then look up the entity
-search_papers(collection="authors", filters_advanced=[{field: "orcid", value: "https://orcid.org/..."}])
+search_metadata(collection="authors", filters=[{field: "orcid", operator: "FILTER_OP_EQ", value: "https://orcid.org/..."}])
 ```
 
 ## Notes for Claude
 
 - **Always cite** `doc_id` and `title` when surfacing paper-based facts.
 - **Prefer `semantic_search`** for natural-language questions; only fall back
-  to `search_papers` when the user provides structured criteria.
+  to `search_metadata` when the user provides structured criteria.
 - **When stuck on a field name**: call `list_catalog` instead of guessing.
   Field name typos return 400 with a clear message, but waste a turn.
 - **Before reading a paper's fulltext**: check `is_content_accessible` on the
-  `search_papers` hit — `true` means the paper has fulltext AND you're authorized,
+  `search_metadata` hit — `true` means the paper has fulltext AND you're authorized,
   so `read_content(doc_id, ...)` will work; `false` means no fulltext or no permission.
 - **When a chunk looks promising but truncated**: `read_content(doc_id, offset)`
   to expand. `read_content` returns `more: true` when more text is available;
@@ -305,4 +301,4 @@ search_papers(collection="authors", filters_advanced=[{field: "orcid", value: "h
 - **Pagination**: `semantic_search` top_k allows up to 100, but `balanced`
   truncates to ~50 server-side — use `quality` (or `fast`) when you need more.
   At most ~3 chunks come back per paper, so a high top_k needs many distinct
-  papers to be matched. `search_papers` returns max 50 per page; use `page`.
+  papers to be matched. `search_metadata` returns max 50 per page; use `page`.

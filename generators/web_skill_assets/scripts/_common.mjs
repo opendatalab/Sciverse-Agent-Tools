@@ -99,7 +99,37 @@ const META_PASSTHROUGH = [
   "freshness_boost", "impact_boost", "language_affinity",
 ];
 
+export function argumentError(message) {
+  console.error(`[sciverse] ${message}`);
+  process.exit(2);
+}
+
+export function validateCollection(collection, allowed = ["papers", "authors", "sources", "patents"]) {
+  if (!allowed.includes(collection)) argumentError(`不支持 collection: ${collection}`);
+}
+
+export function toMetadataPayload(args) {
+  if (!args || typeof args !== "object" || Array.isArray(args)) argumentError("参数必须是 JSON 对象");
+  const allowed = [...META_PASSTHROUGH, "filters", "sort"];
+  for (const key of Object.keys(args)) {
+    if (!allowed.includes(key)) argumentError(`未知参数: ${key}`);
+  }
+  const collection = args.collection ?? "papers";
+  validateCollection(collection);
+  return { ...args, collection };
+}
+
 export function toMetaSearchPayload(args) {
+  const collection = args.collection ?? "papers";
+  validateCollection(collection);
+  const paperOnly = ["title_contains", "abstract_contains", "authors", "year_from",
+    "year_to", "journals", "subjects"];
+  if (collection !== "papers") {
+    if (["asc", "desc"].includes(args.sort_by_year)) argumentError("sort_by_year asc/desc 仅支持 papers");
+    for (const key of paperOnly) {
+      if (Object.hasOwn(args, key)) argumentError(`${key} 仅支持 papers`);
+    }
+  }
   const out = {};
   const filters = [];
   const sort = [];
@@ -122,7 +152,7 @@ export function toMetaSearchPayload(args) {
   // 相关性且软加权可用；纯结构化筛选时按年份降序（后端默认序实质乱序）。
   let sortByYear = args.sort_by_year ?? "auto";
   if (sortByYear === "auto") {
-    sortByYear = args.query || (Array.isArray(args.sort_advanced) && args.sort_advanced.length > 0)
+    sortByYear = collection !== "papers" || args.query || (Array.isArray(args.sort) && args.sort.length > 0) || (Array.isArray(args.sort_advanced) && args.sort_advanced.length > 0)
       ? "none" : "desc";
   }
   if (sortByYear !== "none") {

@@ -18,47 +18,41 @@ Typical uses:
 - Find the right field for DOI, OA status, language, metadata type, venue, or
   subject filtering.
 - Inspect available `FilterOperators`.
-- Avoid guessing field names before `search_papers`.
-- Pass `collection` (`papers` / `authors` / `sources`) to inspect a specific entity's schema.
+- Avoid guessing field names before `search_metadata`.
+- Pass `collection` (`papers` / `authors` / `sources` / `patents`) to inspect a specific entity's schema.
 
-## search_papers
+## search_metadata
 
 Use when the user gives structured criteria such as title keywords, authors,
 years, journals, subjects, DOI, OA status, or metadata fields.
 
 ```bash
-node scripts/search_papers.mjs '{
+node scripts/search_metadata.mjs '{
   "query": "transformer",
-  "authors": ["Hinton"],
-  "year_from": 2020,
+  "filters": [
+    {"field":"author","operator":"FILTER_OP_IN","value":["Hinton"]},
+    {"field":"publication_published_year","operator":"FILTER_OP_GTE","value":2020}
+  ],
   "page_size": 10
 }'
 ```
 
 Common arguments:
 
-- `collection`: entity set — `papers` (default) / `authors` / `sources`. The convenience
-  fields below apply to papers only; for `authors` / `sources` use `filters_advanced` (and
-  `sort_advanced`) with that collection's field names. See `## Collections: authors / sources`.
+- `collection`: `papers` (default), `authors`, `sources`, or `patents`.
+  Call `list_catalog` for the selected collection before building filters.
 - `query`: BM25-style keyword query over title/abstract/venue/keywords. Plain keywords
   match loosely (any word, ranked by relevance). Boolean syntax is supported: UPPERCASE
   `AND` / `OR` / `NOT`, `( )` grouping, `"quoted phrases"` (precedence NOT > AND > OR;
   adjacent words are implicitly AND). In boolean mode every term is required and nothing
   is relaxed — put only search terms in `query`, never labels or instructions. Lowercase
   `and`/`or` are ordinary words; quote `"OR"` for the literal. Max 64 terms.
-- `title_contains`, `abstract_contains`: targeted text matching.
-- `authors`, `journals`, `subjects`: structured list filters.
-- `year_from`, `year_to`: inclusive publication year bounds.
-- `filters_advanced`: explicit field/operator/value filters after consulting
-  `list_catalog`.
-- `sort_by_year`: `auto` (default) / `desc` / `asc` / `none`. `auto` keeps BM25
-  relevance when `query` is set (soft boosts stay usable) and falls back to
-  newest-first for pure structured filtering. **Anti-pattern**: `query` +
-  `desc` does NOT mean "relevant and recent" — an explicit sort degrades the
-  query to a match filter (OR semantics, no relevance ranking) and disables
-  all soft boosts; you get "newest documents containing any query word".
-  Use `freshness_boost` for "relevant and recent".
-- `sort_advanced`: `[{field, order}]` — sort by any sortable field (e.g. authors by
+- `filters`: explicit `[{field, operator, value}]` using `FILTER_OP_*` operators.
+- No implicit year sorting. For newest papers first, explicitly use
+  `sort: [{"field":"publication_published_year","order":"SORT_ORDER_DESC"}]`.
+  Explicit sorting disables relevance boosts; use `freshness_boost` for relevant
+  and recent papers instead.
+- `sort`: `[{field, order}]` — sort by any sortable field (e.g. authors by
   `cited_by_count`, sources by `works_count`). `order` is `SORT_ORDER_DESC` / `SORT_ORDER_ASC`.
 - `freshness_boost` / `impact_boost` / `language_affinity`: soft ranking boosts
   (`NONE`/`MILD`/`STRONG`, stackable multiplicative factors). Freshness biases toward
@@ -66,25 +60,25 @@ Common arguments:
   (bounded, zero-citation neutral); language affinity demotes (never excludes) results
   not in the query's language — target language detected from the query text,
   unknown-language papers stay neutral; to hard-exclude a language use
-  `filters_advanced` on `language` instead. All three: only effective when `query` is
+  `filters` on `language` instead. All three: only effective when `query` is
   non-empty; ignored when any sort is set; shallow paging while active (no `next_cursor`).
 - `page`, `page_size`: pagination; `page_size` is capped at 50.
 
 ## list_paper_relations
 
 Paginate a paper's full citations / references / related works. These are unbounded
-arrays (up to 340k entries) and are **not projectable** in `search_papers`, so this
+arrays (up to 340k entries) and are **not projectable** in `search_metadata`, so this
 endpoint is the only way to read them.
 
 **Limits (CITATIONS only)**: over 10000 relations returns 429; `page * page_size`
-above 10000 returns 400. In both cases switch to reverse lookup via `search_papers`:
+above 10000 returns 400. In both cases switch to reverse lookup via `search_metadata`:
 
 ```bash
-node scripts/search_papers.mjs '{
-  "filters_advanced": [
-    {"field": "references_unique_id", "value": "paper:10.1109/cvpr.2016.90"}
+node scripts/search_metadata.mjs '{
+  "filters": [
+    {"field": "references_unique_id", "operator": "FILTER_OP_EQ", "value": "paper:10.1109/cvpr.2016.90"}
   ],
-  "sort_advanced": [{"field": "citation_count", "order": "SORT_ORDER_DESC"}],
+  "sort": [{"field": "citation_count", "order": "SORT_ORDER_DESC"}],
   "page_size": 50
 }'
 ```
@@ -101,7 +95,7 @@ node scripts/list_paper_relations.mjs '{
 }'
 ```
 
-- `unique_id` (required): from a `search_papers` / `semantic_search` result (not `doc_id`).
+- `unique_id` (required): from a `search_metadata` / `semantic_search` result (not `doc_id`).
 - `relation` (required): `CITATIONS` (who cites this paper) / `REFERENCES` (what this paper
   cites — opposite direction) / `RELATED_WORKS`.
 - `page`, `page_size`: pagination.
@@ -109,21 +103,20 @@ node scripts/list_paper_relations.mjs '{
 ## Advanced Filter Example
 
 ```bash
-node scripts/search_papers.mjs '{
-  "filters_advanced": [
+node scripts/search_metadata.mjs '{
+  "filters": [
     { "field": "doi", "operator": "FILTER_OP_EQ", "value": "10.1038/..." }
   ],
   "page_size": 5
 }'
 ```
 
-## Collections: authors / sources
+## Collections: authors / sources / patents
 
-`search_papers` and `list_catalog` accept `collection`: `papers` (default), `authors`,
-`sources`. Each collection has its own field schema — call
-`list_catalog '{"collection":"authors"}'` first. The papers convenience fields
-(`authors` / `journals` / `year_from` / `subjects`) do **not** apply to other collections;
-use `filters_advanced` + `sort_advanced` with that collection's field names.
+`search_metadata` and `list_catalog` accept `collection`: `papers` (default), `authors`,
+`sources`, `patents`. Each collection has its own field schema — call
+`list_catalog '{"collection":"authors"}'` first. Use canonical `filters` and `sort` with that collection's fields.
+The new script rejects unknown parameters and paper convenience arguments.
 
 - **authors**: filter by `summary_stats.h_index`, `works_count`, `cited_by_count`, `orcid`,
   `last_known_institutions.country_code`, `topics.field.display_name`, `source_issns`
@@ -136,18 +129,18 @@ use `filters_advanced` + `sort_advanced` with that collection's field names.
 
 ```bash
 # Top authors by h-index, sorted by citations
-node scripts/search_papers.mjs '{
+node scripts/search_metadata.mjs '{
   "collection": "authors",
-  "filters_advanced": [
+  "filters": [
     { "field": "summary_stats.h_index", "operator": "FILTER_OP_GTE", "value": 50 }
   ],
-  "sort_advanced": [{ "field": "cited_by_count", "order": "SORT_ORDER_DESC" }]
+  "sort": [{ "field": "cited_by_count", "order": "SORT_ORDER_DESC" }]
 }'
 
 # Open-access core journals in a field
-node scripts/search_papers.mjs '{
+node scripts/search_metadata.mjs '{
   "collection": "sources",
-  "filters_advanced": [
+  "filters": [
     { "field": "is_oa", "operator": "FILTER_OP_EQ", "value": true },
     { "field": "is_core", "operator": "FILTER_OP_EQ", "value": true },
     { "field": "topics.field.display_name", "operator": "FILTER_OP_EQ", "value": "Environmental Science" }
@@ -160,3 +153,14 @@ node scripts/search_papers.mjs '{
 Return concise paper lists unless the user asks for exhaustive output. Preserve
 `doc_id`, title, authors, venue, year, DOI when present, and explain which
 filters were used.
+
+### Patents
+
+```bash
+node scripts/list_catalog.mjs '{"collection":"patents"}'
+node scripts/search_metadata.mjs '{"collection":"patents","query":"CRISPR","page_size":5}'
+node scripts/read_content.mjs '{"collection":"patents","doc_id":"<doc_id from result>"}'
+```
+
+Use the returned identifier, never construct a patent doc_id. `semantic_search`
+continues to search papers only. `get_resource` primarily fetches paper images.

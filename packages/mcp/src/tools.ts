@@ -5,7 +5,7 @@
 // 后续如有第 4 处复制，再用 codegen 收敛。
 
 import type { Config } from "./config.js";
-import { ENDPOINTS } from "./generated/tools.js";
+import { ENDPOINTS, LEGACY_ENDPOINTS } from "./generated/tools.js";
 import { randomUUID } from "node:crypto";
 
 // MCP content block 类型：text（普通响应）+ image（get_resource binary）。
@@ -25,9 +25,74 @@ interface FilterEntry {
   value: unknown;
 }
 
-const PASSTHROUGH = ["query", "page", "page_size", "fields", "collection"] as const;
+const PASSTHROUGH = ["query", "page", "page_size", "fields", "collection", "freshness_boost", "impact_boost", "language_affinity"] as const;
+
+const COLLECTIONS = ["papers", "authors", "sources", "patents"] as const;
+const CANONICAL_SEARCH_KEYS = [
+  "query", "collection", "filters", "sort", "fields", "page", "page_size",
+  "cursor", "facets", "freshness_boost", "impact_boost", "language_affinity",
+] as const;
+const PAPER_CONVENIENCE_KEYS = [
+  "title_contains", "abstract_contains", "authors", "year_from", "year_to",
+  "journals", "subjects",
+] as const;
+
+function validateCollection(collection: unknown, allowed: readonly string[] = COLLECTIONS): void {
+  if (collection !== undefined && (typeof collection !== "string" || !allowed.includes(collection))) {
+    throw new Error(`collection must be one of ${allowed.join(" / ")}`);
+  }
+}
+
+function rejectUnknown(args: Record<string, unknown>, allowed: readonly string[]): void {
+  for (const key of Object.keys(args)) {
+    if (!allowed.includes(key)) throw new Error(`unknown parameter: ${key}`);
+  }
+}
+
+function toMetadataPayload(args: Record<string, unknown>): Record<string, unknown> {
+  rejectUnknown(args, CANONICAL_SEARCH_KEYS);
+  // query/collection 的 null 与省略等价，其余参数不做静默过滤。
+  args = { ...args, collection: args.collection ?? "papers" };
+  if (args.query === null) delete args.query;
+  validateCollection(args.collection);
+  for (const [key, allowed] of [
+    ["filters", ["field", "operator", "value"]],
+    ["sort", ["field", "order"]],
+    ["facets", ["field", "size"]],
+  ] as const) {
+    if (args[key] === undefined) continue;
+    if (!Array.isArray(args[key])) throw new Error(`${key} must be an array`);
+    for (const item of args[key] as unknown[]) {
+      if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error(`${key} entries must be objects`);
+      rejectUnknown(item as Record<string, unknown>, allowed);
+      if (key === "facets") {
+        const { size } = item as { size?: unknown };
+        if (size !== undefined && (typeof size !== "number" || !Number.isInteger(size) || size < 1 || size > 50)) {
+          throw new Error("facets size must be an integer from 1 to 50");
+        }
+      }
+    }
+  }
+  return { ...args, collection: args.collection ?? "papers" };
+}
 
 function toBackendPayload(args: Record<string, unknown>): Record<string, unknown> {
+  const collection = args.collection ?? "papers";
+  validateCollection(collection);
+  let sortByYear = args.sort_by_year ?? "auto";
+  if (typeof sortByYear !== "string" || !["auto", "none", "asc", "desc"].includes(sortByYear)) {
+    throw new Error("sort_by_year must be one of auto / none / asc / desc");
+  }
+  if (collection !== "papers") {
+    if (sortByYear === "asc" || sortByYear === "desc") {
+      throw new Error("sort_by_year asc/desc is only supported for collection papers");
+    }
+    for (const key of PAPER_CONVENIENCE_KEYS) {
+      if (Object.prototype.hasOwnProperty.call(args, key)) {
+        throw new Error(`${key} is only supported for collection papers`);
+      }
+    }
+  }
   const out: Record<string, unknown> = {};
   const filters: FilterEntry[] = [];
   const sort: { field: string; order: string }[] = [];
@@ -61,9 +126,8 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
 
   // sort_by_year 默认 auto：有 query（或 sort_advanced）时不加年份排序——保 BM25
   // 相关性且软加权可用；纯结构化筛选时按年份降序（后端默认序实质乱序）。
-  let sortByYear = (args.sort_by_year as string | undefined) ?? "auto";
   if (sortByYear === "auto") {
-    sortByYear = args.query || (Array.isArray(args.sort_advanced) && args.sort_advanced.length > 0)
+    sortByYear = collection !== "papers" || args.query || (Array.isArray(args.sort_advanced) && args.sort_advanced.length > 0)
       ? "none" : "desc";
   }
   if (sortByYear !== "none") {
@@ -206,7 +270,9 @@ export async function executeTool(
   name: string,
   args: Record<string, unknown>,
 ): Promise<ToolResult> {
-  const endpoint = ENDPOINTS[name];
+  const endpoints = process.env.SCIVERSE_ENABLE_LEGACY_TOOLS === "true"
+    ? { ...ENDPOINTS, ...LEGACY_ENDPOINTS } : ENDPOINTS;
+  const endpoint = Object.prototype.hasOwnProperty.call(endpoints, name) ? endpoints[name] : undefined;
   if (!endpoint) {
     return {
       isError: true,
@@ -215,8 +281,16 @@ export async function executeTool(
   }
 
   switch (name) {
-    case "search_papers":
-      return call(config, "POST", endpoint.path, { body: toBackendPayload(args) });
+    case "search_metadata":
+    case "search_papers": {
+      let body: Record<string, unknown>;
+      try {
+        body = name === "search_metadata" ? toMetadataPayload(args) : toBackendPayload(args);
+      } catch (e) {
+        return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: (e as Error).message }) }] };
+      }
+      return call(config, "POST", endpoint.path, { body });
+    }
     case "semantic_search": {
       let body: Record<string, unknown>;
       try {
@@ -243,11 +317,17 @@ export async function executeTool(
       return call(config, "GET", endpoint.path, { query });
     }
     case "read_content": {
-      const { doc_id, offset, limit } = args as {
+      const { doc_id, collection, offset, limit } = args as {
+        collection?: string;
         doc_id?: string;
         offset?: number;
         limit?: number;
       };
+      try {
+        validateCollection(collection, ["papers", "patents"]);
+      } catch (e) {
+        return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: (e as Error).message }) }] };
+      }
       if (!doc_id) {
         return {
           isError: true,
@@ -256,7 +336,7 @@ export async function executeTool(
       }
       // 后端未传 offset 时返回整篇全文并忽略 limit；这里始终显式传两者，避免把整篇论文灌进模型上下文。
       return call(config, "GET", endpoint.path, {
-        query: { doc_id, offset: offset ?? 0, limit: limit ?? 4096 },
+        query: { doc_id, offset: offset ?? 0, limit: limit ?? 4096, collection },
       });
     }
     case "get_resource": {
