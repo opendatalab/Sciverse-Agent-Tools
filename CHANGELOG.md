@@ -1,3 +1,15 @@
+## [1.0.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.15.1...v1.0.0) (2026-10-30)
+
+### ⚠ BREAKING CHANGES
+
+* default tool discovery exposes search_metadata instead of search_papers. Set SCIVERSE_ENABLE_LEGACY_TOOLS=true to expose legacy MCP tools; SDK and CLI compatibility entries remain available.
+
+Co-authored-by: shlab <shenguanlin@pjlab.org.cn>
+
+### Features
+
+* support multi-entity metadata tools ([#38](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/38)) ([139d0ed](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/139d0ed963c9c670520d73b694165201542df6e7))
+
 ## [0.15.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.15.0...v0.15.1) (2026-10-23)
 
 ## [0.15.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.14.4...v0.15.0) (2026-10-23)

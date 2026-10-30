@@ -9,8 +9,8 @@ info:
     All endpoints require Bearer Token authentication (obtain one from
     https://sciverse.space). The platform provides metadata search across papers, patents, authors and sources,
     with paper semantic retrieval and paper/patent content reading.
-  version: 0.15.1
-  x-sciverse-tools-version: 0.15.1
+  version: 1.0.0
+  x-sciverse-tools-version: 1.0.0
 
 tags:
   - name: search
