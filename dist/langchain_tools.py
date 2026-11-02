@@ -84,7 +84,7 @@ class SemanticSearchTool(BaseTool):
 
 class ListCatalogArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    collection: str = Field('papers', description='字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。')
+    collection: str = Field('papers', description='字段 catalog 所属实体集合。papers（默认）/ authors / sources / patents，各 collection 字段不同。')
     include_sample_values: bool = Field(False, description='是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。')
     include_field_stats: bool = Field(False, description='是否返回字段统计（keyword 字段基数 + 数值字段 min/max/avg/p50/p95）。触发 OpenSearch 聚合，缓存 24h。')
 
