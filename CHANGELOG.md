@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v1.0.0...v1.0.1) (2026-11-02)
+
+### Bug Fixes
+
+* include patents in catalog collection description ([#39](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/39)) ([7ed0d58](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/7ed0d58b5832ed25b4717a0dae74e9481ab3e9ed))
+
 ## [1.0.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v0.15.1...v1.0.0) (2026-10-30)
 
 ### ⚠ BREAKING CHANGES
