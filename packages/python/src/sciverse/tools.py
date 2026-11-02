@@ -283,7 +283,7 @@ OPENAI_TOOLS = json.loads(r"""
               "patents"
             ],
             "default": "papers",
-            "description": "字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。"
+            "description": "字段 catalog 所属实体集合。papers（默认）/ authors / sources / patents，各 collection 字段不同。"
           },
           "include_sample_values": {
             "type": "boolean",
@@ -677,7 +677,7 @@ ANTHROPIC_TOOLS = json.loads(r"""
             "patents"
           ],
           "default": "papers",
-          "description": "字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。"
+          "description": "字段 catalog 所属实体集合。papers（默认）/ authors / sources / patents，各 collection 字段不同。"
         },
         "include_sample_values": {
           "type": "boolean",

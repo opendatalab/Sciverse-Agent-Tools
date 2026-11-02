@@ -609,7 +609,7 @@ export interface operations {
   list_catalog: {
     parameters: {
       query?: {
-        /** @description 字段 catalog 所属实体集合。papers（默认）/ authors / sources，各 collection 字段不同。 */
+        /** @description 字段 catalog 所属实体集合。papers（默认）/ authors / sources / patents，各 collection 字段不同。 */
         collection?: "papers" | "authors" | "sources" | "patents";
         /** @description 是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。 */
         include_sample_values?: boolean;
