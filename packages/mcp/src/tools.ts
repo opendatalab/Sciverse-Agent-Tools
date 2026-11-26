@@ -25,12 +25,15 @@ interface FilterEntry {
   value: unknown;
 }
 
-const PASSTHROUGH = ["query", "page", "page_size", "fields", "collection", "freshness_boost", "impact_boost", "language_affinity"] as const;
+const PASSTHROUGH = [
+  "query", "page", "page_size", "fields", "collection",
+  "allow_relaxation", "freshness_boost", "impact_boost", "language_affinity",
+] as const;
 
-const COLLECTIONS = ["papers", "authors", "sources", "patents"] as const;
+const COLLECTIONS = ["papers", "books", "authors", "sources", "patents"] as const;
 const CANONICAL_SEARCH_KEYS = [
   "query", "collection", "filters", "sort", "fields", "page", "page_size",
-  "cursor", "facets", "freshness_boost", "impact_boost", "language_affinity",
+  "cursor", "facets", "allow_relaxation", "freshness_boost", "impact_boost", "language_affinity",
 ] as const;
 const PAPER_CONVENIENCE_KEYS = [
   "title_contains", "abstract_contains", "authors", "year_from", "year_to",
@@ -55,6 +58,9 @@ function toMetadataPayload(args: Record<string, unknown>): Record<string, unknow
   args = { ...args, collection: args.collection ?? "papers" };
   if (args.query === null) delete args.query;
   validateCollection(args.collection);
+  if (args.allow_relaxation !== undefined && typeof args.allow_relaxation !== "boolean") {
+    throw new Error("allow_relaxation must be a boolean");
+  }
   for (const [key, allowed] of [
     ["filters", ["field", "operator", "value"]],
     ["sort", ["field", "order"]],
@@ -98,7 +104,12 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
   const sort: { field: string; order: string }[] = [];
 
   for (const k of PASSTHROUGH) {
-    if (args[k] !== undefined && args[k] !== null) out[k] = args[k];
+    if (args[k] !== undefined && args[k] !== null) {
+      if (k === "allow_relaxation" && typeof args[k] !== "boolean") {
+        throw new Error("allow_relaxation must be a boolean");
+      }
+      out[k] = args[k];
+    }
   }
 
   const addFilter = (field: string, operator: string, value: unknown) => {
@@ -324,7 +335,7 @@ export async function executeTool(
         limit?: number;
       };
       try {
-        validateCollection(collection, ["papers", "patents"]);
+        validateCollection(collection, ["papers", "books", "patents"]);
       } catch (e) {
         return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: (e as Error).message }) }] };
       }

@@ -34,8 +34,8 @@ SKILL_NAME = "sciverse"
 # 关键词 "academic paper" / "paper retrieval" / "scientific literature" 用来匹配用户请求。
 SKILL_DESCRIPTION = (
     "Use when the user needs academic paper retrieval — searching scientific "
-    "literature and patent/author/source metadata, finding paper chunks for RAG-style "
-    "citations, or expanding original text around a known paper offset. "
+    "literature and book/patent/author/source metadata, finding paper chunks for RAG-style "
+    "citations, or expanding original text around a known doc_id offset. "
     "Provides six Sciverse tools (search_metadata, semantic_search, list_catalog, "
     "list_paper_relations, read_content, get_resource) via the sciverse-mcp-server MCP server."
 )
@@ -76,7 +76,7 @@ def generate_skill_md(openapi_path: Path) -> str:
         "",
         "Retrieval skill for the Sciverse open platform. Exposes six tools",
         "for working with scientific literature: field introspection,",
-        "metadata search across papers, authors, sources and patents, semantic chunk retrieval for RAG,",
+        "metadata search across papers, books, authors, sources and patents, semantic chunk retrieval for RAG,",
         "citation / reference pagination, character-range content reading, and",
         "figure / table image fetching.",
         "",
@@ -89,7 +89,7 @@ def generate_skill_md(openapi_path: Path) -> str:
         "- Expanding the original text around a known doc_id (more text before/after a chunk)",
         "",
         "Do NOT use this skill for general web search, news, or non-scientific content —",
-        "the supported collections are papers, authors, sources, and patents.",
+        "the supported collections are papers, books, authors, sources, and patents.",
         "",
         "## Prerequisites",
         "",
@@ -167,7 +167,7 @@ def generate_skill_md(openapi_path: Path) -> str:
         "```",
         "",
         "`search_metadata` uses canonical `filters` / `sort`; no convenience parameters.",
-        "`semantic_search` remains paper-only. `read_content` supports papers/patents",
+        "`semantic_search` remains paper-only. `read_content` supports papers/books/patents",
         "(default papers), offset=0 and limit=4096. Pass patents explicitly for patent text.",
         "`get_resource` primarily fetches paper images; ZIP downloads are not supported.",
         "MCP: set SCIVERSE_ENABLE_LEGACY_TOOLS=true and restart to restore the legacy tool list.",

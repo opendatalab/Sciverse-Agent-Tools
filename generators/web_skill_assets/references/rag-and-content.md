@@ -91,8 +91,8 @@ decode and show it; otherwise summarize the returned MIME type and file source.
 ## Collection boundaries
 
 `semantic_search` remains paper-only. `read_content` accepts `collection` of
-`papers` or `patents` (default `papers`), with default `offset=0`, `limit=4096`.
+`papers`, `books`, or `patents` (default `papers`), with default `offset=0`, `limit=4096`.
 Offsets and limits count Unicode code points. Pass `collection="patents"`
-explicitly when reading a patent; page using `next_offset`.
+explicitly when reading a patent, and `collection="books"` (or `papers`) for books; page using `next_offset`.
 `get_resource` primarily retrieves paper figure/table images; it does not add
 ZIP download support.

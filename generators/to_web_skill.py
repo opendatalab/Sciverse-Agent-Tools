@@ -21,7 +21,7 @@ from pathlib import Path
 
 ASSETS = Path(__file__).parent / "web_skill_assets"
 SKILL_DIR_RELATIVE = Path(".well-known/agent-skills/sciverse")
-SKILL_DESCRIPTION = 'Retrieve academic paper, author, source, and patent metadata from Sciverse. Use search_metadata with canonical filters and sort, semantic_search for paper chunks, read_content for papers or patents, and get_resource for paper images.'
+SKILL_DESCRIPTION = 'Retrieve academic paper, book, author, source, and patent metadata from Sciverse. Use search_metadata with canonical filters and sort, semantic_search for paper chunks, read_content for papers, books, or patents, and get_resource for paper images.'
 
 
 def _copy_static(out_root: Path) -> None:

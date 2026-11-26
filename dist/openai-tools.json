@@ -5,7 +5,7 @@
       "type": "function",
       "function": {
         "name": "search_metadata",
-        "description": "按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、游标分页和 facets；默认不加隐式排序。论文正文与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。",
+        "description": "按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、allow_relaxation、游标分页和 facets；默认不加隐式排序。论文、图书与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor 与 recall；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。",
         "parameters": {
           "type": "object",
           "additionalProperties": false,
@@ -23,12 +23,19 @@
               "type": "string",
               "enum": [
                 "papers",
+                "books",
                 "authors",
                 "sources",
                 "patents"
               ],
               "default": "papers",
               "description": "实体集合；用 list_catalog 查看对应字段权限和能力。"
+            },
+            "allow_relaxation": {
+              "type": "boolean",
+              "default": true,
+              "description": "请求级自动放宽开关。false 禁止 CJK 自动放宽；true 或省略时按服务端规则决定是否放宽。",
+              "x-en-description": "Request-level query relaxation toggle. Pass false to disable automatic CJK relaxation; omit or pass true to use server rules."
             },
             "query": {
               "type": "string",
@@ -274,12 +281,13 @@
               "type": "string",
               "enum": [
                 "papers",
+                "books",
                 "authors",
                 "sources",
                 "patents"
               ],
               "default": "papers",
-              "description": "字段 catalog 所属实体集合。papers（默认）/ authors / sources / patents，各 collection 字段不同。"
+              "description": "字段 catalog 所属实体集合。papers（默认）/ books / authors / sources / patents，各 collection 字段不同。"
             },
             "include_sample_values": {
               "type": "boolean",
@@ -331,6 +339,24 @@
               "default": 25,
               "minimum": 1,
               "maximum": 200
+            },
+            "sort": {
+              "type": "string",
+              "enum": [
+                "CITATION_COUNT_DESC",
+                "CITATION_COUNT_ASC"
+              ],
+              "description": "按被引数排序（可选）。传入时每条 item 附加 citation_count（外部项为 null）。",
+              "x-en-description": "Optional sort by citation count. Attaches citation_count to each returned item (null for external records)."
+            },
+            "id_types": {
+              "type": "array",
+              "maxItems": 20,
+              "items": {
+                "type": "string"
+              },
+              "description": "id_type 白名单过滤（如 [\"sciverse\"]）；先过滤再排序与分页，并返回 raw_total_count。",
+              "x-en-description": "Filter items to matching id_type values before sorting and pagination; returns raw_total_count."
             }
           }
         }
@@ -348,10 +374,11 @@
               "type": "string",
               "enum": [
                 "papers",
+                "books",
                 "patents"
               ],
               "default": "papers",
-              "description": "正文实体；专利必须传 patents，doc_id 来自元数据查询，不能用公开号。"
+              "description": "正文实体；论文与图书共用默认链路（papers / books），专利必须传 patents，doc_id 来自元数据查询，不能用公开号。"
             },
             "doc_id": {
               "type": "string",

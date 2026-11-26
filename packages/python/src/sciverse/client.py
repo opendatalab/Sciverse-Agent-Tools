@@ -15,10 +15,11 @@ _SOURCE = f"{_PLATFORM}-{_CHANNEL}"
 
 _PASSTHROUGH = (
     "query", "page", "page_size", "fields", "collection",
-    "freshness_boost", "impact_boost", "language_affinity",
+    "allow_relaxation", "freshness_boost", "impact_boost", "language_affinity",
 )
-_COLLECTIONS = ("papers", "authors", "sources", "patents")
+_COLLECTIONS = ("papers", "books", "authors", "sources", "patents")
 _METADATA_FIELDS = frozenset((*_PASSTHROUGH, "filters", "sort", "cursor", "facets"))
+_RELATION_SORTS = frozenset({"CITATION_COUNT_DESC", "CITATION_COUNT_ASC"})
 _PAPER_FILTERS = ("title_contains", "abstract_contains", "authors", "year_from", "year_to", "journals", "subjects")
 # 三个软加权档位共用同一枚举值域（NONE/MILD/STRONG）。
 _BOOST_FIELDS = ("freshness_boost", "impact_boost", "language_affinity")
@@ -52,6 +53,8 @@ def _to_backend_payload(kwargs: dict[str, Any]) -> dict[str, Any]:
 
     for k in _PASSTHROUGH:
         if k in kwargs and kwargs[k] is not None:
+            if k == "allow_relaxation" and type(kwargs[k]) is not bool:
+                raise ValueError(f"allow_relaxation must be a boolean, got {kwargs[k]!r}")
             out[k] = kwargs[k]
 
     # 软加权枚举校验：枚举值不合法直接报错（在打到后端前）。
@@ -178,6 +181,8 @@ class AgentToolsClient:
         body.setdefault("collection", "papers")
         if body["collection"] not in _COLLECTIONS:
             raise ValueError(f"collection must be one of {_COLLECTIONS}")
+        if "allow_relaxation" in body and type(body["allow_relaxation"]) is not bool:
+            raise ValueError(f"allow_relaxation must be a boolean, got {body['allow_relaxation']!r}")
         for field in _BOOST_FIELDS:
             if field in body and (not isinstance(body[field], str) or body[field] not in _BOOST_VALUES):
                 raise ValueError(f"{field} must be one of {sorted(_BOOST_VALUES)}")
@@ -243,14 +248,31 @@ class AgentToolsClient:
         relation: str,
         page: int = 1,
         page_size: int = 25,
+        sort: str | None = None,
+        id_types: list[str] | None = None,
     ) -> dict[str, Any]:
         """对应 POST /meta-paper-relations。分页查某论文的引用关系列表。
 
         relation：CITATIONS（被引：谁引用了我）/ REFERENCES（参考文献：我引用了谁）/
         RELATED_WORKS（相关工作）。CITATIONS 与 REFERENCES 方向相反。
+        sort：可选 CITATION_COUNT_DESC / CITATION_COUNT_ASC。
+        id_types：可选 id_type 白名单过滤，如 ["sciverse"]。
         unique_id 来自 search_papers / semantic_search（勿传 doc_id）。
         """
-        body = {"unique_id": unique_id, "relation": relation, "page": page, "page_size": page_size}
+        body: dict[str, Any] = {
+            "unique_id": unique_id,
+            "relation": relation,
+            "page": page,
+            "page_size": page_size,
+        }
+        if sort is not None:
+            if not isinstance(sort, str) or sort not in _RELATION_SORTS:
+                raise ValueError(f"sort must be one of {sorted(_RELATION_SORTS)}, got {sort!r}")
+            body["sort"] = sort
+        if id_types is not None:
+            if not isinstance(id_types, list) or not all(isinstance(item, str) for item in id_types):
+                raise ValueError("id_types must be a list of strings")
+            body["id_types"] = list(id_types)
         resp = await self._client.post("/meta-paper-relations", json=body)
         resp.raise_for_status()
         return resp.json()
@@ -286,7 +308,7 @@ class AgentToolsClient:
 
         返回字段 catalog：每个字段的名称 / 类型 / filterable / sortable / default_returned /
         描述 / 适用 FilterOperator，外加 enum-like 字段的样本值（include_sample_values=True 时）。
-        collection 指定实体集合（papers 默认 / authors / sources / patents），各 collection 字段集不同。
+        collection 指定实体集合（papers 默认 / books / authors / sources / patents），各 collection 字段集不同。
         Agent 第一次接触 Sciverse 或碰到字段不确定时建议先调一次再构造 search_papers。
         """
         params: dict[str, str] = {"include_sample_values": str(include_sample_values).lower()}
@@ -299,9 +321,9 @@ class AgentToolsClient:
         return resp.json()
 
     async def read_content(self, *, doc_id: str, collection: str = "papers", offset: int = 0, limit: int = 4096) -> dict[str, Any]:
-        """对应 GET /content，支持 papers（默认）和 patents。"""
-        if collection not in ("papers", "patents"):
-            raise ValueError("collection must be papers or patents")
+        """对应 GET /content，支持 papers（默认）、books 和 patents。"""
+        if collection not in ("papers", "books", "patents"):
+            raise ValueError("collection must be papers, books, or patents")
         params = {"doc_id": doc_id, "collection": collection, "offset": offset, "limit": limit}
         resp = await self._client.get("/content", params=params)
         resp.raise_for_status()

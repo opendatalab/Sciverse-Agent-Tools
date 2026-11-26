@@ -1,4 +1,4 @@
 interface:
   display_name: "Sciverse"
-  short_description: "Search paper, author, source and patent metadata with Sciverse."
-  default_prompt: "Use $sciverse to search metadata across papers, authors, sources and patents; retrieve paper or patent text and cite doc_id plus title."
+  short_description: "Search paper, book, author, source and patent metadata with Sciverse."
+  default_prompt: "Use $sciverse to search metadata across papers, books, authors, sources and patents; retrieve paper, book or patent text and cite doc_id plus title."

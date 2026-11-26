@@ -7,8 +7,8 @@
 export interface paths {
   "/meta-search": {
     /**
-     * 检索论文、专利、作者与来源的元数据
-     * @description 按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、游标分页和 facets；默认不加隐式排序。论文正文与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。
+     * 检索论文、图书、专利、作者与来源的元数据
+     * @description 按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、allow_relaxation、游标分页和 facets；默认不加隐式排序。论文、图书与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor 与 recall；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。
      */
     post: operations["search_metadata"];
   };
@@ -91,7 +91,12 @@ export interface components {
        * @default papers
        * @enum {string}
        */
-      collection?: "papers" | "authors" | "sources" | "patents";
+      collection?: "papers" | "books" | "authors" | "sources" | "patents";
+      /**
+       * @description 请求级自动放宽开关。false 禁止 CJK 自动放宽；true 或省略时按服务端规则决定是否放宽。
+       * @default true
+       */
+      allow_relaxation?: boolean;
       /**
        * @description BM25 关键词，匹配当前实体已授权的可检索字段；专利包含 invention_title、abstract、claims.claim_text。留空则纯靠结构化过滤。
        * 普通关键词是宽松匹配（任一词命中、按相关性排序）。
@@ -182,11 +187,16 @@ export interface components {
       /** @description 返回字段，须为当前collection已授权且可投影字段；省略返回默认字段集与授权交集。 */
       fields?: string[];
       /**
-       * @description 检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
+       * @description 检索的实体集合。papers（默认，论文）/ books（图书）/ authors（作者）/ sources（来源期刊）/ patents（专利）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查其他集合时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
        * @default papers
        * @enum {string}
        */
-      collection?: "papers" | "authors" | "sources" | "patents";
+      collection?: "papers" | "books" | "authors" | "sources" | "patents";
+      /**
+       * @description 请求级自动放宽开关。false 禁止 CJK 自动放宽；true 或省略时按服务端规则决定是否放宽。
+       * @default true
+       */
+      allow_relaxation?: boolean;
       /**
        * @description BM25 全文关键词，匹配标题/摘要/期刊名/关键词字段。留空则纯靠结构化过滤。
        * 普通关键词是宽松匹配（任一词命中、按相关性排序）。
@@ -327,6 +337,7 @@ export interface components {
       facets?: {
           [key: string]: unknown;
         }[];
+      recall?: components["schemas"]["RecallInfo"];
     };
     SearchPapersResponse: {
       /** @description 命中论文列表（后端字段名为 results，非 hits）。 */
@@ -348,6 +359,15 @@ export interface components {
       request_tokens?: number;
       /** @description 输出结果文本字段的 token 数。 */
       response_tokens?: number;
+      recall?: components["schemas"]["RecallInfo"];
+    };
+    RecallInfo: {
+      /** @description 实际召回模式（title / strict / relaxed）。 */
+      mode?: string;
+      /** @description 是否实际触发了放宽模式。 */
+      relaxation_applied?: boolean;
+      /** @description 命中总数关系（eq=精确，gte=下界）。 */
+      total_count_relation?: string;
     };
     /**
      * @description 文献元数据。字段名与 metadata-service 后端 `fields.py` 的真实字段一致，
@@ -449,6 +469,20 @@ export interface components {
     };
     SemanticSearchResponse: {
       hits: components["schemas"]["SearchChunk"][];
+      timings?: components["schemas"]["SearchPhaseTiming"][];
+      rewrite_status?: components["schemas"]["RewriteStatus"];
+    };
+    SearchPhaseTiming: {
+      id?: string;
+      label?: string;
+      /** Format: int64 */
+      duration_ms?: number;
+    };
+    /** @description 请求改写且执行了召回时返回；query_paths 包含原问题，少于预期表示仅执行了部分改写。 */
+    RewriteStatus: {
+      requested_sub_queries: number;
+      query_paths: number;
+      fallback: boolean;
     };
     SearchChunk: {
       chunk_id: string;
@@ -458,6 +492,7 @@ export interface components {
       chunk?: string;
       /** Format: float */
       score: number;
+      chunk_no?: number;
       /**
        * Format: int64
        * @description chunk 在原文中的 Unicode 码点偏移（不是字节），可直接作为 read_content 的 offset。
@@ -465,6 +500,11 @@ export interface components {
       offset: number;
       page_no?: number;
       source_type?: string;
+      recall_source?: string;
+      /** Format: float */
+      origin_es_score?: number | null;
+      /** Format: float */
+      origin_milvus_score?: number | null;
     };
     ReadContentResponse: {
       text: string;
@@ -472,18 +512,32 @@ export interface components {
       bytes_returned: number;
       /**
        * Format: int64
+       * @description 全文总 Unicode 码点数。
+       */
+      text_length?: number;
+      /**
+       * Format: int64
        * @description 下一段起始的 Unicode 码点偏移，可直接作为下次请求的 offset。
        */
       next_offset: number;
       /** @description 为 true 表示可能还有后续内容，可用 next_offset 继续请求。 */
       more: boolean;
+      request_tokens?: number;
+      response_tokens?: number;
     };
     CatalogResponse: {
       fields: components["schemas"]["FieldCatalogEntry"][];
       /** @description search_papers 不传 fields 时默认返回的字段名清单。 */
       default_fields: string[];
-      /** @description 支持的 FilterOperator 名（不带 FILTER_OP_ 前缀，如 "EQ" / "IN" / "CONTAINS"）。 */
+      /** @description 支持的 FilterOperator 全称（带 FILTER_OP_ 前缀，如 "FILTER_OP_EQ" / "FILTER_OP_IN" / "FILTER_OP_CONTAINS"）。 */
       filter_operators: string[];
+    };
+    NumericStats: {
+      min?: number;
+      max?: number;
+      avg?: number;
+      p50?: number;
+      p95?: number;
     };
     FieldCatalogEntry: {
       /** @description 字段名（与 search_papers 的 filters[].field 一致）。 */
@@ -502,6 +556,16 @@ export interface components {
       sample_values?: string[];
       /** @description 适用的 FilterOperator 名（参考性，后端不强校验）。 */
       operators?: string[];
+      /** @description 字段语义分组（system / core / publication / topic / citation_impact / access / storage / classification / other）。 */
+      group?: string;
+      /** @description 是否可作为 fields 返回投影；false 时仅支持过滤/排序。 */
+      projectable?: boolean;
+      /**
+       * Format: int64
+       * @description keyword 字段去重基数估算（include_field_stats=true 时填充）。
+       */
+      cardinality_estimate?: number;
+      numeric_stats?: components["schemas"]["NumericStats"];
     };
     ApiError: {
       code: string;
@@ -518,6 +582,18 @@ export interface components {
     };
     /** @description Bearer Token 缺失或无效 */
     Unauthorized: {
+      content: {
+        "application/json": components["schemas"]["ApiError"];
+      };
+    };
+    /** @description 无权限访问该集合、字段或受控正文 */
+    Forbidden: {
+      content: {
+        "application/json": components["schemas"]["ApiError"];
+      };
+    };
+    /** @description 触发用户级限流或关系数上限 */
+    TooManyRequests: {
       content: {
         "application/json": components["schemas"]["ApiError"];
       };
@@ -542,8 +618,8 @@ export type external = Record<string, never>;
 export interface operations {
 
   /**
-   * 检索论文、专利、作者与来源的元数据
-   * @description 按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、游标分页和 facets；默认不加隐式排序。论文正文与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。
+   * 检索论文、图书、专利、作者与来源的元数据
+   * @description 按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、allow_relaxation、游标分页和 facets；默认不加隐式排序。论文、图书与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor 与 recall；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。
    */
   search_metadata: {
     requestBody: {
@@ -560,6 +636,8 @@ export interface operations {
       };
       400: components["responses"]["BadRequest"];
       401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      429: components["responses"]["TooManyRequests"];
       502: components["responses"]["BadGateway"];
     };
   };
@@ -586,6 +664,8 @@ export interface operations {
       };
       400: components["responses"]["BadRequest"];
       401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      429: components["responses"]["TooManyRequests"];
       502: components["responses"]["BadGateway"];
       /** @description 嵌入或检索后端暂不可用 */
       503: {
@@ -609,8 +689,8 @@ export interface operations {
   list_catalog: {
     parameters: {
       query?: {
-        /** @description 字段 catalog 所属实体集合。papers（默认）/ authors / sources / patents，各 collection 字段不同。 */
-        collection?: "papers" | "authors" | "sources" | "patents";
+        /** @description 字段 catalog 所属实体集合。papers（默认）/ books / authors / sources / patents，各 collection 字段不同。 */
+        collection?: "papers" | "books" | "authors" | "sources" | "patents";
         /** @description 是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。 */
         include_sample_values?: boolean;
         /** @description 是否返回字段统计（keyword 字段基数 + 数值字段 min/max/avg/p50/p95）。触发 OpenSearch 聚合，缓存 24h。 */
@@ -625,6 +705,8 @@ export interface operations {
         };
       };
       401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      429: components["responses"]["TooManyRequests"];
       502: components["responses"]["BadGateway"];
     };
   };
@@ -656,6 +738,13 @@ export interface operations {
           page?: number;
           /** @default 25 */
           page_size?: number;
+          /**
+           * @description 按被引数排序（可选）。传入时每条 item 附加 citation_count（外部项为 null）。
+           * @enum {string}
+           */
+          sort?: "CITATION_COUNT_DESC" | "CITATION_COUNT_ASC";
+          /** @description id_type 白名单过滤（如 ["sciverse"]）；先过滤再排序与分页，并返回 raw_total_count。 */
+          id_types?: string[];
         };
       };
     };
@@ -664,26 +753,32 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            items?: {
+            items?: ({
                 id?: string;
                 id_type?: string;
                 title?: string;
-              }[];
+                citation_count?: number | null;
+              })[];
             total_count?: number;
             page?: number;
             page_size?: number;
             total_pages?: number;
+            /** Format: float */
+            query_time_ms?: number;
+            raw_total_count?: number;
           };
         };
       };
       400: components["responses"]["BadRequest"];
       401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
       /** @description unique_id 对应文档不存在 */
       404: {
         content: {
           "application/json": components["schemas"]["ApiError"];
         };
       };
+      429: components["responses"]["TooManyRequests"];
       502: components["responses"]["BadGateway"];
     };
   };
@@ -699,8 +794,8 @@ export interface operations {
   read_content: {
     parameters: {
       query: {
-        /** @description 正文实体；专利必须传 patents，doc_id 来自元数据查询，不能用公开号。 */
-        collection?: "papers" | "patents";
+        /** @description 正文实体；论文与图书共用默认链路（papers / books），专利必须传 patents，doc_id 来自元数据查询，不能用公开号。 */
+        collection?: "papers" | "books" | "patents";
         /** @description 文献 ID（来自 search_metadata / semantic_search）。 */
         doc_id: string;
         /** @description 起始 Unicode 码点偏移，直接使用 semantic_search 返回的 offset。默认 0。 */
@@ -718,6 +813,8 @@ export interface operations {
       };
       400: components["responses"]["BadRequest"];
       401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      429: components["responses"]["TooManyRequests"];
       502: components["responses"]["BadGateway"];
     };
   };
@@ -748,6 +845,8 @@ export interface operations {
       };
       400: components["responses"]["BadRequest"];
       401: components["responses"]["Unauthorized"];
+      403: components["responses"]["Forbidden"];
+      429: components["responses"]["TooManyRequests"];
       502: components["responses"]["BadGateway"];
     };
   };

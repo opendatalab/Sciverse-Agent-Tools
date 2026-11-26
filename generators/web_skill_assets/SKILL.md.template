@@ -1,6 +1,6 @@
 ---
 name: sciverse
-description: Retrieve academic paper, author, source, and patent metadata from Sciverse. Use search_metadata with canonical filters and sort, semantic_search for paper chunks, read_content for papers or patents, and get_resource for paper images.
+description: Retrieve academic paper, book, author, source, and patent metadata from Sciverse. Use search_metadata with canonical filters and sort, semantic_search for paper chunks, read_content for papers, books, or patents, and get_resource for paper images.
 ---
 
 # Sciverse
@@ -14,7 +14,7 @@ tool protocol. Keep answers grounded in returned `doc_id`, title, and excerpts.
 - Need setup, environment variables, script invocation rules, or exit codes:
   read [references/runtime.md](references/runtime.md).
 - Need author/year/journal/DOI/field filtering, schema discovery, metadata
-  search, or author / journal (source) / patent entity search via `collection`: read
+  search, or book / author / journal (source) / patent entity search via `collection`: read
   [references/search-tools.md](references/search-tools.md).
 - Need RAG chunks, source text expansion, or paper figures/tables: read
   [references/rag-and-content.md](references/rag-and-content.md).
@@ -39,5 +39,5 @@ tool protocol. Keep answers grounded in returned `doc_id`, title, and excerpts.
 - Run bundled scripts from this skill directory, or use absolute paths to the
   scripts.
 
-`read_content` supports papers/patents (default papers), offset=0, limit=4096.
+`read_content` supports papers/books/patents (default papers), offset=0, limit=4096.
 Always set collection explicitly for patent reading. Semantic search remains paper-only.

@@ -26,6 +26,7 @@ class SearchMetadataArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
     fields: list[str] | None = Field(None, description='返回字段，须为当前collection已授权且可投影字段；省略返回默认字段集与授权交集。')
     collection: str = Field('papers', description='实体集合；用 list_catalog 查看对应字段权限和能力。')
+    allow_relaxation: bool = Field(True, description='请求级自动放宽开关。false 禁止 CJK 自动放宽；true 或省略时按服务端规则决定是否放宽。')
     query: str | None = Field(None, description='BM25 关键词，匹配当前实体已授权的可检索字段；专利包含 invention_title、abstract、claims.claim_text。留空则纯靠结构化过滤。\n普通关键词是宽松匹配（任一词命中、按相关性排序）。\n\n也支持布尔检索式：全大写 AND / OR / NOT、括号分组、引号短语；优先级\nNOT > AND > OR，相邻词隐式 AND。例如\n  (histopathology OR pathology) AND ("deep learning" OR "machine learning") AND (prognosis OR survival)\n布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。\n- query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。\n- 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 "OR"。\n- 引号需与运算符同时出现才生效：只写 "spread through air spaces" 不带运算符时\n  按普通关键词处理；写成 "spread through air spaces" AND lung 才是短语精确匹配。\n- 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。\n')
     page: int = Field(1, description='')
     page_size: int = Field(25, description='每页条数。省略时为服务端默认 25（SDK / MCP 不注入默认值）；工具层上限 50。')
@@ -40,7 +41,7 @@ class SearchMetadataArgs(BaseModel):
 
 class SearchMetadataTool(BaseTool):
     name: str = "search_metadata"
-    description: str = """按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、游标分页和 facets；默认不加隐式排序。论文正文与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。"""
+    description: str = """按 collection 检索元数据。先用 list_catalog 查看该实体已授权字段，再填写 filters、sort、fields。支持关键词 query、allow_relaxation、游标分页和 facets；默认不加隐式排序。论文、图书与专利正文使用 read_content，语义片段检索使用 semantic_search（仅论文）。返回 results、total_count、next_cursor 与 recall；实体字段不做统一改名，作者和来源的 id 不能用于读取正文。"""
     args_schema: type[BaseModel] = SearchMetadataArgs
     client: Any = None
 
@@ -84,7 +85,7 @@ class SemanticSearchTool(BaseTool):
 
 class ListCatalogArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    collection: str = Field('papers', description='字段 catalog 所属实体集合。papers（默认）/ authors / sources / patents，各 collection 字段不同。')
+    collection: str = Field('papers', description='字段 catalog 所属实体集合。papers（默认）/ books / authors / sources / patents，各 collection 字段不同。')
     include_sample_values: bool = Field(False, description='是否拉取 enum-like 字段的取值样本。false 仅返回静态 schema（毫秒级）；true 触发 OpenSearch terms agg（首次几百毫秒，之后 24h 走缓存）。')
     include_field_stats: bool = Field(False, description='是否返回字段统计（keyword 字段基数 + 数值字段 min/max/avg/p50/p95）。触发 OpenSearch 聚合，缓存 24h。')
 
@@ -118,6 +119,8 @@ class ListPaperRelationsArgs(BaseModel):
     relation: str = Field(..., description='关系类型。CITATIONS=被引（谁引用了我）；REFERENCES=参考文献（我引用了谁）；RELATED_WORKS=相关工作。')
     page: int = Field(1, description='')
     page_size: int = Field(25, description='')
+    sort: str | None = Field(None, description='按被引数排序（可选）。传入时每条 item 附加 citation_count（外部项为 null）。')
+    id_types: list[str] | None = Field(None, description='id_type 白名单过滤（如 ["sciverse"]）；先过滤再排序与分页，并返回 raw_total_count。')
 
 
 class ListPaperRelationsTool(BaseTool):
@@ -147,7 +150,7 @@ total_count 为库内命中数（不含指向库外论文的边），与论文�
 
 class ReadContentArgs(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    collection: str = Field('papers', description='正文实体；专利必须传 patents，doc_id 来自元数据查询，不能用公开号。')
+    collection: str = Field('papers', description='正文实体；论文与图书共用默认链路（papers / books），专利必须传 patents，doc_id 来自元数据查询，不能用公开号。')
     doc_id: str = Field(..., description='文献 ID（来自 search_metadata / semantic_search）。')
     offset: int = Field(0, description='起始 Unicode 码点偏移，直接使用 semantic_search 返回的 offset。默认 0。')
     limit: int = Field(4096, description='最多返回的 Unicode 码点数。默认 4096；服务端上限 524288（超出静默钳制）。LLM 场景建议 ≤ 16384，避免撑爆上下文。')

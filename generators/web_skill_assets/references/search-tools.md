@@ -19,7 +19,7 @@ Typical uses:
   subject filtering.
 - Inspect available `FilterOperators`.
 - Avoid guessing field names before `search_metadata`.
-- Pass `collection` (`papers` / `authors` / `sources` / `patents`) to inspect a specific entity's schema.
+- Pass `collection` (`papers` / `books` / `authors` / `sources` / `patents`) to inspect a specific entity's schema.
 
 ## search_metadata
 
@@ -39,7 +39,7 @@ node scripts/search_metadata.mjs '{
 
 Common arguments:
 
-- `collection`: `papers` (default), `authors`, `sources`, or `patents`.
+- `collection`: `papers` (default), `books`, `authors`, `sources`, or `patents`.
   Call `list_catalog` for the selected collection before building filters.
 - `query`: BM25-style keyword query over title/abstract/venue/keywords. Plain keywords
   match loosely (any word, ranked by relevance). Boolean syntax is supported: UPPERCASE
@@ -62,6 +62,8 @@ Common arguments:
   unknown-language papers stay neutral; to hard-exclude a language use
   `filters` on `language` instead. All three: only effective when `query` is
   non-empty; ignored when any sort is set; shallow paging while active (no `next_cursor`).
+- `allow_relaxation`: request-level boolean toggle (default `true`). Pass `false` to disable
+  automatic CJK relaxation and enforce strict keyword matching.
 - `page`, `page_size`: pagination; `page_size` is capped at 50.
 
 ## list_paper_relations
@@ -90,6 +92,8 @@ node scripts/search_metadata.mjs '{
 node scripts/list_paper_relations.mjs '{
   "unique_id": "paper:10.1038/...",
   "relation": "CITATIONS",
+  "sort": "CITATION_COUNT_DESC",
+  "id_types": ["sciverse"],
   "page": 1,
   "page_size": 25
 }'
@@ -98,6 +102,8 @@ node scripts/list_paper_relations.mjs '{
 - `unique_id` (required): from a `search_metadata` / `semantic_search` result (not `doc_id`).
 - `relation` (required): `CITATIONS` (who cites this paper) / `REFERENCES` (what this paper
   cites — opposite direction) / `RELATED_WORKS`.
+- `sort`: optional `CITATION_COUNT_DESC` / `CITATION_COUNT_ASC` (attaches `citation_count` per item).
+- `id_types`: optional whitelist array (e.g. `["sciverse"]`); filters before sorting/paging and returns `raw_total_count`.
 - `page`, `page_size`: pagination.
 
 ## Advanced Filter Example
@@ -111,9 +117,9 @@ node scripts/search_metadata.mjs '{
 }'
 ```
 
-## Collections: authors / sources / patents
+## Collections: books / authors / sources / patents
 
-`search_metadata` and `list_catalog` accept `collection`: `papers` (default), `authors`,
+`search_metadata` and `list_catalog` accept `collection`: `papers` (default), `books`, `authors`,
 `sources`, `patents`. Each collection has its own field schema — call
 `list_catalog '{"collection":"authors"}'` first. Use canonical `filters` and `sort` with that collection's fields.
 The new script rejects unknown parameters and paper convenience arguments.

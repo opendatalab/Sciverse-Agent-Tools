@@ -9,6 +9,6 @@ if (!args.doc_id) {
 }
 const query = { ...args, collection: args.collection ?? "papers",
   offset: args.offset ?? 0, limit: args.limit ?? 4096 };
-validateCollection(query.collection, ["papers", "patents"]);
+validateCollection(query.collection, ["papers", "books", "patents"]);
 const result = await callSciverse("GET", "/content", { query });
 console.log(JSON.stringify(result));
