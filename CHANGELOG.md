@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v1.0.1...v1.1.0) (2026-11-26)
+
+### Features
+
+* sync books collection, allow_relaxation and relations sort/id_types ([1ef8b99](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/1ef8b99a55d37eeef9be6918e799cc3702e73578))
+
 ## [1.0.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v1.0.0...v1.0.1) (2026-11-02)
 
 ### Bug Fixes

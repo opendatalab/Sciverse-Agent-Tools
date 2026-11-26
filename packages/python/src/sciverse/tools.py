@@ -1,7 +1,7 @@
 """Auto-generated. Do not edit. Run scripts/build.sh."""
 import json
 
-TOOLS_VERSION = "1.0.1"
+TOOLS_VERSION = "1.1.0"
 
 OPENAI_TOOLS = json.loads(r"""
 [
