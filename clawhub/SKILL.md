@@ -2,14 +2,14 @@
 name: sciverse-academic-retrieval
 slug: academic-retrieval
 version: 1.0.1
-description: Sciverse academic paper retrieval: metadata search across papers, authors, sources and patents, semantic chunk retrieval for RAG, and character-range content reading (offsets in Unicode code points). For agent workflows that need citation-grade scientific literature.
+description: Sciverse academic retrieval: metadata search across papers, books, authors, sources and patents, semantic chunk retrieval for RAG, and character-range content reading (offsets in Unicode code points). For agent workflows that need citation-grade scientific literature.
 license: Apache-2.0
 homepage: https://sciverse.space
 ---
 
 # academic-retrieval
 
-Sciverse academic paper retrieval: metadata search across papers, authors, sources and patents, semantic chunk retrieval for RAG, and character-range content reading (offsets in Unicode code points). For agent workflows that need citation-grade scientific literature.
+Sciverse academic retrieval: metadata search across papers, books, authors, sources and patents, semantic chunk retrieval for RAG, and character-range content reading (offsets in Unicode code points). For agent workflows that need citation-grade scientific literature.
 
 ## When to use
 
@@ -29,7 +29,7 @@ to override the default API base URL.
 
 ### search_metadata
 
-Search metadata in one collection: papers, patents, authors or sources. Use list_catalog to discover authorized fields before choosing filters, sort and fields. Supports keywords, cursor pagination and facets; no implicit field sorting. Returns results, total_count and next_cursor with collection-specific fields. Use read_content for paper/patent text and semantic_search for paper semantic retrieval. Author/source IDs cannot be used to read content.
+Search metadata in one collection: papers, books, patents, authors or sources. Use list_catalog to discover authorized fields before choosing filters, sort and fields. Supports keywords, allow_relaxation, cursor pagination and facets; no implicit field sorting. Returns results, total_count, next_cursor and recall with collection-specific fields. Use read_content for paper/book/patent text and semantic_search for paper semantic retrieval. Author/source IDs cannot be used to read content.
 
 **Invoke**: `node scripts/search_metadata.mjs '<JSON args>'`
 
@@ -86,12 +86,12 @@ citation_count by about 1%.
 
 ### read_content
 
-Read a range of a paper or patent’s original text addressed in Unicode code
+Read a range of a paper, book, or patent’s original text addressed in Unicode code
 points (offset/limit count characters like Python len(), not bytes).
-Typically used with a doc_id/offset returned by semantic_search to
+Typically used with a doc_id/offset returned by semantic_search or search_metadata to
 expand context (read more text before or after a chunk).
 Returns: text fragment, bytes_returned (UTF-8 byte length of text, for
-reference only), next_offset (code-point offset of the next fragment —
+reference only), text_length, next_offset (code-point offset of the next fragment —
 page with it, never with bytes_returned), more (boolean).
 Server behaviour: limit above 524288 is silently clamped; omitting
 offset returns the whole document ignoring limit — the SDKs / MCP
@@ -128,7 +128,7 @@ list_catalog(include_sample_values=true)
 ```
 
 `search_metadata` uses canonical `filters` / `sort`; no convenience parameters.
-`semantic_search` remains paper-only. `read_content` supports papers/patents
+`semantic_search` remains paper-only. `read_content` supports papers/books/patents
 (default papers), offset=0 and limit=4096. Pass patents explicitly for patent text.
 `get_resource` primarily fetches paper images; ZIP downloads are not supported.
 MCP: set SCIVERSE_ENABLE_LEGACY_TOOLS=true and restart to restore the legacy tool list.

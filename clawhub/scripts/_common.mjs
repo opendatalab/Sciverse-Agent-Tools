@@ -96,7 +96,7 @@ export function readJsonArg() {
 // 便利参数不翻译=静默失效，所以必须在脚本侧转换）。
 const META_PASSTHROUGH = [
   "query", "page", "page_size", "fields", "collection", "cursor", "facets",
-  "freshness_boost", "impact_boost", "language_affinity",
+  "allow_relaxation", "freshness_boost", "impact_boost", "language_affinity",
 ];
 
 export function argumentError(message) {
@@ -104,7 +104,7 @@ export function argumentError(message) {
   process.exit(2);
 }
 
-export function validateCollection(collection, allowed = ["papers", "authors", "sources", "patents"]) {
+export function validateCollection(collection, allowed = ["papers", "books", "authors", "sources", "patents"]) {
   if (!allowed.includes(collection)) argumentError(`不支持 collection: ${collection}`);
 }
 
@@ -116,12 +116,18 @@ export function toMetadataPayload(args) {
   }
   const collection = args.collection ?? "papers";
   validateCollection(collection);
+  if (args.allow_relaxation !== undefined && typeof args.allow_relaxation !== "boolean") {
+    argumentError("allow_relaxation 必须是布尔值");
+  }
   return { ...args, collection };
 }
 
 export function toMetaSearchPayload(args) {
   const collection = args.collection ?? "papers";
   validateCollection(collection);
+  if (args.allow_relaxation !== undefined && args.allow_relaxation !== null && typeof args.allow_relaxation !== "boolean") {
+    argumentError("allow_relaxation 必须是布尔值");
+  }
   const paperOnly = ["title_contains", "abstract_contains", "authors", "year_from",
     "year_to", "journals", "subjects"];
   if (collection !== "papers") {

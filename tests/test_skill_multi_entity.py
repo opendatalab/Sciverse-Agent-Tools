@@ -23,7 +23,7 @@ def run_script(name, args, scripts=SCRIPTS):
              'TEST_ARGS': json.dumps(args)}, text=True, capture_output=True)
 
 
-@pytest.mark.parametrize('collection', ['papers', 'authors', 'sources', 'patents'])
+@pytest.mark.parametrize('collection', ['papers', 'books', 'authors', 'sources', 'patents'])
 def test_metadata_canonical_payload_without_implicit_sort(collection):
     args = {'collection': collection, 'filters': [{'field': 'x', 'operator': 'FILTER_OP_EQ', 'value': 0}],
             'sort': [{'field': 'x', 'order': 'SORT_ORDER_ASC'}]}
@@ -38,22 +38,28 @@ def test_metadata_defaults_papers():
     assert json.loads(result.stdout)['body'] == {'collection': 'papers'}
 
 
+def test_metadata_allow_relaxation_toggle():
+    result = run_script('search_metadata', {'query': '量子计算', 'allow_relaxation': False})
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)['body'] == {'collection': 'papers', 'query': '量子计算', 'allow_relaxation': False}
+
+
 @pytest.mark.parametrize('args', [{'typo': 1}, {'filters_advanced': []}, {'year_from': 2020},
-                                 {'collection': 'unknown'}, [], None])
+                                 {'collection': 'unknown'}, {'allow_relaxation': 'false'}, [], None])
 def test_metadata_rejects_invalid_args_before_http(args):
     result = run_script('search_metadata', args)
     assert result.returncode == 2, result.stderr
     assert result.stdout == ''
 
 
-@pytest.mark.parametrize('collection', ['authors', 'sources', 'patents'])
+@pytest.mark.parametrize('collection', ['books', 'authors', 'sources', 'patents'])
 def test_legacy_nonpaper_never_adds_year_sort(collection):
     result = run_script('search_papers', {'collection': collection})
     assert result.returncode == 0, result.stderr
     assert 'sort' not in json.loads(result.stdout)['body']
 
 
-@pytest.mark.parametrize('collection', ['authors', 'sources', 'patents'])
+@pytest.mark.parametrize('collection', ['books', 'authors', 'sources', 'patents'])
 @pytest.mark.parametrize('mode', ['none', 'auto'])
 @pytest.mark.parametrize('sort_key', [None, 'sort', 'sort_advanced'])
 def test_legacy_nonpaper_allows_neutral_year_sort(collection, mode, sort_key):
@@ -68,7 +74,7 @@ def test_legacy_nonpaper_allows_neutral_year_sort(collection, mode, sort_key):
                     if sort_key else {'collection': collection})
 
 
-@pytest.mark.parametrize('collection', ['authors', 'sources', 'patents'])
+@pytest.mark.parametrize('collection', ['books', 'authors', 'sources', 'patents'])
 @pytest.mark.parametrize('mode', ['asc', 'desc'])
 def test_legacy_nonpaper_rejects_explicit_year_sort(collection, mode):
     result = run_script('search_papers', {'collection': collection, 'sort_by_year': mode})
@@ -102,7 +108,7 @@ def test_legacy_canonical_sort_takes_precedence_over_auto_year():
     assert json.loads(result.stdout)['body']['sort'] == sort
 
 
-@pytest.mark.parametrize('collection', [None, 'papers', 'patents'])
+@pytest.mark.parametrize('collection', [None, 'papers', 'books', 'patents'])
 def test_content_collection_and_defaults(collection):
     from urllib.parse import urlparse, parse_qs
     args = {'doc_id': 'abc'}

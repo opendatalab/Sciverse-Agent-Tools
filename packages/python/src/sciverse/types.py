@@ -15,6 +15,7 @@ class Collection(Enum):
     """
 
     papers = "papers"
+    books = "books"
     authors = "authors"
     sources = "sources"
     patents = "patents"
@@ -132,6 +133,10 @@ class SearchMetadataRequest(BaseModel):
         Collection.papers,
         description="实体集合；用 list_catalog 查看对应字段权限和能力。",
     )
+    allow_relaxation: bool | None = Field(
+        True,
+        description="请求级自动放宽开关。false 禁止 CJK 自动放宽；true 或省略时按服务端规则决定是否放宽。",
+    )
     query: str | None = Field(
         None,
         description='BM25 关键词，匹配当前实体已授权的可检索字段；专利包含 invention_title、abstract、claims.claim_text。留空则纯靠结构化过滤。\n普通关键词是宽松匹配（任一词命中、按相关性排序）。\n\n也支持布尔检索式：全大写 AND / OR / NOT、括号分组、引号短语；优先级\nNOT > AND > OR，相邻词隐式 AND。例如\n  (histopathology OR pathology) AND ("deep learning" OR "machine learning") AND (prognosis OR survival)\n布尔式里每个检索词都是硬条件、不做放宽——0 命中就是 0。\n- query 只放检索词：「检索式1（预后预测）」这类标签/说明也会变成必须命中的词。\n- 小写 and/or 是普通词；要检索字面量 OR（如比值比）加引号 "OR"。\n- 引号需与运算符同时出现才生效：只写 "spread through air spaces" 不带运算符时\n  按普通关键词处理；写成 "spread through air spaces" AND lung 才是短语精确匹配。\n- 最多 64 个检索词、括号嵌套 10 层，超限返回 400；复杂检索请拆成多次调用。\n',
@@ -171,10 +176,11 @@ class SearchMetadataRequest(BaseModel):
 
 class Collection1(Enum):
     """
-    检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
+    检索的实体集合。papers（默认，论文）/ books（图书）/ authors（作者）/ sources（来源期刊）/ patents（专利）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查其他集合时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。
     """
 
     papers = "papers"
+    books = "books"
     authors = "authors"
     sources = "sources"
     patents = "patents"
@@ -219,7 +225,11 @@ class SearchPapersRequest(BaseModel):
     )
     collection: Collection1 | None = Field(
         Collection1.papers,
-        description="检索的实体集合。papers（默认，论文）/ authors（作者）/ sources（来源期刊）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查 authors/sources 时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。",
+        description="检索的实体集合。papers（默认，论文）/ books（图书）/ authors（作者）/ sources（来源期刊）/ patents（专利）。 各 collection 字段集不同，用 list_catalog（collection=<name>）学习对应 schema。 注意：本工具的便捷字段（authors/journals/year_from/subjects 等）只对 papers 有意义； 查其他集合时改用 filters_advanced + 该 collection 的字段名（如 authors 的 summary_stats.h_index / orcid，sources 的 issn / is_oa）。authors 用 orcid、 sources 用 issn 与论文检索结果关联。",
+    )
+    allow_relaxation: bool | None = Field(
+        True,
+        description="请求级自动放宽开关。false 禁止 CJK 自动放宽；true 或省略时按服务端规则决定是否放宽。",
     )
     query: str | None = Field(
         None,
@@ -285,28 +295,16 @@ class TotalCount(RootModel[str]):
     )
 
 
-class SearchMetadataResponse(BaseModel):
-    results: list[dict[str, Any]] = Field(
-        ...,
-        description="实体元数据，字段受collection、投影和授权影响。专利无 is_content_accessible；作者/来源无正文句柄。",
+class RecallInfo(BaseModel):
+    mode: str | None = Field(
+        None, description="实际召回模式（title / strict / relaxed）。"
     )
-    total_count: int | TotalCount = Field(
-        ...,
-        description="命中数，protobuf JSON 可能返回数字字符串；不是通过分页精确计数的保证。",
+    relaxation_applied: bool | None = Field(
+        None, description="是否实际触发了放宽模式。"
     )
-    page: int
-    page_size: int
-    total_pages: int | None = Field(None, description="总页数。")
-    next_cursor: str | None = Field(
-        None,
-        description="深翻页游标，为空表示无更多。page*page_size>10000 时必须改用 cursor（把此值回填到请求的 cursor）。",
+    total_count_relation: str | None = Field(
+        None, description="命中总数关系（eq=精确，gte=下界）。"
     )
-    search_time_ms: float | None = Field(None, description="检索耗时（毫秒）。")
-    request_tokens: int | None = Field(None, description="输入 query 的 token 数。")
-    response_tokens: int | None = Field(
-        None, description="输出结果文本字段的 token 数。"
-    )
-    facets: list[dict[str, Any]] | None = None
 
 
 class AuthorItem(BaseModel):
@@ -447,6 +445,22 @@ class SemanticSearchRequest(BaseModel):
     )
 
 
+class SearchPhaseTiming(BaseModel):
+    id: str | None = None
+    label: str | None = None
+    duration_ms: int | None = None
+
+
+class RewriteStatus(BaseModel):
+    """
+    请求改写且执行了召回时返回；query_paths 包含原问题，少于预期表示仅执行了部分改写。
+    """
+
+    requested_sub_queries: int = Field(..., ge=1)
+    query_paths: int = Field(..., ge=1)
+    fallback: bool
+
+
 class SearchChunk(BaseModel):
     chunk_id: str
     doc_id: str
@@ -454,12 +468,16 @@ class SearchChunk(BaseModel):
     abstract: str | None = None
     chunk: str | None = None
     score: float
+    chunk_no: int | None = None
     offset: int = Field(
         ...,
         description="chunk 在原文中的 Unicode 码点偏移（不是字节），可直接作为 read_content 的 offset。",
     )
     page_no: int | None = None
     source_type: str | None = None
+    recall_source: str | None = None
+    origin_es_score: float | None = None
+    origin_milvus_score: float | None = None
 
 
 class ReadContentResponse(BaseModel):
@@ -468,12 +486,23 @@ class ReadContentResponse(BaseModel):
         ...,
         description="text 的 UTF-8 字节长度，仅供参考；翻页请用 next_offset（两者单位不同）。",
     )
+    text_length: int | None = Field(None, description="全文总 Unicode 码点数。")
     next_offset: int = Field(
         ..., description="下一段起始的 Unicode 码点偏移，可直接作为下次请求的 offset。"
     )
     more: bool = Field(
         ..., description="为 true 表示可能还有后续内容，可用 next_offset 继续请求。"
     )
+    request_tokens: int | None = None
+    response_tokens: int | None = None
+
+
+class NumericStats(BaseModel):
+    min: float | None = None
+    max: float | None = None
+    avg: float | None = None
+    p50: float | None = None
+    p95: float | None = None
 
 
 class FieldCatalogEntry(BaseModel):
@@ -496,12 +525,49 @@ class FieldCatalogEntry(BaseModel):
     operators: list[str] | None = Field(
         None, description="适用的 FilterOperator 名（参考性，后端不强校验）。"
     )
+    group: str | None = Field(
+        None,
+        description="字段语义分组（system / core / publication / topic / citation_impact / access / storage / classification / other）。",
+    )
+    projectable: bool | None = Field(
+        None, description="是否可作为 fields 返回投影；false 时仅支持过滤/排序。"
+    )
+    cardinality_estimate: int | None = Field(
+        None,
+        description="keyword 字段去重基数估算（include_field_stats=true 时填充）。",
+    )
+    numeric_stats: NumericStats | None = None
 
 
 class ApiError(BaseModel):
     code: str
     message: str
     request_id: str | None = None
+
+
+class SearchMetadataResponse(BaseModel):
+    results: list[dict[str, Any]] = Field(
+        ...,
+        description="实体元数据，字段受collection、投影和授权影响。专利无 is_content_accessible；作者/来源无正文句柄。",
+    )
+    total_count: int | TotalCount = Field(
+        ...,
+        description="命中数，protobuf JSON 可能返回数字字符串；不是通过分页精确计数的保证。",
+    )
+    page: int
+    page_size: int
+    total_pages: int | None = Field(None, description="总页数。")
+    next_cursor: str | None = Field(
+        None,
+        description="深翻页游标，为空表示无更多。page*page_size>10000 时必须改用 cursor（把此值回填到请求的 cursor）。",
+    )
+    search_time_ms: float | None = Field(None, description="检索耗时（毫秒）。")
+    request_tokens: int | None = Field(None, description="输入 query 的 token 数。")
+    response_tokens: int | None = Field(
+        None, description="输出结果文本字段的 token 数。"
+    )
+    facets: list[dict[str, Any]] | None = None
+    recall: RecallInfo | None = None
 
 
 class SearchPapersResponse(BaseModel):
@@ -524,10 +590,13 @@ class SearchPapersResponse(BaseModel):
     response_tokens: int | None = Field(
         None, description="输出结果文本字段的 token 数。"
     )
+    recall: RecallInfo | None = None
 
 
 class SemanticSearchResponse(BaseModel):
     hits: list[SearchChunk]
+    timings: list[SearchPhaseTiming] | None = None
+    rewrite_status: RewriteStatus | None = None
 
 
 class CatalogResponse(BaseModel):
@@ -537,5 +606,5 @@ class CatalogResponse(BaseModel):
     )
     filter_operators: list[str] = Field(
         ...,
-        description='支持的 FilterOperator 名（不带 FILTER_OP_ 前缀，如 "EQ" / "IN" / "CONTAINS"）。',
+        description='支持的 FilterOperator 全称（带 FILTER_OP_ 前缀，如 "FILTER_OP_EQ" / "FILTER_OP_IN" / "FILTER_OP_CONTAINS"）。',
     )

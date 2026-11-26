@@ -195,7 +195,7 @@ def api_env(monkeypatch):
 
 
 @respx.mock
-@pytest.mark.parametrize("collection", ["papers", "authors", "sources", "patents"])
+@pytest.mark.parametrize("collection", ["papers", "books", "authors", "sources", "patents"])
 def test_metadata_cli_canonical_request(api_env, capsys, collection):
     route = respx.post("https://api.example/meta-search").respond(200, json={"hits": []})
     assert main([
@@ -203,7 +203,7 @@ def test_metadata_cli_canonical_request(api_env, capsys, collection):
         "--filters", '[{"field":"unique_id","operator":"FILTER_OP_EQ","value":"x"}]',
         "--sort", '[{"field":"unique_id","order":"SORT_ORDER_ASC"}]',
         "--fields", '["unique_id"]', "--facets", '[{"field":"language","size":50}]',
-        "--cursor", "opaque", "--page", "1", "--page-size", "5",
+        "--cursor", "opaque", "--page", "1", "--page-size", "5", "--no-allow-relaxation",
         "--freshness-boost", "MILD", "--impact-boost", "STRONG", "--language-affinity", "NONE",
     ]) == 0
     assert json.loads(route.calls.last.request.content) == {
@@ -211,7 +211,7 @@ def test_metadata_cli_canonical_request(api_env, capsys, collection):
         "filters": [{"field": "unique_id", "operator": "FILTER_OP_EQ", "value": "x"}],
         "sort": [{"field": "unique_id", "order": "SORT_ORDER_ASC"}],
         "fields": ["unique_id"], "facets": [{"field": "language", "size": 50}], "cursor": "opaque",
-        "page": 1, "page_size": 5,
+        "page": 1, "page_size": 5, "allow_relaxation": False,
         "freshness_boost": "MILD", "impact_boost": "STRONG", "language_affinity": "NONE",
     }
     assert json.loads(capsys.readouterr().out) == {"hits": []}
@@ -233,7 +233,7 @@ def test_metadata_cli_rejects_invalid_arguments(args):
 
 
 @respx.mock
-@pytest.mark.parametrize("collection", ["authors", "sources", "patents"])
+@pytest.mark.parametrize("collection", ["books", "authors", "sources", "patents"])
 def test_legacy_cli_nonpapers_no_year_sort(api_env, collection):
     route = respx.post("https://api.example/meta-search").respond(200, json={})
     assert main(["search", "--collection", collection]) == 0
@@ -249,7 +249,7 @@ def test_legacy_cli_nonpapers_rejects_conveniences(api_env, capsys, option, valu
 
 
 @respx.mock
-@pytest.mark.parametrize("collection", ["papers", "patents"])
+@pytest.mark.parametrize("collection", ["papers", "books", "patents"])
 def test_content_cli_collection_defaults(api_env, collection):
     route = respx.get("https://api.example/content").respond(200, json={})
     assert main(["content", "x", "--collection", collection]) == 0
@@ -261,5 +261,29 @@ def test_content_cli_collection_defaults(api_env, collection):
 @respx.mock
 def test_catalog_cli_patents(api_env):
     route = respx.get("https://api.example/meta-catalog").respond(200, json={"fields": []})
-    assert main(["catalog", "--collection", "patents", "--samples"]) == 0
-    assert dict(route.calls.last.request.url.params) == {"collection": "patents", "include_sample_values": "true"}
+    assert main(["catalog", "--collection", "patents", "--samples", "--field-stats"]) == 0
+    assert dict(route.calls.last.request.url.params) == {
+        "collection": "patents", "include_sample_values": "true", "include_field_stats": "true",
+    }
+
+
+@respx.mock
+def test_paper_relations_and_semantic_search_new_cli_flags(api_env):
+    rel_route = respx.post("https://api.example/meta-paper-relations").respond(200, json={"items": []})
+    assert main([
+        "paper-relations", "paper:1", "--relation", "CITATIONS",
+        "--sort", "CITATION_COUNT_DESC", "--id-types", "sciverse",
+    ]) == 0
+    assert json.loads(rel_route.calls.last.request.content) == {
+        "unique_id": "paper:1", "relation": "CITATIONS", "page": 1, "page_size": 25,
+        "sort": "CITATION_COUNT_DESC", "id_types": ["sciverse"],
+    }
+
+    sem_route = respx.post("https://api.example/agentic-search").respond(200, json={"hits": []})
+    assert main([
+        "semantic-search", "attention", "--filters", '{"lang":"en"}', "--source-types", "pdf",
+    ]) == 0
+    assert json.loads(sem_route.calls.last.request.content) == {
+        "query": "attention", "top_k": 10, "retrieval": "hybrid",
+        "filters": {"lang": "en"}, "source_types": ["pdf"],
+    }

@@ -9,10 +9,10 @@
 | 工具 | 适用场景 |
 |---|---|
 | `list_catalog` | 字段 introspection：按 `collection` 返回可用字段、过滤算子、enum 取值样本 |
-| `search_metadata` | 按结构化条件查 papers / authors / sources / patents（用 `collection` 切换实体集合） |
+| `search_metadata` | 按结构化条件查 papers / books / authors / sources / patents（用 `collection` 切换实体集合） |
 | `semantic_search` | 自然语言语义检索片段（RAG 用） |
 | `list_paper_relations` | 分页取某篇论文完整的 citations / references / related works（按 `unique_id`） |
-| `read_content` | 读取 papers / patents 原文字符切片（默认 papers，offset=0、limit=4096） |
+| `read_content` | 读取 papers / books / patents 原文字符切片（默认 papers，offset=0、limit=4096） |
 | `get_resource` | 取 `read_content` Markdown 中引用的图片/表格字节流 |
 
 六个工具共用同一套 Bearer Token 鉴权，并在 Python SDK / TypeScript SDK / MCP server / Claude Code skill / ClawHub skill 中以一致接口暴露。canonical schema 见 [`openapi.yaml`](./openapi.yaml)。

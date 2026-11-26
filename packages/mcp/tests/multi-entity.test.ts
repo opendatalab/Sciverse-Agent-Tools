@@ -18,8 +18,8 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import * as generated from "../src/generated/tools.js";
 const config = { token: "test", baseUrl: "https://api.example", channel: "mcp" as const };
 describe("多实体 MCP", () => {
-  it.each(["papers", "authors", "sources", "patents"])("canonical 参数原样发送：%s", async collection => {
-    const args = { query: "x", collection, filters: [{field: "id", operator: "FILTER_OP_EQ", value: "x"}], sort: [{field: "id", order: "SORT_ORDER_ASC"}], fields: ["id"], page: 2, page_size: 3, cursor: "next", facets: [{field: "id", size: 50}], freshness_boost: "MILD", impact_boost: "STRONG", language_affinity: "NONE" };
+  it.each(["papers", "books", "authors", "sources", "patents"])("canonical 参数原样发送：%s", async collection => {
+    const args = { query: "x", collection, filters: [{field: "id", operator: "FILTER_OP_EQ", value: "x"}], sort: [{field: "id", order: "SORT_ORDER_ASC"}], fields: ["id"], page: 2, page_size: 3, cursor: "next", facets: [{field: "id", size: 50}], allow_relaxation: false, freshness_boost: "MILD", impact_boost: "STRONG", language_affinity: "NONE" };
     expect((await executeTool(config, "search_metadata", args)).isError).toBe(false);
     expect(bodies).toEqual([args]);
   });
@@ -27,7 +27,7 @@ describe("多实体 MCP", () => {
     expect((await executeTool(config, "search_metadata", {})).isError).toBe(false);
     expect(bodies).toEqual([{collection: "papers"}]);
   });
-  it.each([{ typo: true }, { typo: null }, { year_from: 2020 }, { collection: "unknown" }, { facets: [{field: "id", size: 51}] }, { filters: [{field: "id", operator: "FILTER_OP_EQ", value: 1, typo: true}] }])("拒绝错误 canonical 参数 %j", async args => {
+  it.each([{ typo: true }, { typo: null }, { year_from: 2020 }, { collection: "unknown" }, { allow_relaxation: "false" }, { facets: [{field: "id", size: 51}] }, { filters: [{field: "id", operator: "FILTER_OP_EQ", value: 1, typo: true}] }])("拒绝错误 canonical 参数 %j", async args => {
     expect((await executeTool(config, "search_metadata", args)).isError).toBe(true);
     expect(urls).toHaveLength(0);
   });
@@ -38,7 +38,7 @@ describe("多实体 MCP", () => {
     }
     expect(urls).toHaveLength(0);
   });
-  it.each(["authors", "sources", "patents"])("旧接口非论文不自动年份排序：%s", async collection => {
+  it.each(["books", "authors", "sources", "patents"])("旧接口非论文不自动年份排序：%s", async collection => {
     vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", "true");
     expect((await executeTool(config, "search_papers", { collection, filters_advanced: [{ field: "id", value: "x" }], impact_boost: "MILD" })).isError).toBe(false);
     expect(bodies[0]).toEqual({collection, filters: [{field: "id", operator: "FILTER_OP_EQ", value: "x"}], impact_boost: "MILD"});
@@ -54,7 +54,7 @@ describe("多实体 MCP", () => {
     expect(urls).toHaveLength(0);
   });
 
-  it.each(["authors", "sources", "patents"])("非论文保留 auto/none 及显式高级排序：%s", async collection => {
+  it.each(["books", "authors", "sources", "patents"])("非论文保留 auto/none 及显式高级排序：%s", async collection => {
     vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", "true");
     for (const sort_by_year of ["auto", "none"]) {
       for (const sort_advanced of [undefined, [{field: "id", order: "SORT_ORDER_ASC"}]]) {
@@ -64,7 +64,7 @@ describe("多实体 MCP", () => {
       }
     }
   });
-  it.each(["authors", "sources", "patents"])("非论文拒绝显式年份 asc/desc：%s", async collection => {
+  it.each(["books", "authors", "sources", "patents"])("非论文拒绝显式年份 asc/desc：%s", async collection => {
     vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", "true");
     for (const sort_by_year of ["asc", "desc"]) {
       const args = {collection, sort_by_year};
@@ -76,7 +76,7 @@ describe("多实体 MCP", () => {
   });
   it("非法 sort_by_year 不得变成隐式升序", async () => {
     vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", "true");
-    for (const collection of ["papers", "patents"]) {
+    for (const collection of ["papers", "books", "patents"]) {
       const args = {collection, sort_by_year: "typo"};
       const result = await executeTool(config, "search_papers", args);
       expect(result.isError).toBe(true);
@@ -96,13 +96,15 @@ describe("多实体 MCP", () => {
     expect(bodies).toEqual([{sort: [{field: "publication_published_year", order: "SORT_ORDER_DESC"}]}]);
   });
 
-  it("专利正文保留分页默认值", async () => {
-    expect((await executeTool(config, "read_content", { doc_id: "patent:1", collection: "patents" })).isError).toBe(false);
-    expect(Object.fromEntries(urls[0]!.searchParams)).toEqual({doc_id: "patent:1", collection: "patents", offset: "0", limit: "4096"});
+  it.each(["books", "patents"])("图书和专利正文保留分页默认值：%s", async collection => {
+    expect((await executeTool(config, "read_content", { doc_id: `${collection}:1`, collection })).isError).toBe(false);
+    expect(Object.fromEntries(urls.at(-1)!.searchParams)).toEqual({doc_id: `${collection}:1`, collection, offset: "0", limit: "4096"});
   });
-  it("catalog 支持 patents", async () => {
+  it("catalog 支持 books 与 patents", async () => {
+    await executeTool(config, "list_catalog", {collection: "books"});
+    expect(urls[0]!.searchParams.get("collection")).toBe("books");
     await executeTool(config, "list_catalog", {collection: "patents"});
-    expect(urls[0]!.searchParams.get("collection")).toBe("patents");
+    expect(urls[1]!.searchParams.get("collection")).toBe("patents");
   });
   it.each([false, true])("工具发现使用共享元数据，legacy=%s", async legacy => {
     vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", String(legacy));
@@ -114,7 +116,7 @@ describe("多实体 MCP", () => {
       const {tools} = await client.listTools();
       expect(tools.map(t => t.name)).toContain("search_metadata");
       expect(Object.keys(tools.find(t => t.name === "search_metadata")!.inputSchema.properties!).sort()).toEqual([
-        "query", "collection", "filters", "sort", "fields", "page", "page_size", "cursor", "facets", "freshness_boost", "impact_boost", "language_affinity",
+        "query", "collection", "filters", "sort", "fields", "page", "page_size", "cursor", "facets", "allow_relaxation", "freshness_boost", "impact_boost", "language_affinity",
       ].sort());
       expect(tools.some(t => t.name === "search_papers")).toBe(legacy);
       if (legacy) expect(tools.find(t => t.name === "search_papers")?.inputSchema).toEqual(generated.LEGACY_TOOLS.find(t => t.name === "search_papers")?.inputSchema);

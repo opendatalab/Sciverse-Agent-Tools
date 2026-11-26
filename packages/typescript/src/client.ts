@@ -21,6 +21,7 @@ const SOURCE = `${PLATFORM}-${CHANNEL}`;
 
 const PASSTHROUGH = [
   "query", "page", "page_size", "fields", "collection",
+  "allow_relaxation",
   // 软加权档位（NONE/MILD/STRONG，可叠加）：新鲜度 / 影响力 / 语言亲和
   "freshness_boost", "impact_boost", "language_affinity",
 ] as const;
@@ -31,10 +32,10 @@ interface FilterEntry {
   value: unknown;
 }
 
-const COLLECTIONS = ["papers", "authors", "sources", "patents"] as const;
+const COLLECTIONS = ["papers", "books", "authors", "sources", "patents"] as const;
 const CANONICAL_SEARCH_KEYS = [
   "query", "collection", "filters", "sort", "fields", "page", "page_size",
-  "cursor", "facets", "freshness_boost", "impact_boost", "language_affinity",
+  "cursor", "facets", "allow_relaxation", "freshness_boost", "impact_boost", "language_affinity",
 ] as const;
 const PAPER_CONVENIENCE_KEYS = [
   "title_contains", "abstract_contains", "authors", "year_from", "year_to",
@@ -59,6 +60,9 @@ function toMetadataPayload(args: Record<string, unknown>): Record<string, unknow
   args = { ...args, collection: args.collection ?? "papers" };
   if (args.query === null) delete args.query;
   validateCollection(args.collection);
+  if (args.allow_relaxation !== undefined && typeof args.allow_relaxation !== "boolean") {
+    throw new Error("allow_relaxation must be a boolean");
+  }
   for (const [key, allowed] of [
     ["filters", ["field", "operator", "value"]],
     ["sort", ["field", "order"]],
@@ -102,7 +106,12 @@ function toBackendPayload(args: Record<string, unknown>): Record<string, unknown
   const sort: { field: string; order: string }[] = [];
 
   for (const k of PASSTHROUGH) {
-    if (args[k] !== undefined && args[k] !== null) out[k] = args[k];
+    if (args[k] !== undefined && args[k] !== null) {
+      if (k === "allow_relaxation" && typeof args[k] !== "boolean") {
+        throw new Error("allow_relaxation must be a boolean");
+      }
+      out[k] = args[k];
+    }
   }
 
   const addFilter = (field: string, operator: string, value: unknown) => {
@@ -228,7 +237,14 @@ export class AgentToolsClient {
   }
 
   async listPaperRelations(
-    args: { unique_id: string; relation: string; page?: number; page_size?: number },
+    args: {
+      unique_id: string;
+      relation: string;
+      page?: number;
+      page_size?: number;
+      sort?: "CITATION_COUNT_DESC" | "CITATION_COUNT_ASC";
+      id_types?: string[];
+    },
   ): Promise<unknown> {
     return this.request("/meta-paper-relations", { method: "POST", body: JSON.stringify(args) });
   }
@@ -266,9 +282,9 @@ export class AgentToolsClient {
     return { bytes: buf, mimeType };
   }
 
-  async readContent(params: { doc_id: string; collection?: "papers" | "patents"; offset?: number; limit?: number }): Promise<unknown> {
+  async readContent(params: { doc_id: string; collection?: "papers" | "books" | "patents"; offset?: number; limit?: number }): Promise<unknown> {
     const qs = new URLSearchParams();
-    validateCollection(params.collection, ["papers", "patents"]);
+    validateCollection(params.collection, ["papers", "books", "patents"]);
     qs.set("doc_id", params.doc_id);
     if (params.collection !== undefined) qs.set("collection", params.collection);
     // 后端未传 offset 时返回整篇全文并忽略 limit；默认值与 Python SDK 一致。

@@ -57,9 +57,9 @@ Do not intersect global `semantic_search` results with candidate `doc_id`
 client-side — that loses recall to global top-k truncation. `filters.doc_id`
 replaces that pattern.
 
-## Author / Journal Entity Profiles
+## Book / Author / Journal Entity Profiles
 
-`search_metadata` and `list_catalog` accept `collection`: `papers` (default), `authors`,
+`search_metadata` and `list_catalog` accept `collection`: `papers` (default), `books`, `authors`,
 `sources` (journals), `patents`. Use this to discover or profile entities, and to enrich paper results.
 
 Discovery (find entities directly):

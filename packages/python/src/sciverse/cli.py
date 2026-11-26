@@ -146,6 +146,7 @@ def _cmd_search(args: argparse.Namespace) -> int:
         if args.freshness_boost != "NONE": kwargs["freshness_boost"] = args.freshness_boost
         if args.impact_boost != "NONE": kwargs["impact_boost"] = args.impact_boost
         if args.language_affinity != "NONE": kwargs["language_affinity"] = args.language_affinity
+        if args.allow_relaxation is not None: kwargs["allow_relaxation"] = args.allow_relaxation
         kwargs["page"] = args.page
         kwargs["page_size"] = args.page_size
         r = await client.search_papers(**kwargs)
@@ -158,7 +159,7 @@ def _cmd_search_metadata(args: argparse.Namespace) -> int:
     async def _do(client):
         fields = (
             "query", "collection", "filters", "sort", "fields", "page", "page_size",
-            "cursor", "facets", "freshness_boost", "impact_boost", "language_affinity",
+            "cursor", "facets", "allow_relaxation", "freshness_boost", "impact_boost", "language_affinity",
         )
         kwargs = {field: getattr(args, field) for field in fields if getattr(args, field) is not None}
         _print_json(await client.search_metadata(**kwargs))
@@ -168,9 +169,14 @@ def _cmd_search_metadata(args: argparse.Namespace) -> int:
 
 def _cmd_semantic_search(args: argparse.Namespace) -> int:
     async def _do(client):
-        r = await client.semantic_search(
-            query=args.query, top_k=args.top_k, mode=args.mode,
-        )
+        kwargs: dict[str, Any] = {
+            "query": args.query, "top_k": args.top_k, "mode": args.mode,
+        }
+        if args.filters is not None:
+            kwargs["filters"] = args.filters
+        if args.source_types is not None:
+            kwargs["source_types"] = args.source_types
+        r = await client.semantic_search(**kwargs)
         _print_json(r)
 
     return _run_with_client(_do)
@@ -178,10 +184,15 @@ def _cmd_semantic_search(args: argparse.Namespace) -> int:
 
 def _cmd_paper_relations(args: argparse.Namespace) -> int:
     async def _do(client):
-        r = await client.list_paper_relations(
-            unique_id=args.unique_id, relation=args.relation,
-            page=args.page, page_size=args.page_size,
-        )
+        kwargs: dict[str, Any] = {
+            "unique_id": args.unique_id, "relation": args.relation,
+            "page": args.page, "page_size": args.page_size,
+        }
+        if args.sort is not None:
+            kwargs["sort"] = args.sort
+        if args.id_types is not None:
+            kwargs["id_types"] = args.id_types
+        r = await client.list_paper_relations(**kwargs)
         _print_json(r)
 
     return _run_with_client(_do)
@@ -199,10 +210,13 @@ def _cmd_content(args: argparse.Namespace) -> int:
 
 def _cmd_catalog(args: argparse.Namespace) -> int:
     async def _do(client):
-        r = await client.list_catalog(
-            include_sample_values=args.samples,
-            collection=getattr(args, "collection", None),
-        )
+        kwargs: dict[str, Any] = {
+            "include_sample_values": args.samples,
+            "collection": getattr(args, "collection", None),
+        }
+        if getattr(args, "field_stats", False):
+            kwargs["include_field_stats"] = True
+        r = await client.list_catalog(**kwargs)
         _print_json(r)
 
     return _run_with_client(_do)
@@ -270,8 +284,8 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     search.add_argument("query", nargs="?", default="", help="全文 BM25 关键词（可选）")
-    search.add_argument("--collection", choices=["papers", "authors", "sources", "patents"], default="papers",
-                        help="实体集合（默认 papers）。authors/sources/patents 的高级字段过滤请用 SDK 的 "
+    search.add_argument("--collection", choices=["papers", "books", "authors", "sources", "patents"], default="papers",
+                        help="实体集合（默认 papers）。books/authors/sources/patents 的高级字段过滤请用 SDK 的 "
                              "filters_advanced / sort_advanced；CLI 主要支持 query 与 catalog 自省")
     search.add_argument("--author", "--authors", action="append", default=None, dest="authors",
                         help="作者名（可多次传，任一命中即可）")
@@ -296,6 +310,8 @@ def _build_parser() -> argparse.ArgumentParser:
     search.add_argument("--language-affinity", choices=["NONE", "MILD", "STRONG"], default="NONE",
                         dest="language_affinity",
                         help="模糊搜索语言亲和加权：非 query 语言结果降序（不排除）；MILD=×0.5 / STRONG=×0.2。仅 query 非空时生效")
+    search.add_argument("--allow-relaxation", action=argparse.BooleanOptionalAction, default=None,
+                        dest="allow_relaxation", help="请求级 CJK 自动放宽开关（--no-allow-relaxation 禁用）")
     search.add_argument("--page", type=int, default=1, help="页码，从 1 开始")
     search.add_argument("--page-size", type=int, default=10, dest="page_size",
                         help="每页数量，默认 10，上限 50")
@@ -305,12 +321,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "search-metadata", help="多实体 canonical 元数据检索（不添加默认排序）", allow_abbrev=False,
     )
     metadata.add_argument("query", nargs="?", help="全文关键词（可选）")
-    metadata.add_argument("--collection", choices=["papers", "authors", "sources", "patents"], default="papers")
+    metadata.add_argument("--collection", choices=["papers", "books", "authors", "sources", "patents"], default="papers")
     for field in ("filters", "sort", "fields", "facets"):
         metadata.add_argument(f"--{field}", type=json.loads, help=f"canonical {field} JSON 数组")
     metadata.add_argument("--page", type=int)
     metadata.add_argument("--page-size", type=int, help="每页数量（省略使用服务端默认值）")
     metadata.add_argument("--cursor", help="上页返回的 next_cursor")
+    metadata.add_argument("--allow-relaxation", action=argparse.BooleanOptionalAction, default=None,
+                          dest="allow_relaxation", help="请求级 CJK 自动放宽开关（--no-allow-relaxation 禁用）")
     for field in ("freshness-boost", "impact-boost", "language-affinity"):
         metadata.add_argument(f"--{field}", choices=["NONE", "MILD", "STRONG"])
     metadata.set_defaults(func=_cmd_search_metadata)
@@ -325,6 +343,9 @@ def _build_parser() -> argparse.ArgumentParser:
                           "要更多请用 --mode quality 或 fast）")
     sem.add_argument("--mode", choices=["fast", "balanced", "quality"], default="balanced",
                      help="fast=纯关键词 (~200ms) / balanced=混合 (~600ms，默认) / quality=LLM 改写 (~2-4s)")
+    sem.add_argument("--filters", type=json.loads, help="结构化过滤 JSON 对象")
+    sem.add_argument("--source-types", nargs="+", choices=["web", "pdf"], dest="source_types",
+                     help="限制 chunk 来源类型（web / pdf）")
     sem.set_defaults(func=_cmd_semantic_search)
 
     rel = sub.add_parser(
@@ -337,11 +358,15 @@ def _build_parser() -> argparse.ArgumentParser:
     rel.add_argument("--page", type=int, default=1, help="页码，从 1 开始")
     rel.add_argument("--page-size", type=int, default=25, dest="page_size",
                      help="每页数量，默认 25，上限 200")
+    rel.add_argument("--sort", choices=["CITATION_COUNT_DESC", "CITATION_COUNT_ASC"],
+                     help="可选按被引数排序")
+    rel.add_argument("--id-types", nargs="+", dest="id_types",
+                     help="可选 id_type 白名单过滤（如 sciverse）")
     rel.set_defaults(func=_cmd_paper_relations)
 
     content = sub.add_parser("content", help="读文献原文 Unicode 码点区间（GET /content）")
     content.add_argument("doc_id", help="文献 ID（来自 search / semantic-search hits）")
-    content.add_argument("--collection", choices=["papers", "patents"], default="papers")
+    content.add_argument("--collection", choices=["papers", "books", "patents"], default="papers")
     content.add_argument("--offset", type=int, default=0, help="起始 Unicode 码点偏移，默认 0")
     content.add_argument("--limit", type=int, default=4096,
                          help="读取的 Unicode 码点数，默认 4096，服务端上限 524288")
@@ -351,10 +376,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "catalog",
         help="字段 introspection（GET /meta-catalog），第一次接入时建议先调",
     )
-    cat.add_argument("--collection", choices=["papers", "authors", "sources", "patents"], default="papers",
+    cat.add_argument("--collection", choices=["papers", "books", "authors", "sources", "patents"], default="papers",
                      help="字段目录所属实体集合（默认 papers）")
     cat.add_argument("--samples", action="store_true",
                      help="拉枚举字段的取值样本（首次 OpenSearch terms agg，~几百 ms；之后 24h 缓存）")
+    cat.add_argument("--field-stats", action="store_true", dest="field_stats",
+                     help="返回 keyword 字段基数估算与数值字段 min/max/avg/p50/p95 统计")
     cat.set_defaults(func=_cmd_catalog)
 
     res = sub.add_parser(

@@ -14,8 +14,8 @@ afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 import { AgentToolsClient } from "../src/client.js";
 const client = new AgentToolsClient({ token: "test", baseUrl: "https://api.example" });
 describe("多实体 SDK", () => {
-  it.each(["papers", "authors", "sources", "patents"])("canonical 参数原样发送：%s", async collection => {
-    const args = { query: "x", collection, filters: [{field: "id", operator: "FILTER_OP_EQ", value: "x"}], sort: [{field: "id", order: "SORT_ORDER_ASC"}], fields: ["id"], page: 2, page_size: 3, cursor: "next", facets: [{field: "id", size: 50}], freshness_boost: "MILD", impact_boost: "STRONG", language_affinity: "NONE" };
+  it.each(["papers", "books", "authors", "sources", "patents"])("canonical 参数原样发送：%s", async collection => {
+    const args = { query: "x", collection, filters: [{field: "id", operator: "FILTER_OP_EQ", value: "x"}], sort: [{field: "id", order: "SORT_ORDER_ASC"}], fields: ["id"], page: 2, page_size: 3, cursor: "next", facets: [{field: "id", size: 50}], allow_relaxation: false, freshness_boost: "MILD", impact_boost: "STRONG", language_affinity: "NONE" };
     await client.searchMetadata(args);
     expect(bodies).toEqual([args]);
   });
@@ -23,11 +23,11 @@ describe("多实体 SDK", () => {
     await client.searchMetadata({});
     expect(bodies).toEqual([{ collection: "papers" }]);
   });
-  it.each([{ typo: true }, { typo: null }, { year_from: 2020 }, { collection: "unknown" }, { facets: [{field: "id", size: 51}] }, { filters: [{field: "id", operator: "FILTER_OP_EQ", value: 1, typo: true}] }])("拒绝错误 canonical 参数 %j", async args => {
+  it.each([{ typo: true }, { typo: null }, { year_from: 2020 }, { collection: "unknown" }, { allow_relaxation: "false" }, { facets: [{field: "id", size: 51}] }, { filters: [{field: "id", operator: "FILTER_OP_EQ", value: 1, typo: true}] }])("拒绝错误 canonical 参数 %j", async args => {
     await expect(client.searchMetadata(args)).rejects.toThrow();
     expect(urls).toHaveLength(0);
   });
-  it.each(["authors", "sources", "patents"])("旧接口非论文不自动年份排序：%s", async collection => {
+  it.each(["books", "authors", "sources", "patents"])("旧接口非论文不自动年份排序：%s", async collection => {
     await client.searchPapers({ collection, filters_advanced: [{ field: "id", value: "x" }] });
     expect(bodies[0]).toEqual({collection, filters: [{field: "id", operator: "FILTER_OP_EQ", value: "x"}]});
   });
@@ -39,7 +39,7 @@ describe("多实体 SDK", () => {
     expect(urls).toHaveLength(0);
   });
 
-  it.each(["authors", "sources", "patents"])("非论文保留 auto/none 及显式高级排序：%s", async collection => {
+  it.each(["books", "authors", "sources", "patents"])("非论文保留 auto/none 及显式高级排序：%s", async collection => {
     vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", "true");
     for (const sort_by_year of ["auto", "none"]) {
       for (const sort_advanced of [undefined, [{field: "id", order: "SORT_ORDER_ASC"}]]) {
@@ -49,7 +49,7 @@ describe("多实体 SDK", () => {
       }
     }
   });
-  it.each(["authors", "sources", "patents"])("非论文拒绝显式年份 asc/desc：%s", async collection => {
+  it.each(["books", "authors", "sources", "patents"])("非论文拒绝显式年份 asc/desc：%s", async collection => {
     vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", "true");
     for (const sort_by_year of ["asc", "desc"]) {
       const args = {collection, sort_by_year};
@@ -59,7 +59,7 @@ describe("多实体 SDK", () => {
   });
   it("非法 sort_by_year 不得变成隐式升序", async () => {
     vi.stubEnv("SCIVERSE_ENABLE_LEGACY_TOOLS", "true");
-    for (const collection of ["papers", "patents"]) {
+    for (const collection of ["papers", "books", "patents"]) {
       const args = {collection, sort_by_year: "typo"};
       await expect(client.searchPapers(args)).rejects.toThrow("sort_by_year");
     }
@@ -77,9 +77,13 @@ describe("多实体 SDK", () => {
     expect(bodies).toEqual([{sort: [{field: "publication_published_year", order: "SORT_ORDER_DESC"}]}]);
   });
 
-  it("专利正文透传 collection，保留分页默认值", async () => {
-    await client.readContent({ doc_id: "patent:1", collection: "patents" });
-    expect(Object.fromEntries(urls[0]!.searchParams)).toEqual({doc_id: "patent:1", collection: "patents", offset: "0", limit: "4096"});
+  it.each(["books", "patents"] as const)("图书和专利正文透传 collection，保留分页默认值：%s", async collection => {
+    await client.readContent({ doc_id: `${collection}:1`, collection });
+    expect(Object.fromEntries(urls.at(-1)!.searchParams)).toEqual({doc_id: `${collection}:1`, collection, offset: "0", limit: "4096"});
+  });
+  it("listPaperRelations 透传 sort 与 id_types", async () => {
+    await client.listPaperRelations({ unique_id: "paper:1", relation: "CITATIONS", sort: "CITATION_COUNT_DESC", id_types: ["sciverse"] });
+    expect(bodies.at(-1)).toEqual({ unique_id: "paper:1", relation: "CITATIONS", sort: "CITATION_COUNT_DESC", id_types: ["sciverse"] });
   });
   it("catalog 支持 patents", async () => {
     await client.listCatalog({ collection: "patents" });

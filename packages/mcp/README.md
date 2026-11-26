@@ -88,9 +88,9 @@ default (`https://api.sciverse.space`).
 
 | Tool | Purpose |
 |---|---|
-| `search_papers` | Structured metadata search over papers / authors / sources (set `collection`) |
+| `search_papers` | Structured metadata search over papers / books / authors / sources / patents (set `collection`) |
 | `semantic_search` | Natural-language semantic chunk retrieval (RAG) |
-| `read_content` | Character-range read of original paper text (offset/limit in Unicode code points) |
+| `read_content` | Character-range read of original text across papers / books / patents (offset/limit in Unicode code points) |
 | `list_catalog` | Field introspection (returns all field names + enum sample values, agents should call this first to learn the schema) |
 | `get_resource` | Fetch a paper figure / table image; the server wraps the bytes as an MCP `image` content block (base64 + mimeType) so multimodal models (e.g. Claude) can read the figure inline |
 
@@ -215,9 +215,9 @@ Token / endpoint 解析顺序：MCP 配置里显式 `env` → `SCIVERSE_API_TOKE
 
 | 名称 | 用途 |
 |---|---|
-| `search_papers` | 结构化元数据检索（作者 / 年份 / 期刊 / 学科） |
+| `search_papers` | 结构化元数据检索（支持 papers / books / authors / sources / patents） |
 | `semantic_search` | 自然语言语义检索（RAG 用） |
-| `read_content` | 按 Unicode 码点区间读文献原文 |
+| `read_content` | 按 Unicode 码点区间读原文（papers / books / patents） |
 | `list_catalog` | 字段 introspection（返回所有字段名 + 枚举值样本，agent 接入时建议先调一次学 schema） |
 | `get_resource` | 取文献附属图片字节流；MCP server 包装为 `image` content block + base64 + mimeType，多模态模型（如 Claude）可直接读图 |
 

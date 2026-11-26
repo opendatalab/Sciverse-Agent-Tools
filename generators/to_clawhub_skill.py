@@ -22,7 +22,7 @@ from .to_web_skill import copy_scripts
 SKILL_NAME = "sciverse-academic-retrieval"
 SKILL_SLUG = "academic-retrieval"
 SKILL_DESCRIPTION_EN = (
-    "Sciverse academic paper retrieval: metadata search across papers, authors, sources and patents, semantic "
+    "Sciverse academic retrieval: metadata search across papers, books, authors, sources and patents, semantic "
     "chunk retrieval for RAG, and character-range content reading (offsets in "
     "Unicode code points). For agent "
     "workflows that need citation-grade scientific literature."
@@ -153,7 +153,7 @@ def generate_skill_md(openapi_path: Path, *, existing_version: str | None = None
         "```",
         "",
         "`search_metadata` uses canonical `filters` / `sort`; no convenience parameters.",
-        "`semantic_search` remains paper-only. `read_content` supports papers/patents",
+        "`semantic_search` remains paper-only. `read_content` supports papers/books/patents",
         "(default papers), offset=0 and limit=4096. Pass patents explicitly for patent text.",
         "`get_resource` primarily fetches paper images; ZIP downloads are not supported.",
         "MCP: set SCIVERSE_ENABLE_LEGACY_TOOLS=true and restart to restore the legacy tool list.",

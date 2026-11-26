@@ -13,7 +13,7 @@
 | Python CLI | `sciverse search-metadata` |
 | Skills 脚本 | `node scripts/search_metadata.mjs '<JSON>'` |
 
-`collection` 支持 `papers`、`authors`、`sources`、`patents`，省略时为 `papers`。
+`collection` 支持 `papers`、`books`、`authors`、`sources`、`patents`，省略时为 `papers`。
 先用相同 collection 调用 `list_catalog`，再按该实体的字段构造查询；论文的年份、作者字段不能直接套在专利、作者或来源集合上。
 
 ## 参数迁移：不能只改工具名
@@ -60,7 +60,7 @@ node scripts/search_metadata.mjs '{"collection":"patents","query":"CRISPR","page
 
 ## 正文与能力边界
 
-`read_content` 支持 `collection="papers"` 或 `"patents"`，默认 `papers`、`offset=0`、`limit=4096`。offset/limit 按 Unicode 码点计数，不是字节。传入检索返回的 doc_id，不要拼接或猜测 ID；后续分页沿用同一 collection 和返回的 next_offset。
+`read_content` 支持 `collection="papers"`、`"books"` 或 `"patents"`，默认 `papers`、`offset=0`、`limit=4096`。offset/limit 按 Unicode 码点计数，不是字节。传入检索返回的 doc_id，不要拼接或猜测 ID；后续分页沿用同一 collection 和返回的 next_offset。
 
 ```bash
 node scripts/read_content.mjs '{"collection":"patents","doc_id":"<检索返回的doc_id>","offset":0,"limit":4096}'

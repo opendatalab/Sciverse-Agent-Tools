@@ -286,7 +286,7 @@ async def test_search_papers_freshness_boost_invalid_value_rejected():
 
 @pytest.mark.asyncio
 @respx.mock
-@pytest.mark.parametrize("collection", ["papers", "authors", "sources", "patents"])
+@pytest.mark.parametrize("collection", ["papers", "books", "authors", "sources", "patents"])
 async def test_search_metadata_canonical_payload(collection):
     route = respx.post("https://api.example/meta-search").respond(200, json={"hits": []})
     payload = {
@@ -294,6 +294,7 @@ async def test_search_metadata_canonical_payload(collection):
         "filters": [{"field": "unique_id", "operator": "FILTER_OP_EQ", "value": "x"}],
         "sort": [], "fields": ["unique_id"], "page": 1, "page_size": 5,
         "cursor": "opaque", "facets": [{"field": "language", "size": 50}],
+        "allow_relaxation": False,
         "freshness_boost": "MILD", "impact_boost": "STRONG", "language_affinity": "NONE",
     }
     async with AgentToolsClient(base_url="https://api.example", token="t") as c:
@@ -303,7 +304,7 @@ async def test_search_metadata_canonical_payload(collection):
 
 @pytest.mark.asyncio
 @respx.mock
-@pytest.mark.parametrize("kwargs", [{}, {"collection": "authors"}, {"collection": "sources"}, {"collection": "patents"}, {"filters": []}])
+@pytest.mark.parametrize("kwargs", [{}, {"collection": "books"}, {"collection": "authors"}, {"collection": "sources"}, {"collection": "patents"}, {"filters": []}])
 async def test_search_metadata_never_adds_sort(kwargs):
     route = respx.post("https://api.example/meta-search").respond(200, json={})
     async with AgentToolsClient(base_url="https://api.example", token="t") as c:
@@ -316,6 +317,8 @@ async def test_search_metadata_never_adds_sort(kwargs):
 @pytest.mark.parametrize("kwargs, field", [
     ({"typo": None}, "typo"), ({"year_from": 2020}, "year_from"),
     ({"collection": "invalid"}, "collection"),
+    ({"allow_relaxation": "false"}, "allow_relaxation"),
+    ({"allow_relaxation": 0}, "allow_relaxation"),
     *[({field: "INVALID"}, field) for field in ("freshness_boost", "impact_boost", "language_affinity")],
 ])
 async def test_search_metadata_rejects_invalid_parameters(kwargs, field):
@@ -327,7 +330,7 @@ async def test_search_metadata_rejects_invalid_parameters(kwargs, field):
 
 @pytest.mark.asyncio
 @respx.mock
-@pytest.mark.parametrize("collection", ["authors", "sources", "patents"])
+@pytest.mark.parametrize("collection", ["books", "authors", "sources", "patents"])
 @pytest.mark.parametrize("sort_by_year", [None, "auto", "none"])
 async def test_legacy_nonpapers_keeps_advanced_filters_without_year_sort(collection, sort_by_year):
     route = respx.post("https://api.example/meta-search").respond(200, json={})
@@ -357,7 +360,7 @@ async def test_legacy_nonpapers_rejects_paper_conveniences(collection, kwargs):
 
 @pytest.mark.asyncio
 @respx.mock
-@pytest.mark.parametrize("kwargs, collection", [({}, "papers"), ({"collection": "patents"}, "patents")])
+@pytest.mark.parametrize("kwargs, collection", [({}, "papers"), ({"collection": "books"}, "books"), ({"collection": "patents"}, "patents")])
 async def test_content_collection_and_default_window(kwargs, collection):
     route = respx.get("https://api.example/content").respond(200, json={"text": "x"})
     async with AgentToolsClient(base_url="https://api.example", token="t") as c:
@@ -464,5 +467,30 @@ async def test_metadata_accepts_generated_model_default_serialization():
     assert len(route.calls) == 1
     assert json.loads(route.calls.last.request.content) == {
         "query": "x", "collection": "papers", "page": 1, "page_size": 25,
+        "allow_relaxation": True,
         "freshness_boost": "NONE", "impact_boost": "NONE", "language_affinity": "NONE",
     }
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_list_paper_relations_sort_and_id_types():
+    route = respx.post("https://api.example/meta-paper-relations").respond(200, json={"items": []})
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        await c.list_paper_relations(
+            unique_id="paper:1", relation="CITATIONS",
+            sort="CITATION_COUNT_DESC", id_types=["sciverse"],
+        )
+    assert json.loads(route.calls.last.request.content) == {
+        "unique_id": "paper:1", "relation": "CITATIONS", "page": 1, "page_size": 25,
+        "sort": "CITATION_COUNT_DESC", "id_types": ["sciverse"],
+    }
+
+
+@pytest.mark.asyncio
+async def test_list_paper_relations_rejects_invalid_sort_and_id_types():
+    async with AgentToolsClient(base_url="https://api.example", token="t") as c:
+        with pytest.raises(ValueError, match="sort"):
+            await c.list_paper_relations(unique_id="paper:1", relation="CITATIONS", sort="INVALID")
+        with pytest.raises(ValueError, match="id_types"):
+            await c.list_paper_relations(unique_id="paper:1", relation="CITATIONS", id_types=[123])  # type: ignore[list-item]
