@@ -6,7 +6,7 @@ from typing import Any
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, ConfigDict, Field
 
-TOOLS_VERSION = "1.1.0"
+TOOLS_VERSION = "1.1.1"
 
 _NO_CLIENT = (
     "No Sciverse client bound. Build these tools with build_tools(client), passing a "

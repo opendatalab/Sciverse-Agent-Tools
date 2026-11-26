@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v1.1.0...v1.1.1) (2026-11-26)
+
+### Bug Fixes
+
+* **typescript:** add .js extensions to ESM re-exports ([#42](https://github.com/opendatalab/Sciverse-Agent-Tools/issues/42)) ([c75c96e](https://github.com/opendatalab/Sciverse-Agent-Tools/commit/c75c96eae00765a35e0332ef956251ea80caa4ee))
+
 ## [1.1.0](https://github.com/opendatalab/Sciverse-Agent-Tools/compare/v1.0.1...v1.1.0) (2026-11-26)
 
 ### Features
