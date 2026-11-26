@@ -89,9 +89,63 @@ jobs:
       - name: Typecheck
         working-directory: packages/typescript
         run: npm run typecheck
+      - name: Build
+        working-directory: packages/typescript
+        run: npm run build
       - name: Test (excluding contract)
         working-directory: packages/typescript
         run: npx vitest run --exclude 'tests/contract.test.ts'
+      - name: Verify built package (Node ESM + NodeNext types)
+        working-directory: packages/typescript
+        run: |
+          set -euo pipefail
+          TMP_DIR="$(mktemp -d)"
+          trap 'rm -rf "$TMP_DIR"' EXIT
+          TSC_BIN="$PWD/node_modules/.bin/tsc"
+          npm pack --pack-destination "$TMP_DIR"
+          TARBALL="$(find "$TMP_DIR" -maxdepth 1 -name 'sciverse-*.tgz' -print -quit)"
+          test -n "$TARBALL"
+          mkdir -p "$TMP_DIR/consumer"
+          cd "$TMP_DIR/consumer"
+          npm init -y >/dev/null
+          npm pkg set type=module
+          npm install --no-audit --no-fund "$TARBALL"
+          node --input-type=module -e '
+            import assert from "node:assert/strict";
+            import { AgentToolsClient, TOOLS_VERSION, OPENAI_TOOLS, ANTHROPIC_TOOLS } from "sciverse";
+            assert.equal(typeof AgentToolsClient, "function");
+            assert.equal(typeof TOOLS_VERSION, "string");
+            assert.ok(Array.isArray(OPENAI_TOOLS) && OPENAI_TOOLS.length > 0);
+            assert.ok(Array.isArray(ANTHROPIC_TOOLS) && ANTHROPIC_TOOLS.length > 0);
+          '
+          cat > tsconfig.json <<'EOF'
+          {
+            "compilerOptions": {
+              "target": "ES2022",
+              "module": "NodeNext",
+              "moduleResolution": "NodeNext",
+              "strict": true,
+              "noEmit": true,
+              "skipLibCheck": false
+            },
+            "include": ["check.ts"]
+          }
+          EOF
+          cat > check.ts <<'EOF'
+          import { AgentToolsClient, TOOLS_VERSION, OPENAI_TOOLS, ANTHROPIC_TOOLS } from "sciverse";
+          import type { AgentToolsClientOptions, components, paths } from "sciverse";
+
+          type AssertNotAny<T> = 0 extends 1 & T ? never : true;
+          const _clientCtor: AssertNotAny<typeof AgentToolsClient> = true;
+          const _version: AssertNotAny<typeof TOOLS_VERSION> = true;
+          const _openai: AssertNotAny<typeof OPENAI_TOOLS> = true;
+          const _anthropic: AssertNotAny<typeof ANTHROPIC_TOOLS> = true;
+          const _opts: AgentToolsClientOptions = { baseUrl: "https://api.sciverse.space", token: "tok" };
+          const _schemas: AssertNotAny<components["schemas"]> = true;
+          const _paths: AssertNotAny<paths> = true;
+          void [_clientCtor, _version, _openai, _anthropic, _opts, _schemas, _paths];
+          EOF
+          "$TSC_BIN" -p tsconfig.json
 
   mcp:
     name: MCP server
